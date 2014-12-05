@@ -16,23 +16,57 @@
     <div class="wrapper">
       <header>
         <h1>servant</h1>
-        <p>Servant</p>
+        <p>Simple and lightweight Haskell API framework</p>
 
 
         <p class="view"><a href="https://github.com/haskell-servant">View My GitHub Profile</a></p>
 
       </header>
       <section>
-        <h3>
-<a id="servant---easy-apis" class="anchor" href="#servant---easy-apis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Servant - easy APIs.</h3>
+        <h2>
+<a id="servant---easy-apis" class="anchor" href="#servant---easy-apis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Servant - easy APIs.</h2>
 
-<p>Servant is a lightweight tool that makes building Haskell API services a breeze. With only the thinnest sliver of boilerplate, you get a type-safe service that is capable of generating client-side code and documentation for free.</p>
+<p>Servant is a lightweight tool that makes building Haskell API services a
+breeze. With only the thinnest sliver of boilerplate, you get a type-safe
+service that is capable of generating client-side code and documentation for
+free.</p>
+
+    <h3> A Taste </h3>
+
+    TODO
+
+    <h3> Your API </h3>
+
+<p>When you use Servant, your API is represented as a <em>type</em>:</p>
+
+<div class="highlight highlight-haskell">
+    <pre>
+type MyAPI = "date" :> Get Date
+        :<|> "time" :> Capture "tz" Timezone :> Get Time
+    </pre>
+</div>
+
+<p> This represents an API with two endpoints, both of which accept only GET
+requests, and which return a (JSON representation of) a <code>Date</code> and
+<code>Time</code> object, respectively.
+
+<p> The main advantage of Servant's type-level representation of your entire
+API is that gives you access to both <em>safety</em> and <em>modularity</em>.
+Here's an example.
+
+    <h3> Servant's server </h3>
+
+Servant's server (serving is, after all, the core of its
+being!) has type <code>Server a</code> where <code>a</code> is your API type --
+<code>MyAPI</code>, in our simple example. The fact that
+
+
       </section>
       <footer>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
-    
+
   </body>
 </html>
