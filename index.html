@@ -60,15 +60,26 @@ server = getDate :<|> getTimeForTZ
   where getDate = liftIO getCurrentDate
         getTimeForTZ tz = liftIO $ getTimeAtTZ tz
 
-  -- where 'getCurrentDate' and 'getTimeAtTZ' are implemented separately
+getCurrentDate :: IO Date
+getTimeAtTZ :: Timezone -> IO Time
+
+main :: IO ()
+main = run 8000 $ serve myAPI server
+    where myAPI :: Proxy MyAPI
+          myAPI = proxy
 </code>
 </pre>
 
-<p>One handler per endpoint. The handlers' types must match those described in the endpoint. URL captures, GET parameters, headers or request body must be explicitly mentionned and get <em>automatically</em> turned into arguments to the handlers.</p>
+<p>One handler per endpoint. The handlers' types must match those described in
+the endpoint. URL captures, GET parameters, headers or request body must be
+explicitly mentionned and get <em>automatically</em> turned into arguments to
+the handlers.</p>
 
     <h3>And more!</h3>
 
-<p>This representation lets us generate client-side querying functions automatically, in Haskell and Javascript. API docs too!</p>
+<p>This representation lets us generate client-side querying functions
+automatically, in Haskell and Javascript. API docs too!</p>
+
 <p>To find out more, please check our <em><a href="http://haskell-servant.github.io/getting-started/" title="Getting started">Getting Started</a></em> guide.</p>
 
     <h3>Documentation</h3>
