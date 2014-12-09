@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>servant by haskell-servant</title>
+    <title>servant - Rethinking webservices and APIs in Haskell, one combinator at a time</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
@@ -15,52 +15,68 @@
   <body>
     <div class="wrapper">
       <header>
+        <p><img src="https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png"/></p>
         <h1>servant</h1>
-        <p>Simple and lightweight Haskell API framework</p>
+        <p>a family of combinators to define webservice APIs, and serve, document and query them</p>
 
 
-        <p class="view"><a href="https://github.com/haskell-servant">View My GitHub Profile</a></p>
+        <p class="view"><a href="https://github.com/haskell-servant">View the repositories</a></p>
+
+        <p class="view"><a href="https://haskell-servant.github.io/getting-started/">Getting Started with servant</a></p>
 
       </header>
       <section>
         <h2>
 <a id="servant---easy-apis" class="anchor" href="#servant---easy-apis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Servant - easy APIs.</h2>
 
-<p>Servant is a lightweight tool that makes building Haskell API services a
+<p><i>servant</i> is a set of libraries that makes building Haskell webservices a
 breeze. With only the thinnest sliver of boilerplate, you get a type-safe
-service that is capable of generating client-side code and documentation for
-free.</p>
+service that is capable of generating client-side code (Haskell or Javascript) and documentation for
+free. See for yourself.</p>
 
-    <h3> A Taste </h3>
-
-    TODO
-
-    <h3> Your API </h3>
-
-<p>When you use Servant, your API is represented as a <em>type</em>:</p>
+    <h3>A webservice API is a type</h3>
 
 <div class="highlight highlight-haskell">
-    <pre>
+<pre>
+             -- GET /date
 type MyAPI = "date" :> Get Date
+             -- GET /time/:tz
         :<|> "time" :> Capture "tz" Timezone :> Get Time
-    </pre>
+</pre>
 </div>
 
-<p> This represents an API with two endpoints, both of which accept only GET
+<p>This represents an API with two endpoints, both of which accept only GET
 requests, and which return a (JSON representation of) a <code>Date</code> and
-<code>Time</code> object, respectively.
+<code>Time</code> object, respectively.</p>
 
-<p> The main advantage of Servant's type-level representation of your entire
-API is that gives you access to both <em>safety</em> and <em>modularity</em>.
-Here's an example.
+    <h3>That a server can implement</h3>
 
-    <h3> Servant's server </h3>
+<div class="highlight highlight-haskell">
+<pre>
+server :: Server MyAPI
+server = getDate :<|> getTimeForTZ
 
-Servant's server (serving is, after all, the core of its
-being!) has type <code>Server a</code> where <code>a</code> is your API type --
-<code>MyAPI</code>, in our simple example. The fact that
+  where getDate = liftIO getCurrentDate
+        getTimeForTZ tz = liftIO $ getTimeAtTZ tz
 
+  -- where 'getCurrentDate' and 'getTimeAtTZ' are implemented separately
+</pre>
+</div>
 
+<p>One handler per endpoint. The handlers' types must match those described in the endpoint. URL captures, GET parameters, headers or request body must be explicitly mentionned and get <em>automatically</em> turned into arguments to the handlers.</p>
+
+    <h3>And more!</h3>
+
+<p>This representation lets us generate client-side querying functions automatically, in Haskell and Javascript. API docs too!</p>
+<p>To find out more, please check our <em><a href="http://haskell-servant.github.io/getting-started/" title="Getting started">Getting Started</a></em> guide.</p>
+
+    <h3>Documentation</h3>
+<ul>
+  <li><a href="/servant/">servant</a>, API types and serving</li>
+  <li><a href="/servant-client">servant-client</a>, for generating haskell functions to query APIs automatically</li>
+  <li><a href="/servant-jquery">servant-jquery</a>, for generating javascript functions to query APIs automatically</li>
+  <li><a href="/servant-docs">servant-docs</a>, for assistance in API docs generation</li>
+</ul>
       </section>
       <footer>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
