@@ -60,8 +60,8 @@ server = getDate :<|> getTimeForTZ
   where getDate = liftIO getCurrentDate
         getTimeForTZ tz = liftIO $ getTimeAtTZ tz
 
-getCurrentDate :: EitherT (Int, String) IO Date
-getTimeAtTZ :: Timezone -> EitherT (Int, String) IO Time
+getCurrentDate :: IO Date
+getTimeAtTZ :: Timezone -> IO Time
 
 main :: IO ()
 main = run 8000 $ serve myAPI server
@@ -74,9 +74,6 @@ main = run 8000 $ serve myAPI server
 the endpoint. URL captures, GET parameters, headers or request body must be
 explicitly mentionned and get <em>automatically</em> turned into arguments to
 the handlers.</p>
-
-<p>If an error occurs, just return a <code>Left (Int, String)</code> value,
-with your HTTP status code an message.</p>
 
     <h3>And more!</h3>
 
