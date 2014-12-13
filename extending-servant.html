@@ -101,7 +101,7 @@ instance ToJSON a => HasServer (PostWithLocation a) where
 Post</a>, you'll see very little changed. We've changed the type of the
 associated <code>Server</code> type to be a <code>EitherT (Int, String) IO
 (Link, a) </code> instead of <code>EitherT (Int, String) IO a </code>. This
-means that the function that ultimate implements this endpoint must return a
+means that the function that ultimately implements this endpoint must return a
 tuple of the link and the return value, and not just the return value. In the
 definition of the <code>route</code> method, we also changed the code to add
 the link to the <code>Location</code> header. Note how in the definition of the
@@ -195,7 +195,7 @@ layout beneath the current endpoint for all other endpoints. </p>
 involves writing a class that rewrites types and servers hand-in-hand, to
 generate a new server. </p>
 
-<p> Similarly, an interesting extension to server would be a rewrite system
+<p> Similarly, an interesting extension to <i>servant</i> would be a rewrite system
 that makes a trie out of the API type, and correspondingly changing the
 data-level implementation of a server, so that route lookups can be faster than
 linear. </p>
