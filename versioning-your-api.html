@@ -77,7 +77,7 @@ incompatibilities with the latest Hackage version of your package.</p>
 <p> In this manner, you can develop both server and client code in a way that
 feels natural, without much overhead, and <i>guarantee</i> that API changes are
 safe. You can't update your server in a way that necessitates an API change
-without change your API package version. And you can't write client code that
+without changing your API package version. And you can't write client code that
 relies on an API other than the one deployed, unless you develop against stale
 versions. (The only exception is the always-tricky case of an endpoint whose name
 and types don't change, but whose behavior does in ways the client may not
