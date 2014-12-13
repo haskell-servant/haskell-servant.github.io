@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>servant - Extending Servant</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/styles/github.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <p><img src="https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png"/></p>
+        <h1>servant</h1>
+        <p>a family of combinators to define webservice APIs, and serve, document and query them</p>
+
+
+        <p class="view"><a
+            href="https://haskell-servant.github.io/">Back to main page</a></p>
+        <p class="view"><a href="https://github.com/haskell-servant">View the repositories</a></p>
+        <p class="view"><a href="https://haskell-servant.github.io/getting-started/">Getting Started with servant</a></p>
+      </header>
+      <section>
+        <h2> Extending Servant</h2>
+
+<p> One of the best features of <i>servant</i> is that it is easily extensible.
+Extensions and plugins, such as client-library generation and support for
+authentication or cookies, generally happen along two axes: through the introduction of
+new combinators, and through new 'interpretations' for the combinators. You can
+think of the combinators as a little "API DSL", which is a deep-embedding in
+that multiple intepretations for it are possible.
+</p>
+
+<p> Note that the two axes don't quite exhaust the ways in which you can extend
+<i>servant</i>, but they are the most common.
+
+   <h3> New Combinators </h3>
+
+<p> Let's suppose our objective was to add a <code>Post</code>-like combinator
+that returns a response with an HTTP
+<a href="http://en.wikipedia.org/wiki/HTTP_location">Location</a> header with
+the location of a newly-created resource.
+</p>
+
+<p> First we define a datatype: </p>
+
+<pre>
+<code class="haskell">
+data PostWithLocation a
+    deriving Typeable
+</code>
+</pre>
+
+<p> Next, we need to describe how this ought to be intepreted. Intepretations
+are defined via instances of classes. In particular, when we want to defined how the
+<i>server</i> should behave, we instantiate the <code>HasServer</code> class:
+</p>
+
+
+<pre>
+<code class="haskell">
+
+import Control.Monad.Trans.Either
+import Data.Aeson
+import Data.Proxy
+import Data.String.Conversions
+import Data.Typeable
+import Network.HTTP.Types
+import Network.Wai
+import Servant.Server
+
+data Link = Link Ascii
+
+instance ToJSON a => HasServer (PostWithLocation a) where
+  type Server (PostWithLocation a) = EitherT (Int, String) IO (Link, a)
+
+  route Proxy action request respond
+    | null (pathInfo request) && requestMethod request == methodPost = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right (Link link, out) ->
+            responseLBS status201 [
+                ("Content-Type", "application/json")
+                ("Location", link)
+                ] (encode out)
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | null (pathInfo request) && requestMethod request /= methodPost =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+</code>
+</pre>
+
+<p> If you compare this with the implementation of <a
+    href="http://haskell-servant.github.io/servant/src/Servant-API-Post.html#Post">,
+Post</a>, you'll see very little changed. We've changed the type of the
+associated <code>Server</code> type to be a <code>EitherT (Int, String) IO
+(Link, a) </code> instead of <code>EitherT (Int, String) IO a </code>. This
+means that the function that ultimate implements this endpoint must return a
+tuple of the link and the return value, and not just the return value. In the
+definition of the <code>route</code> method, we also changed the code to add
+the link to the <code>Location</code> header. Note how in the definition of the
+instance, we have access to the details (e.g., headers) of the request and
+response, whereas the code that implements the endpoint doesn't (or at least
+not directly - we could, if we so desired, pass all of the details of the
+request to the function, creating a new combinator).
+
+<p> If we look at the original definition of <a
+    href="http://haskell-servant.github.io/servant/Servant-Server.html#t:HasServer">HasServer</a>,
+we see that the second parameter of <code>route</code> -- in this case,
+<code>action</code> has the type of the Server associated type synonym instance.
+In this case, that is our <code>EitherT (Int, String) IO (Link, a) </code>.
+This is just what we wanted in this case, because <code>PostWithLocation</code>
+should always be the last element of any route type. But if we were defining a
+combinator that wasn't at the end, we would likely need delegate some
+decision-making to combinators further on down the line. Look at the
+<code>HasServer</code> instance
+for <a href="http://haskell-servant.github.io/servant/src/Servant-API-Sub.html">
+<code>(:>)</code></a> if you're curious how that works.
+<p>
+
+<p> We can now use our combinator: </p>
+
+<pre>
+<code class="haskell">
+type MyAPI = "user" :> ReqBody User :> PostWithLocation ()
+
+myAPI :: Proxy MyAPI
+myAPI = Proxy
+
+server :: Server MyAPI
+server = mkNewUser
+    where
+      mkNewUser :: User -> EitherT (Int, String) IO (Link, a)
+      mkNewUser = ...
+</code>
+</pre>
+
+<p> Depending on your use case, you may also want to define
+<code>HasClient</code> and <code>HasDocs</code> instances for your combinator,
+so that you (and other people) can benefit from code and documentation
+generation. <p>
+
+   <h3> New Interpreters </h3>
+
+<p> If you've come this far, you should already have a sense for what
+defining new 'intepreters' for the API consists of. You write a new class,
+akin to <code>HasServer</code>, and instances of that class for existing
+combinators.
+</p>
+
+<p> The most obvious use of a new interpreter is code generation. I highly
+recommend taking a look at <a href="/servant-jquery/">servant-jquery</a> for
+inspiration. </p>
+
+
+   <h3> Other Directions </h3>
+
+<p> In rare cases, extensions to <i>servant</i> may involve something that
+   doesn't quite belong in either of these categories. For instance, a distant
+   dream of mine in getting <i>HATEOAS for free</i> in <i>servant</i>. The idea
+   is that given an API:
+   </p>
+
+<pre>
+<code class="haskell">
+type MyAPI = "user" :> ReqBody User :> Post ()
+         :<|> "names" :> Capture "name" String :> Get User
+</code>
+</pre>
+
+<p> And a server <code>MyServer</code> for it, we would <i>automatically</i>
+create a type:
+
+<pre>
+<code class="haskell">
+type MyAPIResty = Get HATEOASData
+            :<|> "user" :> Get HATEOASData
+            :<|> "user" :> ReqBody User :> Post ()
+            :<|> "names" :> Get HATEOASData
+            :<|> "names" :> Capture "name" String :> Get User
+</code>
+</pre>
+
+<p> And a server for it, that behaves just like <code>MyServer</code> insofar
+as their endpoints coincide, but would return information about the server's
+layout beneath the current endpoint for all other endpoints. </p>
+
+<p> This involves considerable trickery at the type-level. In particular, it
+involves writing a class that rewrites types and servers hand-in-hand, to
+generate a new server. </p>
+
+<p> Similarly, an interesting extension to server would be a rewrite system
+that makes a trie out of the API type, and correspondingly changing the
+data-level implementation of a server, so that route lookups can be faster than
+linear. </p>
+
+<p> If this, or related more advanced projects, sounds interesting to you, get
+in touch! </p>
+      </section>
+      <footer>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="javascripts/scale.fix.js"></script>
+
+  </body>
+</html>
