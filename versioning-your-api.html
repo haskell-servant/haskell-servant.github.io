@@ -90,6 +90,12 @@ there's no guarantee that server and client agree on the interface.<p>
 automatically notified of any API changes in a server your interface with that
 break your code! <p>
 
+<p> Of course, you might still choose to unpack your API into client code
+yourself (which has the added benefit of allowing you to use
+<code>DEPRECATE</code> pragmas for deprecated endpoints). But even then,
+separating your API into its own package, belonging neither to the client code
+nor the server code, but being a dependency of both, maintains the clear
+boundary between server and client.</p>
       </section>
       <footer>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
