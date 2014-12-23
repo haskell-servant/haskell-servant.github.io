@@ -5,12 +5,17 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+import Control.Applicative
+import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Proxy
 import Data.Text (Text)
 import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Simple.FromRow
+import Database.PostgreSQL.Simple.ToField
+import Database.PostgreSQL.Simple.ToRow
 import GHC.Generics
-import Network.Wai.Handler.Warp
+import Network.Wai.Handler.Warp (run)
 import Servant
 
 data Book = Book
@@ -33,10 +38,6 @@ instance ToRow Book where
 
              -- we explicitly say we expect a request body,
              -- of type Book
-type BookApi = "books" :> ReqBody Book :> Post Book  -- POST /books
-          :<|> "books" :> Get [Book]                 -- GET /books
-
--- Let's stick the API type again here:
 type BookApi = "books" :> ReqBody Book :> Post Book  -- POST /books
           :<|> "books" :> Get [Book]                 -- GET /books
 
