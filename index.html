@@ -66,7 +66,7 @@ getTimeAtTZ :: Timezone -> IO Time
 main :: IO ()
 main = run 8000 $ serve myAPI server
     where myAPI :: Proxy MyAPI
-          myAPI = proxy
+          myAPI = Proxy
 </code>
 </pre>
 
