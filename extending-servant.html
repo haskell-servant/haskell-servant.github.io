@@ -56,7 +56,7 @@ data PostWithLocation a
 </code>
 </pre>
 
-<p> Next, we need to describe how this ought to be intepreted. Intepretations
+<p> Next, we need to describe how this ought to be interpreted. Interpretations
 are defined via instances of classes. In particular, when we want to defined how the
 <i>server</i> should behave, we instantiate the <code>HasServer</code> class:
 </p>
@@ -97,7 +97,7 @@ instance ToJSON a => HasServer (PostWithLocation a) where
 </pre>
 
 <p> If you compare this with the implementation of <a
-    href="http://haskell-servant.github.io/servant/src/Servant-API-Post.html#Post">,
+    href="http://haskell-servant.github.io/servant/src/Servant-API-Post.html#Post">
 Post</a>, you'll see very little changed. We've changed the type of the
 associated <code>Server</code> type to be a <code>EitherT (Int, String) IO
 (Link, a) </code> instead of <code>EitherT (Int, String) IO a </code>. This
@@ -149,7 +149,7 @@ generation. <p>
    <h3> New Interpreters </h3>
 
 <p> If you've come this far, you should already have a sense for what
-defining new 'intepreters' for the API consists of. You write a new class,
+defining new 'interpreters' for the API consists of. You write a new class,
 akin to <code>HasServer</code>, and instances of that class for existing
 combinators.
 </p>
