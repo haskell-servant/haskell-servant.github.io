@@ -197,7 +197,7 @@ Now this is interesting! Let's zoom in on this server function, piece by piece.
 server :: Connection -> Server BookApi
 ```
 
-Assuming it is given a PostgreSQL connection, our `server` function returns something of type `Server BookApi`. `Server` is a type family in servant which expresses the type that the handlers when glued together should have. It basically makes sure you have an handler for each endpoint and that each handler's type matches the "type" given by the endpoint.
+Assuming it is given a PostgreSQL connection, our `server` function returns something of type `Server BookApi`. `Server` is a type family in servant which expresses the type that the handlers when glued together should have. It basically makes sure you have a handler for each endpoint and that each handler's type matches the "type" given by the endpoint.
 
 ``` haskell
 server conn = postBook
@@ -214,7 +214,7 @@ postBook book = liftIO $ execute conn "insert into books values (?, ?)" book >> 
 
 The `ReqBody` bit of the endpoint gets automatically turned into an argument for the handler. The only thing that's required for this to work is a `FromJSON` instance for `Book`. From there, we just run a SQL query and return our `book` argument, and then use `liftIO`. This is necessary because server-side handlers live in the `EitherT (Int, String) IO` monad. The `Left` case is meant to store failure information, `Int` for the status and `String` for the message. This will probably change to a more robust representation soon.
 
-## Server-side handlers (2)
+## Server-side handlers (3)
 
 ``` haskell
 -- corresponds to: "books" :> Get [Book]
