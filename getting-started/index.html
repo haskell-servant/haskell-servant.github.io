@@ -190,7 +190,7 @@ server conn <span class="fu">=</span> postBook
 </div><div id="server-side-handlers-2" class="slide section level2">
 <h1>Server-side handlers (2)</h1>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">server ::</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Server</span> <span class="dt">BookApi</span></code></pre>
-<p>Assuming it is given a PostgreSQL connection, our <code>server</code> function returns something of type <code>Server BookApi</code>. <code>Server</code> is a type family in servant which expresses the type that the handlers when glued together should have. It basically makes sure you have an handler for each endpoint and that each handler's type matches the &quot;type&quot; given by the endpoint.</p>
+<p>Assuming it is given a PostgreSQL connection, our <code>server</code> function returns something of type <code>Server BookApi</code>. <code>Server</code> is a type family in servant which expresses the type that the handlers when glued together should have. It basically makes sure you have a handler for each endpoint and that each handler's type matches the &quot;type&quot; given by the endpoint.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">server conn <span class="fu">=</span> postBook
          <span class="fu">:&lt;|&gt;</span> getBooks</code></pre>
 <p>One handler for each endpoint, glued together with <code>:&lt;|&gt;</code>, just like in the API's type.</p>
@@ -198,8 +198,8 @@ server conn <span class="fu">=</span> postBook
 <span class="ot">postBook ::</span> <span class="dt">Book</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> (<span class="dt">Int</span>, <span class="dt">String</span>) <span class="dt">IO</span> <span class="dt">Book</span>
 postBook book <span class="fu">=</span> liftIO <span class="fu">$</span> execute conn <span class="st">&quot;insert into books values (?, ?)&quot;</span> book <span class="fu">&gt;&gt;</span> return book</code></pre>
 <p>The <code>ReqBody</code> bit of the endpoint gets automatically turned into an argument for the handler. The only thing that's required for this to work is a <code>FromJSON</code> instance for <code>Book</code>. From there, we just run a SQL query and return our <code>book</code> argument, and then use <code>liftIO</code>. This is necessary because server-side handlers live in the <code>EitherT (Int, String) IO</code> monad. The <code>Left</code> case is meant to store failure information, <code>Int</code> for the status and <code>String</code> for the message. This will probably change to a more robust representation soon.</p>
-</div><div id="server-side-handlers-2-1" class="slide section level2">
-<h1>Server-side handlers (2)</h1>
+</div><div id="server-side-handlers-3" class="slide section level2">
+<h1>Server-side handlers (3)</h1>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- corresponds to: &quot;books&quot; :&gt; Get [Book]</span>
 <span class="ot">getBooks ::</span> <span class="dt">EitherT</span> (<span class="dt">Int</span>, <span class="dt">String</span>) <span class="dt">IO</span> [<span class="dt">Book</span>]
 getBooks <span class="fu">=</span> liftIO <span class="fu">$</span> query_ conn <span class="st">&quot;select * from books&quot;</span></code></pre>
