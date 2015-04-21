@@ -1,0 +1,9 @@
+---
+title: servant 0.3 released
+author: Alp Mestanogullari
+date: 2050-05-01 13:00
+description: This new version of servant is cool.
+tags: release, 0.3, content-types, response-headers
+---
+
+Blah
