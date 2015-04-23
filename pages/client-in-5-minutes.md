@@ -70,6 +70,8 @@ type HackageAPI =
 Nothing fancy here, except that we clearly specify
 we are expecting the output to be in JSON (this will insert the appropriate `Accept` header).
 
+# Data types and JSON serialization
+
 We also need some types to go with that: `UserSummary`, `Username`, `UserDetailed`, `Package`. Here they are, along with JSON deserialization instances.
 
 ``` haskell
@@ -102,6 +104,8 @@ newtype Package = Package { packageName :: Text }
 
 instance FromJSON Package
 ```
+
+# Deriving functions to query hackage
 
 Finally, we can automatically derive our client functions:
 
@@ -144,7 +148,7 @@ uselessNumbers = runEitherT $ do
 
 Here's a sample run:
 
-``` bash
+```
 $ cabal run hackage
 Preprocessing executable hackage for servant-examples-0.3...
 Running hackage...
@@ -155,5 +159,7 @@ AlpMestanogullari maintains 20 packages
 130 monad packages
 Right ()
 ```
+
+# Code
 
 The whole code is available in [servant's repo](http://github.com/haskell-servant/servant), under the `servant-examples/hackage` directory.
