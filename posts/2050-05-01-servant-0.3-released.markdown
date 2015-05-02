@@ -6,7 +6,12 @@ description: This new version of servant is cool.
 tags: release, 0.3, content-types, response-headers, website
 ---
 
-Since [the last major release](http://alpmestan.com/posts/2014-12-09-rethinking-webservices-apis-haskell.html), a lot happened in and around *servant*. Definitely enough to justify a new one. This post announces new releases of all the servant packages, with many local changes but also some major ones that affect all packages. You can find the detailed changelogs at the end of this post, but here are a few major features you may want to learn about.
+Since [the last major release](http://alpmestan.com/posts/2014-12-09-rethinking-webservices-apis-haskell.html),
+a lot happened in and around *servant*. Definitely enough to justify a new one.
+This post announces new releases of all the servant packages, with many local
+changes but also some major ones that affect all packages. You can find the
+detailed changelogs at the end of this post, but here are a few major features
+you may want to learn about.
 
 # Multiple content-type support
 
@@ -34,4 +39,72 @@ Wherever applicable (i.e `ReqBody` and all the combinators that correspond to an
 ``` haskell
 data JSON
 ```
+
+In *servant-server*, a list of these content-types as the first argument of a
+method gets translated into a set of constraints on the return type:
+
+``` haskell
+Get '[JSON, PlainText] Int
+==>
+MimeRender JSON Int, MimeRender PlainText Int => EitherT ServantErr IO Int
+```
+
+Which have unsurprising instances:
+
+``` haskell
+instance (ToJSON a) => MimeRender JSON a
+```
+
+Thus, *servant* checks at _compile-time_ that it really can serialize your
+values as you describe.
+
+(For `ReqBody`, _deserialization_ is involved. For *servant-client*, the logic
+ goes the other way around - serialization for `ReqBody`, deserialization for
+ methods.)
+
+# Response headers
+
+There was no easy way so far to have handlers add headers to a response. We've
+since come up with a solution that stays true to the *servant* spirit: _what_
+headers your response will include (and what their types are) is still enforced
+statically:
+
+``` haskell
+type MyHandler = Get '[JSON] (Headers '[Header "Location" Link] User)
+
+myHandler :: Server MyHandler
+myHandler = return $ addHeader <someLink> $ <someuser>
+```
+
+*servant-docs* and *servant-client* are also response-header aware.
+
+# Monads etc.
+
+
+# mkLink
+
+Somewhere between the 0.2 release and now, `mkLink` got a whole lot better
+(thanks Christian Marie!). `mkLink` makes urls that are statically guaranteed
+to belong to your API, without any Template Haskell. Combined with response
+headers, you can now easily create, for instance, type-safe redirect headers.
+Combined with the new HTML support, you can easily make links that you know
+will not 404.
+
+# Left
+
+We also change the default type of handlers from `EitherT (Int,String) IO a` to
+`EitherT ServantErr IO a`. Now it is possible to return headers and a response
+body in the `Left` case.
+
+# Conclusions
+
+As you can see, more and more information is getting encoded statically - the
+types are becoming a pretty rich DSL. In order to keep the noise down, do what
+you normally do: abstract away common patterns! If your endpoints always return
+the same content-types, make aliases:
+
+``` haskell
+type Get' a = Get '[JSON, HTML, PlainText] a
+```
+
 
