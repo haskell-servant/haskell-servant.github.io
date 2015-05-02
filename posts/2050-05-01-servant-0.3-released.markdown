@@ -34,7 +34,11 @@ type API = -- list users
       :<|> "user" :> Capture "username" Text :> ReqBody '[JSON] User :> Put '[JSON] ()
 ```
 
-Wherever applicable (i.e `ReqBody` and all the combinators that correspond to an HTTP method), you can now specify all the content types in which you want to want to be able to encode/decode values. As you can see, we use the `DataKinds` GHC extension to let you specify a type-level list of content-types, which are simple dummy types:
+Wherever applicable (i.e `ReqBody` and all the combinators that correspond to
+an HTTP method), you can now specify all the content types in which you
+want to want to be able to encode/decode values. As you can see, we use the
+`DataKinds` GHC extension to let you specify a type-level list of
+content-types, which are simple dummy types:
 
 ``` haskell
 data JSON
@@ -56,11 +60,27 @@ instance (ToJSON a) => MimeRender JSON a
 ```
 
 Thus, *servant* checks at _compile-time_ that it really can serialize your
-values as you describe.
+values as you describe. And of course, it handles picking the appropriate
+serialization format based on the request's "Accept" header for you.
 
 (For `ReqBody`, _deserialization_ is involved. For *servant-client*, the logic
  goes the other way around - serialization for `ReqBody`, deserialization for
  methods.)
+
+# Servant-blaze and servant-lucid
+
+Declaring new content-types, and the associated constraints for them, is quite
+easy. But to make it easier still, we are also announcing two new packages:
+servant-blaze and servant-lucid. To use them, just import their `HTML`
+datatype:
+
+``` haskell
+import Servant.HTML.Lucid (HTML) -- or Servant.HTML.Blaze
+
+type MyHTML = Get '[HTML] User
+```
+
+And `User` will be checked for the appropriate (e.g. `ToHtml`) instance.
 
 # Response headers
 
@@ -92,9 +112,12 @@ will not 404.
 
 # Left
 
-We also change the default type of handlers from `EitherT (Int,String) IO a` to
+We also changed the default type of handlers from `EitherT (Int,String) IO a` to
 `EitherT ServantErr IO a`. Now it is possible to return headers and a response
 body in the `Left` case.
+
+We also now export function `errXXX` (where `XXX` is a 300-599 HTTP status code)
+with sensible reason strings.
 
 # Conclusions
 
