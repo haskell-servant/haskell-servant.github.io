@@ -3,7 +3,35 @@ title: servant 0.3 released
 author: Alp Mestanogullari
 date: 2050-05-01 13:00
 description: This new version of servant is cool.
-tags: release, 0.3, content-types, response-headers
+tags: release, 0.3, content-types, response-headers, website
 ---
 
-Blah
+Since [the last major release](http://alpmestan.com/posts/2014-12-09-rethinking-webservices-apis-haskell.html), a lot happened in and around *servant*. Definitely enough to justify a new one. This post announces new releases of all the servant packages, with many local changes but also some major ones that affect all packages. You can find the detailed changelogs at the end of this post, but here are a few major features you may want to learn about.
+
+# Multiple content-type support
+
+*servant* combinators are not JSON-centric anymore.
+
+If you had an API type like the following with servant *0.2.x*:
+
+``` haskell
+type API = -- list users
+           "users" :> Get [User]
+           -- update an user
+      :<|> "user" :> Capture "username" Text :> ReqBody User :> Put ()
+```
+
+You now have to change it to:
+
+``` haskell
+type API = -- list users
+           "users" :> Get '[JSON] [User]
+      :<|> "user" :> Capture "username" Text :> ReqBody '[JSON] User :> Put '[JSON] ()
+```
+
+Wherever applicable (i.e `ReqBody` and all the combinators that correspond to an HTTP method), you can now specify all the content types in which you want to want to be able to encode/decode values. As you can see, we use the `DataKinds` GHC extension to let you specify a type-level list of content-types, which are simple dummy types:
+
+``` haskell
+data JSON
+```
+
