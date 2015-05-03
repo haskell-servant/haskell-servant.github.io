@@ -98,6 +98,14 @@ myHandler = return $ addHeader <someLink> $ <someuser>
 
 *servant-docs* and *servant-client* are also response-header aware.
 
+Our current solution isn't something we are entirely happy with from an
+internal persepctive. We use overlapping instances for all the handlers, which
+some might think is already a problem. But more concretely, there's the threat
+of an exponential blowup in the number of instances we have to declare. And
+that can be a problem for end users too, if they decide to further modify
+behavior via a similar mechanism. But these things thankfully don't seem to
+pose any *immediate* problems.
+
 # Monads etc.
 
 An often-requested feature has been easy use of datatypes besides `EitherT`. Now
