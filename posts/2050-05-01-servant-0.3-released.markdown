@@ -100,6 +100,33 @@ myHandler = return $ addHeader <someLink> $ <someuser>
 
 # Monads etc.
 
+An often-requested feature has been easy use of datatypes besides `EitherT`. Now
+we believe we have a good story for that (thanks in large part to rschatz). To
+convert from one datatype to another, all you need to do is provide a natural
+transformation between them. For example:
+
+``` haskell
+type ReaderAPI = "a" :> Get '[JSON] Int
+            :<|> "b" :> Get '[JSON] String
+
+readerServerT :: ServerT ReaderAPI (Reader String)
+readerServerT = return 1797 :<|> ask
+
+readerServer :: Server ReaderAPI
+readerServer = enter (Nat $ return . (`runReader` "hi")) readerServerT
+```
+The new `ServerT` type synonym takes an extra paramer that represents what
+datatype you are using over your handlers (instead of `EitherT ServantErr IO`).
+
+(Note that we also provide a number of pre-existing `Nat`s, which are an
+ instance of `Category`. We could have used
+
+```
+readerServer = enter (generalizeNat . (runReaderTNat "hi")) readerServerT
+```
+instead (with `.` being from `Control.Category`).)
+
+Note that the datatypes you can use now don't even need to be monads!
 
 # mkLink
 
