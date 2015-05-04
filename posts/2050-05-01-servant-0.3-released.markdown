@@ -106,10 +106,10 @@ that can be a problem for end users too, if they decide to further modify
 behavior via a similar mechanism. But these things thankfully don't seem to
 pose any *immediate* problems.
 
-# Monads etc.
+# Running handlers in other monads than `EitherT`
 
-An often-requested feature has been easy use of datatypes besides `EitherT`. Now
-we believe we have a good story for that (thanks in large part to rschatz). To
+An often-requested feature has been easy use of datatypes/monads besides `EitherT`. Now
+we believe we have a good story for that (thanks in large part to [rschatz](http://github.com/rschatz)). To
 convert from one datatype to another, all you need to do is provide a natural
 transformation between them. For example:
 
@@ -123,8 +123,9 @@ readerServerT = return 1797 :<|> ask
 readerServer :: Server ReaderAPI
 readerServer = enter (Nat $ return . (`runReader` "hi")) readerServerT
 ```
+
 The new `ServerT` type synonym takes an extra paramer that represents what
-datatype you are using over your handlers (instead of `EitherT ServantErr IO`).
+datatype/monad you are using over your handlers (instead of `EitherT ServantErr IO`).
 
 (Note that we also provide a number of pre-existing `Nat`s, which are an
  instance of `Category`. We could have used
@@ -153,6 +154,10 @@ body in the `Left` case.
 
 We also now export function `errXXX` (where `XXX` is a 300-599 HTTP status code)
 with sensible reason strings.
+
+# Website
+
+We also decided to switch to hakyll in order to be able to have a blog as well as some static pages that collect tips and tricks that people have found. We might as well at some point in the future use this setup to publish some kind of 'manual' that covers extensively *servant*'s features.
 
 # Conclusions
 
