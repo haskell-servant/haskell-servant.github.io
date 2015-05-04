@@ -194,13 +194,45 @@ type UserAPI = "users" :> ReqBody '[JSON] User :> Post '[JSON] User
 
 ### Request `Header`s
 
+Request headers are used for various purposes, from specifying the format in which we want the response (`Accept` header) to carrying auth-related data (`Authorize` header). They consist of a header name and an associated value. An example would be `Accept: application/json`.
+
+The `Header` combinator in servant takes a type-level string for the header name and the type to which we want to decode the header's value (from some textual representation), as illustrated below.
+
+``` haskell
+data Header (sym :: Symbol) a
+```
+
+Here's an example where we declare that an endpoint makes use of the `User-Agent` header which specifies the name of the software/library used by the client to send the request.
+
+``` haskell
+type UserAPI = "users" :> Header "User-Agent" Text :> Get '[JSON] [User]
+```
+
 ### Content types
+
+So far, whenever we have used a combinator that carries a list of content types, we've always specified `'[JSON]`. *servant* however lets you use several content types and define your owns.
+
+4 content-types are provided out of the box by the core *servant* package: `JSON`, `PlainText`, `FormUrlEncoded` and `OctetStream`. If for some obscure reason you wanted one of your endpoints to make your user data available under those 4 formats, you would write the API type as below.
+
+``` haskell
+type UserAPI = "users" :> Get '[JSON, PlainText, FormUrlEncoded, OctetStream] [User]
+```
 
 ### Response `Headers`
 
 ### Interoperability with other WAI `Application`s: `Raw`
 
 # Serving an API
+
+## A first example
+
+## Combinators become arguments to your handler functions
+
+## The `FromText`/`ToText` classes
+
+## Using content-types with your own data types
+
+## Serving static files
 
 # Deriving Haskell functions to query an API
 
