@@ -154,6 +154,24 @@ body in the `Left` case.
 We also now export function `errXXX` (where `XXX` is a 300-599 HTTP status code)
 with sensible reason strings.
 
+# BaseUrl
+
+We also changed the `client` function from `servant-client` so that, instead of
+returning various functions that each take a `BaseUrl` argument (often in
+inconvenient argument positions), the `client` function itself takes a
+`BaseUrl` argument, and the functions it returns don't. So the type of `client`
+went from
+
+``` haskell
+client :: HasClient (Canonicalize layout) => Proxy layout -> Client layout
+```
+To
+
+``` haskell
+client :: HasClient (Canonicalize layout) => Proxy layout -> BaseUrl -> Client layout
+```
+
+
 # Complete CHANGELOGs
 
 - [servant](http://hackage.haskell.org/package/servant-0.4/changelog)
