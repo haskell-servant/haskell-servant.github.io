@@ -31,6 +31,7 @@ main = hakyll $ do
     match "pages/*" $ do
         route   $ gsubRoute "pages/" (const "") `composeRoutes` setExtension "html"
         compile $ myPandocCompiler
+            >>= loadAndApplyTemplate "templates/page.html"    defaultContext
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
