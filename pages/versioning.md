@@ -1,6 +1,5 @@
 ---
 title: Versioning your API
-toc: true
 ---
 
 The *servant* package contains everything needed to describe an API, and little else. In particular, we decided to keep servant-server as a separate package. This enables an easy and effective way of versioning your API that avails itself of familiar tools - Hackage and cabal - in what we think is a novel way.
