@@ -236,6 +236,23 @@ type UserAPI = "users" :> Get '[JSON] (Headers [Header "User-Count" Integer] [Us
 
 ### Interoperability with other WAI `Application`s: `Raw`
 
+Finally, we also include a combinator named `Raw` that can be used for two reasons:
+
+- You want to serve static files from a given directory. In that case you can just say:
+
+    ``` haskell
+    type UserAPI = "users" :> Get '[JSON] [User]
+                   -- a /users endpoint
+
+              :<|> Raw
+                   -- requests to anything else than /users
+                   -- go here, where the server will try to
+                   -- find a file with the right name
+                   -- at the right path
+    ```
+
+- You more generally want to plug a [WAI `Application`](http://hackage.haskell.org/package/wai) into your webservice. Static file serving is a specific example of that.
+
 # Serving an API
 
 ## A first example
