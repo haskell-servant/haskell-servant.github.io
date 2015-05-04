@@ -6,14 +6,6 @@ toc: true
 
 This is an introductory tutorial to the current version of *servant*, which is **0.3**. Any comment or issue can be directed to [this website's issue tracker](http://github.com/haskell-servant/haskell-servant.github.io/issues).
 
-# Prologue
-
-In 2014, the three initial authors of *servant* (as it is today) were all working at [Zalora](http://github.com/zalora) and a common need there for the haskell team was to spin up webservices for various internal needs. We were mostly using [scotty](http://hackage.haskell.org/package/scotty) but began to need more: we usually had to write a lot of boilerplate by hand (in haskell and javascript) and wrote API docs manually. But even worse: even the code for our request handlers  had boilerplate, e.g decoding the request body from JSON, getting URL captures, handling failure cases for these two tasks, etc.
-
-This lead to [servant-0.1](http://hackage.haskell.org/package/servant-0.1) which centered around the concept of a `Resource` that supports a given list of operation. *Operation* here represents any "generic request handler", like "add an entry in the DB", "list all the entries", "view entries by id", etc. The specifics of how the data was fetched or updated were then addressed by the user who would just say "implement the listing operation using `listMyUsers`". This wasn't enough though, because we still had to write the API docs by hand and manually write the Javascript boilerplate to call out to the webservice too.
-
-Around October 2014, the three of us gathered and brainstormed until we developped the current approach, centered around type-level combinators, which was then released around December as [servant-0.2](http://hackage.haskell.org/package/servant-0.2). Finally, several new features and overall improvements later, we announced [servant-0.3](http://hackage.haskell.org/package/servant-0.3) which is the target of this tutorial.
-
 # Introduction
 
 *servant* was born out of the following needs:
