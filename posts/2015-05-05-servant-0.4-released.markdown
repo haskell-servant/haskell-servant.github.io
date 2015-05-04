@@ -1,5 +1,5 @@
 ---
-title: servant 0.3 released
+title: servant 0.4 released
 author: Alp Mestanogullari, Julian Arni
 date: 2050-05-01 13:00
 toc: true
@@ -154,9 +154,19 @@ body in the `Left` case.
 We also now export function `errXXX` (where `XXX` is a 300-599 HTTP status code)
 with sensible reason strings.
 
+# Complete CHANGELOGs
+
+- [servant](http://hackage.haskell.org/package/servant-0.4/changelog)
+- [servant-server](http://hackage.haskell.org/package/servant-server-0.4/changelog)
+- [servant-client](http://hackage.haskell.org/package/servant-client-0.4/changelog)
+- [servant-docs](http://hackage.haskell.org/package/servant-docs-0.4/changelog)
+- [servant-jquery](http://hackage.haskell.org/package/servant-jquery-0.4/changelog)
+
 # Website
 
 We also decided to switch to hakyll in order to be able to have a blog as well as some static pages that collect tips and tricks that people have found. We might as well at some point in the future use this setup to publish some kind of 'manual' that covers extensively *servant*'s features.
+
+We also used this opportunity to rewrite the getting started, now available [here](/getting-started.html).
 
 # Conclusions
 
@@ -180,3 +190,5 @@ that.
 We also merged our repos into [servant](https://github.com/haskell-servant/servant).
 Please use that repo exclusively for PRs and issues (we'll get rid of the
 others eventually).
+
+Special thanks to [the Anchor team](https://github.com/anchor) from Australia, [Matthew Pickering](https://github.com/mpickering), [Daniel Larsson](https://github.com/dlarsson), [Phil Freeman](https://github.com/paf31), [Matthias Fischmann](https://github.com/fisx), [rschatz](https://github.com/rschatz), [Mateusz Kowalczyk](https://github.com/Fuuzetsu) and [Sean Leather](https://github.com/spl) who've contributed from little fixes to whole new features. Several companies are now running *servant*-powered web applications.
