@@ -1,7 +1,10 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Monoid (mappend)
-import           Hakyll
+import Data.Char   (toLower)
+import Data.Monoid (mappend)
+import Hakyll
+import Text.Pandoc
+import Text.Pandoc.Options
 
 
 --------------------------------------------------------------------------------
@@ -27,13 +30,13 @@ main = hakyll $ do
 
     match "pages/*" $ do
         route   $ gsubRoute "pages/" (const "") `composeRoutes` setExtension "html"
-        compile $ pandocCompiler
+        compile $ myPandocCompiler
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
     match "posts/*" $ do
         route $ setExtension "html"
-        compile $ pandocCompiler
+        compile $ myPandocCompiler
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
             >>= saveSnapshot "content"
             >>= loadAndApplyTemplate "templates/default.html" postCtx
@@ -95,3 +98,30 @@ myFeedConfiguration = FeedConfiguration
     , feedAuthorEmail = ""
     , feedRoot        = "http://haskell-servant.github.io"
     }
+
+--------------------------------------------------------------------------------
+myPandocCompiler' :: Maybe String -> Compiler (Item String)
+myPandocCompiler' withToc = 
+    pandocCompilerWith defaultHakyllReaderOptions $
+        case withToc of
+            Just x | map toLower x `elem` ["true", "yes"] -> writerWithToc
+                   | otherwise                            -> writerOpts
+            Nothing                                       -> writerOpts
+
+    where writerOpts = defaultHakyllWriterOptions 
+                           { writerReferenceLinks = True
+                           , writerSectionDivs = True 
+                           , writerHtml5 = True
+                           , writerHTMLMathMethod = MathJax "http://cdn.mathjax.org/mathjax/latest/MathJax.js"
+                           , writerColumns = 100 
+                           }
+          writerWithToc = 
+            writerOpts { writerTableOfContents = True 
+                       , writerTemplate = "$if(toc)$<div id=\"toc\"><h3>Table of contents</h3>$toc$</div>$endif$\n$body$" 
+                       , writerStandalone = True 
+                       }
+
+myPandocCompiler :: Compiler (Item String)
+myPandocCompiler = do
+    ident <- getUnderlying
+    myPandocCompiler' =<< getMetadataField ident "toc"
