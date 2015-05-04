@@ -168,7 +168,29 @@ type UserAPI = "users" :> QueryParam "sortby" SortBy :> Get '[JSON] [User]
 
 ### `ReqBody`
 
+Each HTTP request can carry some additional data that the server can use in its *body* and the said data can be encoded in any format -- as long as the server understands it. This can be used for example for an endpoint for creating new users: instead of passing each field of the user as a separate query string parameter or anything dirty like that, we can group all the data into a JSON object. This has the advantage of supporting nested objects.
 
+*servant*'s `ReqBody` combinator takes a list of content types in which the data encoded in the request body can be represented and the type of that data. Here's the data type declaration for it.
+
+``` haskell
+data ReqBody (contentTypes :: [*]) a
+```
+
+Here are the now traditional examples.
+
+``` haskell
+type UserAPI = "users" :> ReqBody '[JSON] User :> Post '[JSON] User
+               -- - equivalent to 'POST /users' with a JSON object
+               --   describing an User in the request body
+               -- - returns an User encoded in JSON
+
+          :<|> "users" :> Capture "userid" Integer
+                       :> ReqBody '[JSON] User
+                       :> Put '[JSON] User
+               -- - equivalent to 'PUT /users/:userid' with a JSON
+               --   object describing an User in the request body
+               --- returns an User encoded in JSON
+```
 
 ### Request `Header`s
 
