@@ -6,7 +6,7 @@ toc: true
 ---
 
 Since [the last major release](http://alpmestan.com/posts/2014-12-09-rethinking-webservices-apis-haskell.html),
-a lot happened in and around *servant*. Definitely enough to justify a new one.
+a lot happened in and around *servant*. Definitely enough to justify a new release.
 This post announces new releases of all the servant packages, with many local
 changes but also some major ones that affect all packages. You can find the
 detailed changelogs at the end of this post, but here are a few major features
