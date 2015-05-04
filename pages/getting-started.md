@@ -83,13 +83,92 @@ type UserAPI = "users" :> "list-all" :> Get '[JSON] [User]
 
 ### Static strings
 
+As you've already seen, you can use type-level strings (enabled with the `DataKinds` language extension) for static path fragments. Chaining them amounts to `/`-separating them in an URL.
+
+``` haskell
+type UserAPI = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
+             -- describes an endpoint reachable at:
+             -- /users/list-all/now
+```
+
 ### `Delete`, `Get`, `Patch`, `Post` and `Put`
 
-### `Capture` and `MatrixParam`
+These 5 combinators are very similar except that they obviously each describe a different HTTP method. They all are "dummy", empty types that take a list of content types and the type of the value that will be returned in the response body except for `Delete` which should not return any response body. In fact, here are the 5 declarations for them:
 
-### `QueryParam`, `QueryParams` and `QueryFlag`
+``` haskell
+data Delete
+data Get (contentTypes :: [*]) a
+data Patch (contentTypes :: [*]) a
+data Post (contentTypes :: [*]) a
+data Put (contentTypes :: [*]) a
+```
+
+An endpoint must always end with one of the 5 combinators above. Examples:
+
+``` haskell
+type UserAPI = "users" :> Get '[JSON] [User]
+          :<|> "admins" :> Get '[JSON] [User]
+```
+
+### `Capture`
+
+URL captures are parts of the URL that are variable and whose actual value is captured and passed to the request handlers. In may web frameworks, you'll see it written as in `/users/:userid`, with that leading `:` denoting that `userid` is just some kind of variable name or placeholder. For instance, if `userid` is supposed to range over all integers greater or equal to 1, our endpoint will
+match requests made to `/users/1`, `/users/143` and so on.
+
+The `Capture` combinator in servant takes a (type-level) string representing the "name of the variable" and a type, which indicates the type we want to decode the "captured value" to.
+
+``` haskell
+data Capture (s :: Symbol) a
+-- s :: Symbol just says that 's' must be a type-level string.
+```
+
+Examples, as usual:
+
+``` haskell
+type UserAPI = "user" :> Capture "userid" Integer :> Get '[JSON] User
+               -- equivalent to 'GET /user/:userid'
+               -- except that we explicitly say that "userid"
+               -- must be an integer
+
+          :<|> "user" :> Capture "userid" Integer :> Delete
+               -- equivalent to 'DELETE /user/:userid'
+```
+
+### `QueryParam`, `QueryParams`, `QueryFlag`, `MatrixParam`, `MatrixParams` and `MatrixFlag`
+
+`QueryParam`, `QueryParams` and `QueryFlag` are about query string parameters, i.e those parameters that come after the question mark (`?`) in URLs, like `sortby` in `/users?sortby=age`, whose value is here set to `age`. The difference is that `QueryParams` lets you specify that the query parameter is actually a list of values, which can be specified using `?param[]=value1&param[]=value2`. This represents a list of values composed of `value1` and `value2`. `QueryFlag` lets you specify a boolean-like query parameter where a client isn't forced to specify a value. The absence or presence of the parameter's name in the query string determines whether the parameter is considered to have value `True` or `False`. `/users?active` would list only active users whereas `/users` would list them all.
+
+Here are the corresponding data type declarations.
+
+``` haskell
+data QueryParam (sym :: Symbol) a
+data QueryParams (sym :: Symbol) a
+data QueryFlag (sym :: Symbol) -- no need for a type argument, it's a boolean
+```
+
+[Matrix parameters](http://www.w3.org/DesignIssues/MatrixURIs.html), on the other hand, are like query string parameters that can appear anywhere in the paths (click the link for more details). An URL with matrix parameters in it looks like `/users;sortby=age`, as opposed to `/users?sortby=age` with query string parameters. The big advantage is that they are not necessarily at the end of the URL. You could have `/users;active=true;registered_after=2005-01-01/locations` to get geolocation data about your users that are still active and who registered after *January 1st, 2005*.
+
+Corresponding data type declarations below.
+
+``` haskell
+data MatrixParam (sym :: Symbol) a
+data MatrixParams (sym :: Symbol) a
+data MatrixFlag (sym :: Symbol)
+```
+
+Examples:
+
+``` haskell
+type UserAPI = "users" :> QueryParam "sortby" SortBy :> Get '[JSON] [User]
+               -- equivalent to 'GET /users?sortby={age, name}'
+
+          :<|> "users" :> MatrixParam "sortby" SortBy :> Get '[JSON] [User]
+               -- equivalent to 'GET /users;sortby={age, name}'
+```
 
 ### `ReqBody`
+
+
 
 ### Request `Header`s
 
