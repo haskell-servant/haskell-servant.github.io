@@ -1,9 +1,10 @@
 ---
 title: servant 0.3 released
-author: Alp Mestanogullari
+author: Alp Mestanogullari, Julian Arni
 date: 2050-05-01 13:00
 description: This new version of servant is cool.
 tags: release, 0.3, content-types, response-headers, website
+toc: true
 ---
 
 Since [the last major release](http://alpmestan.com/posts/2014-12-09-rethinking-webservices-apis-haskell.html),
