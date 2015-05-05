@@ -437,7 +437,7 @@ users :: [User]
 users = [isaac, albert]
 ```
 
-Now, just like we separate the various endpoints in `UserAPI` with `:<|>`, we are going to separate the handlers with `:<|>` too! They are provided in the same order as the one they appear in in the API type.
+Now, just like we separate the various endpoints in `UserAPI` with `:<|>`, we are going to separate the handlers with `:<|>` too! They must be provided in the same order as the one they appear in in the API type.
 
 ``` haskell
 server :: Server UserAPI
@@ -450,10 +450,116 @@ And that's it! You can run this example with `dist/build/getting-started/getting
 
 ## From combinators to handler arguments
 
+Fine, we can write trivial webservices easily, but none of the two above use any "fancy" combinator from servant. Let's address this and use `QueryParam`, `Capture` and `ReqBody` right away. You'll see how each occurence of these combinators in an endpoint makes the corresponding handler receive an argument of the appropriate type automatically. This effectively means you don't have to worry about manually looking up URL captures or query string parameters, or decoding/encoding data from/to JSON. Never.
+
+First off, again, some pragmas and imports.
+
+``` haskell
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+import Control.Monad.Trans.Either
+import Data.Aeson
+import Data.List
+import GHC.Generics
+import Network.Wai
+import Servant
+```
+
+We are going to use the following data types and functions to implement a server for `API`.
+
+``` haskell
+type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
+      :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
+      :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
+
+data Position = Position
+  { x :: Int
+  , y :: Int
+  } deriving Generic
+
+instance ToJSON Position
+
+newtype HelloMessage = HelloMessage { msg :: String }
+  deriving Generic
+
+instance ToJSON HelloMessage
+
+data ClientInfo = ClientInfo
+  { name :: String
+  , email :: String
+  , age :: Int
+  , interested_in :: [String]
+  } deriving Generic
+
+instance FromJSON ClientInfo
+
+data Email = Email
+  { from :: String
+  , to :: String
+  , subject :: String
+  , body :: String
+  } deriving Generic
+
+instance ToJSON Email
+
+emailForClient :: ClientInfo -> Email
+emailForClient c = Email from' to' subject' body'
+
+  where from'    = "great@company.com"
+        to'      = email c
+        subject' = "Hey " ++ name c ++ ", we miss you!"
+        body'    = "Hi " ++ name c ++ ",\n\n"
+                ++ "Since you've recently turned " ++ show (age c)
+                ++ ", have you checked out our latest "
+                ++ intercalate ", " (interested_in c)
+                ++ " products? Give us a visit!"
+```
+
+Nothing fancy here except that our API type now uses `Capture` and friends. Let's implement handlers for the 3 endpoints.
+
+``` haskell
+server :: Server API
+server = position
+    :<|> hello
+    :<|> marketing
+
+  where position :: Int -> Int -> EitherT ServantErr IO Position
+        position x y = return (Position x y)
+
+        hello :: Maybe String -> EitherT ServantErr IO HelloMessage
+        hello mname = return . HelloMessage $ case mname of
+          Nothing -> "Hello, anonymous coward"
+          Just n  -> "Hello, " ++ n
+
+        marketing :: ClientInfo -> EitherT ServantErr IO Email
+        marketing clientinfo = return (emailForClient clientinfo)
+```
+
+This time, all handlers become functions. We can notice that:
+- a `Capture "something" a` becomes an argument of type `a` (for `position`);
+- a `QueryParam "something" a` becomes an argument of type `Maybe a` (because an endpoint can technically be accessed without specifying any query string parameter, we decided to "force" handlers to be aware that the parameter might not always be there);
+- a `ReqBody contentTypeList a` becomes an argument of type `a`;
+
+And that's it. You can see this example in action by running `dist/build/getting-started/getting-started 3`.
+
+``` bash
+$ curl http://localhost:8081/position/1/2
+{"x":1,"y":2}
+$ curl http://localhost:8081/hello
+{"msg":"Hello, anonymous coward"}
+$ curl http://localhost:8081/hello?name=Alp
+{"msg":"Hello, Alp"}
+$ curl -X POST -d '{"name":"Alp Mestanogullari", "email" : "alp@foo.com", "age": 25, "interested_in": ["haskell", "mathematics"]}' -H 'Accept: application/json' -H 'Content-type: application/json' http://localhost:8081/marketing
+{"subject":"Hey Alp Mestanogullari, we miss you!","body":"Hi Alp Mestanogullari,\n\nSince you've recently turned 25, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
+```
 
 ## The `FromText`/`ToText` classes
 
-## Using content-types with your own data types
+## Using content-types with existing or new data types
+
+## Failing
 
 ## Serving static files
 
