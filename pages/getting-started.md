@@ -620,11 +620,218 @@ There's not much else to say about these classes. You will need instances for th
 
 ## Using content-types with your data types
 
-Something that we have been skipping over since the beginning is how *servant* decodes the request body from JSON to a good old Haskell data type or how it encodes the values returned by our handlers to JSON. And, for that matter, how we could make this work with more than just JSON, or even with custom content-types. This section and the next one will introduce a couple of typeclasses provided by *servant* that make all of this work and that you should use when extending servant.
+Something that we have been skipping over since the beginning is how *servant* decodes the request body from JSON to a good old Haskell data type or how it encodes the values returned by our handlers to JSON. And, for that matter, how we could make this work with more than just JSON, or even with custom content-types. This section introduces a couple of typeclasses provided by *servant* that make all of this work and that you should use when extending servant.
 
 ### The truth behind `JSON`
 
+What exactly is `JSON`? Like the 3 other content types provided out of the box by *servant*, it's a really dumb data type.
+
+``` haskell
+data JSON
+data PlainText
+data FormUrlEncoded
+data OctetStream
+```
+
+Obviously, this is not all there is to `JSON`, otherwise it would be quite pointless. Like most of the data types in *servant*, `JSON` is mostly there as a special *symbol* that's associated with encoding (resp. decoding) to (resp. from) the *JSON* format. The way this association is performed can be decomposed into two steps.
+
+The first step is to provide a proper [`MediaType`](https://hackage.haskell.org/package/http-media-0.6.2/docs/Network-HTTP-Media.html) representation for `JSON`, or for your own content types. If you look at the haddocks from this link, you can see that we just have to specify `application/json` using the appropriate functions. In our case, we can just use `(//) :: ByteString -> ByteString -> MediaType`. The precise way to specify the `MediaType` is to write an instance for the `Accept` class:
+
+``` haskell
+-- for reference:
+class Accept ctype where
+    contentType   :: Proxy ctype -> MediaType
+
+instance Accept JSON where
+    contentType _ = "application" // "json"
+```
+
+The second step is centered around the `MimeRender` and `MimeUnrender` classes. These classes just let you specify a way to respectively encode and decode values respectively into or from your content-type's representation.
+
+``` haskell
+class Accept ctype => MimeRender ctype a where
+    mimeRender  :: Proxy ctype -> a -> ByteString
+    -- alternatively readable as:
+    mimeRender  :: Proxy ctype -> (a -> ByteString)
+```
+
+Given a content-type and some user type, `MimeRender` provides a function that encodes values of type `a` to lazy `ByteString`s.
+
+In the case of `JSON`, this is easily dealt with! For any type `a` with a `ToJSON` instance, we can render values of that type to JSON using `Data.Aeson.encode`.
+
+``` haskell
+instance ToJSON a => MimeRender JSON a where
+  mimeRender _ = encode
+```
+
+And now the `MimeUnrender` class, which lets us extract values from lazy `ByteString`s, alternatively failing with an error string.
+
+``` haskell
+class Accept ctype => MimeUnrender ctype a where
+    mimeUnrender :: Proxy ctype -> ByteString -> Either String a
+    -- alternatively:
+    mimeUnrender :: Proxy ctype -> (ByteString -> Either String a)
+```
+
+We don't have much work to do there either, `Data.Aeson.eitherDecode` is precisely what we need. However, it only allows arrays and objects as toplevel JSON values and this has proven to get in our way more than help us so we wrote our own little function around *aeson* and *attoparsec* that allows any type of JSON value at the toplevel of a "JSON document". Here's the definition in case you are curious.
+
+``` haskell
+eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
+eitherDecodeLenient input = do
+    v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
+    parseEither parseJSON v
+```
+
+This function is exactly what we need for our `MimeUnrender` instance.
+
+``` haskell
+instance FromJSON a => MimeUnrender JSON a where
+    mimeUnrender _ = eitherDecodeLenient
+```
+
+And this is all the code that lets you use `JSON` for with `ReqBody`, `Get`, `Post` and friends. Let's now go over it all again by implementing support for an `HTML` content type, so that users of your webservice can access an HTML representation of the data they want, ready to be included in any HTML document, e.g using [jQuery's `load` function](https://api.jquery.com/load/), simply by adding `Accept: text/html` to their request headers.
+
 ### Case-studies: *servant-blaze* and *servant-lucid*
+
+These days, most of the haskellers who write their HTML UIs directly from Haskell use either [blaze-html](http://hackage.haskell.org/package/blaze-html) or [lucid](http://hackage.haskell.org/package/lucid). The best option for *servant* is obviously to support both (and hopefully other templating solutions!). For technical reasons (avoiding orphan instances), each package provides itw own `HTML` data type, although the two definitions are identical.
+
+``` haskell
+data HTML
+```
+
+Once again, the data type is just there as a symbol for the encoding/decoding functions, except that this time we will only worry about encoding since *blaze-html* and *lucid* don't provide a way to extract data from HTML.
+
+Both packages also have the same `Accept` instance for their `HTML` type.
+
+``` haskell
+instance Accept HTML where
+    contentType _ = "text" // "html" /: ("charset", "utf-8")
+```
+
+Note that this instance uses the `(/:)` operator from *http-media* which lets us specify additional information about a content-type, like the charset here.
+
+The rendering instances for both packages both call similar functions that take types with an appropriate instance to an "abstract" HTML representation and then write that to a `ByteString`.
+
+For *lucid*:
+
+``` haskell
+instance ToHtml a => MimeRender HTML a where
+    mimeRender _ = renderBS . toHtml
+
+-- let's also provide an instance for lucid's
+-- 'Html' wrapper.
+instance MimeRender HTML (Html a) where
+    mimeRender _ = renderBS
+```
+
+For *blaze-html*:
+
+``` haskell
+instance ToMarkup a => MimeRender HTML a where
+    mimeRender _ = renderHtml . toHtml
+
+-- while we're at it, just like for lucid we can
+-- provide an instance for rendering blaze's 'Html' type
+instance MimeRender HTML Html where
+    mimeRender _ = renderHtml
+```
+
+Both [servant-blaze](http://hackage.haskell.org/package/servant-blaze) and [servant-lucid](http://hackage.haskell.org/package/servant-lucid) let you use `HTML` in any content type list as long as you provide an instance of the appropriate class (`ToMarkup` for *blaze-html*, `ToHtml` for *lucid*).
+
+Let's write a webservice that uses *servant-lucid* to show the `HTML` content type in action. First off, imports and pragmas as usual.
+
+``` haskell
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+import Data.Aeson
+import Data.Foldable (foldMap)
+import GHC.Generics
+import Lucid
+import Network.Wai
+import Servant
+import Servant.HTML.Lucid
+```
+
+We will be serving the following API:
+
+``` haskell
+type PersonAPI = "persons" :> Get '[JSON, HTML] [Person]
+```
+
+where `Person` is defined as follows:
+
+``` haskell
+data Person = Person
+  { firstName :: String
+  , lastName  :: String
+  , age       :: Int
+  } deriving Generic -- for the JSON instance
+
+instance ToJSON Person
+```
+
+Now, let's teach *lucid* how to render a `Person` as a row in a table, and then a list of `Person`s as a table with a row per person.
+
+``` haskell
+-- HTML serialization of a single person
+instance ToHtml Person where
+  toHtml p =
+    tr_ $ do
+      td_ (toHtml $ firstName p)
+      td_ (toHtml $ lastName p)
+      td_ (toHtml . show $ age p)
+
+  -- do not worry too much about this
+  toHtmlRaw = toHtml
+
+-- HTML serialization of a list of persons
+instance ToHtml [Person] where
+  toHtml persons = table_ $ do
+    tr_ $ do
+      td_ "first name"
+      td_ "last name"
+      td_ "age"
+
+    -- this just calls toHtml on each person of the list
+    -- and concatenates the resulting pieces of HTML together
+    foldMap toHtml persons
+
+  toHtmlRaw = toHtml
+```
+
+Now let's create some `Person` values and serve them as a list:
+
+``` haskell
+persons :: [Person]
+persons =
+  [ Person "Isaac"  "Newton"   372
+  , Person "Albert" "Einstein" 136
+  ]
+
+personAPI :: Proxy PersonAPI
+personAPI = Proxy
+
+server :: Server PersonAPI
+server = return persons
+
+app :: Application
+app = serve personAPI server
+```
+
+We're good to go. You can run this example with `dist/build/getting-started/getting-started 4`.
+
+``` bash
+$ curl http://localhost:8081/persons
+[{"lastName":"Newton","age":372,"firstName":"Isaac"},{"lastName":"Einstein","age":136,"firstName":"Albert"}]
+$ curl -H 'Accept: text/html' http://localhost:8081/persons
+<table><tr><td>first name</td><td>last name</td><td>age</td></tr><tr><td>Isaac</td><td>Newton</td><td>372</td></tr><tr><td>Albert</td><td>Einstein</td><td>136</td></tr></table>
+# or just point your browser to http://localhost:8081/persons
+```
 
 ## The `EitherT ServantErr IO` monad
 
