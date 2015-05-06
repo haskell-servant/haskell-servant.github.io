@@ -835,9 +835,375 @@ $ curl -H 'Accept: text/html' http://localhost:8081/persons
 
 ## The `EitherT ServantErr IO` monad
 
+At the heart of the handlers is the monad they run in, namely `EitherT ServantErr IO`. One might wonder: why this monad? The answer is that it somehow is the simplest monad with the following properties:
+
+- it lets us both return a successful result (with the `Right` branch of `Either`) or "fail" with a descriptive error (with the `Left` branch of `Either`);
+- it lets us perform IO, which is absolutely vital since most webservices exist as interfaces to databases that we interact with in `IO`;
+- it's a monad and thus lets us run a sequence of effectful actions (that can all fail and thus abort the whole computation early).
+
+Let's recall some definitions.
+
+``` haskell
+-- from the Prelude
+data Either e a = Left e | Right a
+
+-- from the 'either' package at
+-- http://hackage.haskell.org/package/either-4.3.3.2/docs/Control-Monad-Trans-Either.html
+newtype EitherT e m a
+  = EitherT { runEitherT :: m (Either e a) }
+```
+
+In short, this means that a handler of type `EitherT ServantErr IO a` is simply equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO action that either returns an error or a result. `EitherT` also comes with many typeclass instances, among which the following ones that might be of interest to you depending on how much you use monad transformers and standard typeclasses:
+
+``` haskell   
+Monad m => MonadError e (EitherT e m)
+MonadReader r m => MonadReader r (EitherT e m)
+MonadState s m => MonadState s (EitherT e m)
+MonadWriter s m => MonadWriter s (EitherT e m)
+MonadTrans (EitherT e)
+(Monad m, Monoid e) => Alternative (EitherT e m)
+Monad m => Monad (EitherT e m)
+Monad m => Functor (EitherT e m)
+MonadFix m => MonadFix (EitherT e m)
+(Monad m, Monoid e) => MonadPlus (EitherT e m)
+Monad m => Applicative (EitherT e m)
+Foldable m => Foldable (EitherT e m)
+(Monad f, Traversable f) => Traversable (EitherT e f)
+MonadRandom m => MonadRandom (EitherT e m)
+MonadThrow m => MonadThrow (EitherT e m)
+MonadCatch m => MonadCatch (EitherT e m)
+MonadIO m => MonadIO (EitherT e m)
+MonadCont m => MonadCont (EitherT e m)
+(Monad m, Semigroup e) => Alt (EitherT e m)
+Monad m => Apply (EitherT e m)
+Monad m => Bind (EitherT e m)
+Monad m => Semigroup (EitherT e m a)
+```
+
+You might want to sooner or later check out the typeclasses above that you don't know yet since every single one of them adds a way to combine, build or tear down `EitherT` computations.
+
+One important item in this list is the `Monad` instance. `return` just puts the value you give it in the `Right` branch and `>>=` keeps chaining computations in the `Right` branch unless one of the intermediate computations aborts early in the `Left` branch. This is made easy by the `left` function:
+
+``` haskell
+left :: Monad m => e -> EitherT e m a
+```
+
+Now, most of what you'll be doing in your handlers is running some IO and depending on the result, you might sometimes want to throw an error of some kind and abort early. The next two sections cover how to do just that.
+
 ### Performing IO
 
+Another important instance from the list above is `MonadIO m => MonadIO (EitherT e m)`. [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html) is a class from the *transformers* package defined as:
+
+``` haskell
+class Monad m => MonadIO m where
+  liftIO :: IO a -> m a
+```
+
+Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type `e`, `EitherT e IO` has a `MonadIO` instance. So if you want to run any kind of IO computation in your handlers, just use `liftIO`:
+
+``` haskell
+type IOAPI = "myfile.txt" :> Get '[JSON] FileContent
+
+newtype FileContent = FileContent
+  { content :: String }
+  deriving Generic
+
+instance ToJSON FileContent
+
+server :: Server IOAPI
+server = do
+  filecontent <- liftIO (readFile "myfile.txt")
+  return (FileContent filecontent)
+```
+
 ### Failing, through `ServantErr`
+
+If you want to explicitly fail at providing the result promised by an endpoint using the appropriate HTTP status code (not found, unauthorized, etc) and some error message, all you have to do is use the `left` function mentionned above and provide it with the appropriate value of type `ServantErr`, which is defined as:
+
+``` haskell
+data ServantErr = ServantErr
+    { errHTTPCode     :: Int
+    , errReasonPhrase :: String
+    , errBody         :: ByteString -- lazy bytestring
+    , errHeaders      :: [Header]
+    }
+```
+
+Many standard values are provided out of the box by the `Servant.Server` module:
+
+``` haskell
+err300 :: ServantErr
+err300 = ServantErr { errHTTPCode = 300
+                    , errReasonPhrase = "Multiple Choices"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err301 :: ServantErr
+err301 = ServantErr { errHTTPCode = 301
+                    , errReasonPhrase = "Moved Permanently"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err302 :: ServantErr
+err302 = ServantErr { errHTTPCode = 302
+                    , errReasonPhrase = "Found"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err303 :: ServantErr
+err303 = ServantErr { errHTTPCode = 303
+                    , errReasonPhrase = "See Other"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err304 :: ServantErr
+err304 = ServantErr { errHTTPCode = 304
+                    , errReasonPhrase = "Not Modified"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err305 :: ServantErr
+err305 = ServantErr { errHTTPCode = 305
+                    , errReasonPhrase = "Use Proxy"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err307 :: ServantErr
+err307 = ServantErr { errHTTPCode = 307
+                    , errReasonPhrase = "Temporary Redirect"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err400 :: ServantErr
+err400 = ServantErr { errHTTPCode = 400
+                    , errReasonPhrase = "Bad Request"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err401 :: ServantErr
+err401 = ServantErr { errHTTPCode = 401
+                    , errReasonPhrase = "Unauthorized"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err402 :: ServantErr
+err402 = ServantErr { errHTTPCode = 402
+                    , errReasonPhrase = "Payment Required"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err403 :: ServantErr
+err403 = ServantErr { errHTTPCode = 403
+                    , errReasonPhrase = "Forbidden"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err404 :: ServantErr
+err404 = ServantErr { errHTTPCode = 404
+                    , errReasonPhrase = "Not Found"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err405 :: ServantErr
+err405 = ServantErr { errHTTPCode = 405
+                    , errReasonPhrase = "Method Not Allowed"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err406 :: ServantErr
+err406 = ServantErr { errHTTPCode = 406
+                    , errReasonPhrase = "Not Acceptable"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err407 :: ServantErr
+err407 = ServantErr { errHTTPCode = 407
+                    , errReasonPhrase = "Proxy Authentication Required"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err409 :: ServantErr
+err409 = ServantErr { errHTTPCode = 409
+                    , errReasonPhrase = "Conflict"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err410 :: ServantErr
+err410 = ServantErr { errHTTPCode = 410
+                    , errReasonPhrase = "Gone"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err411 :: ServantErr
+err411 = ServantErr { errHTTPCode = 411
+                    , errReasonPhrase = "Length Required"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err412 :: ServantErr
+err412 = ServantErr { errHTTPCode = 412
+                    , errReasonPhrase = "Precondition Failed"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err413 :: ServantErr
+err413 = ServantErr { errHTTPCode = 413
+                    , errReasonPhrase = "Request Entity Too Large"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err414 :: ServantErr
+err414 = ServantErr { errHTTPCode = 414
+                    , errReasonPhrase = "Request-URI Too Large"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err415 :: ServantErr
+err415 = ServantErr { errHTTPCode = 415
+                    , errReasonPhrase = "Unsupported Media Type"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err416 :: ServantErr
+err416 = ServantErr { errHTTPCode = 416
+                    , errReasonPhrase = "Request range not satisfiable"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err417 :: ServantErr
+err417 = ServantErr { errHTTPCode = 417
+                    , errReasonPhrase = "Expectation Failed"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err500 :: ServantErr
+err500 = ServantErr { errHTTPCode = 500
+                    , errReasonPhrase = "Internal Server Error"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err501 :: ServantErr
+err501 = ServantErr { errHTTPCode = 501
+                    , errReasonPhrase = "Not Implemented"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err502 :: ServantErr
+err502 = ServantErr { errHTTPCode = 502
+                    , errReasonPhrase = "Bad Gateway"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err503 :: ServantErr
+err503 = ServantErr { errHTTPCode = 503
+                    , errReasonPhrase = "Service Unavailable"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err504 :: ServantErr
+err504 = ServantErr { errHTTPCode = 504
+                    , errReasonPhrase = "Gateway Time-out"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
+err505 :: ServantErr
+err505 = ServantErr { errHTTPCode = 505
+                    , errReasonPhrase = "HTTP Version not supported"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+```
+
+If you want to use these values but add a body or some headers, just use the good old record update syntax:
+
+``` haskell
+failingHandler = left myerr
+
+  where myerr :: ServantErr
+        myerr = err503 { errBody = "Sorry dear user." }
+```
+
+Here's an example where we return a customised 404-Not-Found error message in the response body if "myfile.txt" isn't there:
+
+``` haskell
+type IOAPI = "myfile.txt" :> Get '[JSON] FileContent
+
+newtype FileContent = FileContent
+  { content :: String }
+  deriving Generic
+
+instance ToJSON FileContent
+
+server :: Server IOAPI
+server = do
+  exists <- liftIO (doesFileExist "myfile.txt")
+  if exists
+    then liftIO (readFile "myfile.txt") >>= return . FileContent
+    else left custom404Err
+
+  where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
+```
+
+Let's run this server (`dist/build/getting-started/getting-started 5`) and query it, first without the file and then after.
+
+``` bash
+$ curl --verbose http://localhost:8081/myfile.txt
+[snip]
+* Connected to localhost (127.0.0.1) port 8081 (#0)
+> GET /myfile.txt HTTP/1.1
+> User-Agent: curl/7.30.0
+> Host: localhost:8081
+> Accept: */*
+> 
+< HTTP/1.1 404 Not Found
+[snip]
+myfile.txt just isnt there, please leave this server alone.
+
+$ echo Hello > myfile.txt
+
+$ curl --verbose http://localhost:8081/myfile.txt
+[snip]
+* Connected to localhost (127.0.0.1) port 8081 (#0)
+> GET /myfile.txt HTTP/1.1
+> User-Agent: curl/7.30.0
+> Host: localhost:8081
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+[snip]
+< Content-Type: application/json
+[snip]
+{"content":"Hello\n"}
+```
 
 ## Serving static files
 
