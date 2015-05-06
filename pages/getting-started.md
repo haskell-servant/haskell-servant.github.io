@@ -1173,7 +1173,7 @@ server = do
   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
 ```
 
-Let's run this server (`dist/build/getting-started/getting-started 5`) and query it, first without the file and then after.
+Let's run this server (`dist/build/getting-started/getting-started 5`) and query it, first without the file and then with the file.
 
 ``` bash
 $ curl --verbose http://localhost:8081/myfile.txt
@@ -1207,7 +1207,128 @@ $ curl --verbose http://localhost:8081/myfile.txt
 
 ## Serving static files
 
+*servant-server* also provides a way to just serve the content of a directory under some path in your web API. As mentionned earlier in this document, the `Raw` combinator can be used in your APIs to mean "plug here any WAI application". Well, servant-server provides a function to get a file and directory serving WAI application, namely:
+
+``` haskell
+-- exported by Servant and Servant.Server
+serveDirectory :: FilePath -> Server Raw
+```
+
+`serveDirectory`'s argument must be a path to a valid directory. You can see a example below, runnable with `dist/build/getting-started/getting-started 6` (you **must** run it from within the *servant-examples/* directory!), which is a webserver that serves the various bits of code covered in this getting-started.
+
+The API type will be the following.
+
+``` haskell
+type API = "code" :> Raw
+```
+
+And the server:
+
+``` haskell
+api :: Proxy API
+api = Proxy
+
+server :: Server API
+server = serveDirectory "getting-started"
+
+app :: Application
+app = serve api server
+```
+
+This server will match any request whose path starts with `/code` and will look for a file at the path described by the rest of the request path, inside the *getting-started/* directory of the path you run the program from.
+
+In other words:
+
+- If a client requests `/code/foo.txt`, the server will look for a file at `./getting-started/foo.txt` (and fail)
+- If a client requests `/code/GS1.hs`, the server will look for a file at `./getting-started/GS1.hs` (and succeed)
+- If a client requests `/code/foo/bar/baz/movie.mp4`, the server will look for a file at `./getting-started/foo/bar/baz/movie.mp4` (and fail)
+
+Here is our little server in action.
+
+``` haskell
+$ curl http://localhost:8081/code/GS1.hs
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+module GS1 where
+
+import Data.Aeson
+import Data.Time.Calendar
+import GHC.Generics
+import Network.Wai
+import Servant
+
+data User = User
+  { name :: String
+  , age :: Int
+  , email :: String
+  , registration_date :: Day
+  } deriving (Eq, Show, Generic)
+
+-- orphan ToJSON instance for Day. necessary to derive one for User
+instance ToJSON Day where
+  -- display a day in YYYY-mm-dd format
+  toJSON d = toJSON (showGregorian d)
+
+instance ToJSON User
+
+type UserAPI = "users" :> Get '[JSON] [User]
+
+users :: [User]
+users = 
+  [ User "Isaac Newton"    372 "isaac@newton.co.uk" (fromGregorian 1683  3 1)
+  , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
+  ]
+
+userAPI :: Proxy UserAPI
+userAPI = Proxy
+
+server :: Server UserAPI
+server = return users
+
+app :: Application
+app = serve userAPI server
+$ curl http://localhost:8081/code/getting-started.hs
+import Network.Wai
+import Network.Wai.Handler.Warp
+import System.Environment
+
+import qualified GS1
+import qualified GS2
+import qualified GS3
+import qualified GS4
+import qualified GS5
+import qualified GS6
+
+app :: String -> Maybe Application
+app n = case n of
+  "1" -> Just GS1.app
+  "2" -> Just GS2.app
+  "3" -> Just GS3.app
+  "4" -> Just GS4.app
+  "5" -> Just GS5.app
+  "6" -> Just GS6.app
+  _   -> Nothing
+
+main :: IO ()
+main = do
+  args <- getArgs
+  case args of
+    [n] -> maybe usage (run 8081) (app n)
+    _   -> usage
+
+usage :: IO ()
+usage = do
+  putStrLn "Usage:\t getting-started N"
+  putStrLn "\t\twhere N is the number of the example you want to run."
+$ curl http://localhost:8081/foo
+not found
+```
+
 ## Using another monad for handlers
+
+
 
 # Deriving Haskell functions to query an API
 
