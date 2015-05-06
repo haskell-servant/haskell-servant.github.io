@@ -35,7 +35,9 @@ endpoint :: SortBy -> IO [User]
 endpoint sortby = ...
 ```
 
-However, this doesn't let us say where we want to get `sortby` from, which means we'll have to wire everything manually, which is a no-go. What if we instead could create some kind of DSL to describe once and forall everything that relates to HTTP requests and responses so that we can actually describe the endpoint from above and reuse that information in any way we want? A fixed data type with all the possible constructions wouldn't work, we want extensibility. What we came up with is an adaptation of the [tagless-final](http://okmij.org/ftp/tagless-final/) approach which lets us describe web APIS *with types* and interpret these descriptions with typeclasses and type families.
+However, this doesn't let us say where we want to get `sortby` from, which means we'll have to wire everything manually, which is a no-go. What if we instead could create some kind of DSL to describe once and forall everything that relates to HTTP requests and responses so that we can actually describe the endpoint from above and reuse that information in any way we want? A fixed data type with all the possible constructions wouldn't work, we want extensibility. What we came up with is an adaptation of the [tagless-final](http://okmij.org/ftp/tagless-final/) approach which lets us describe web APIs *with types* and interpret these descriptions with typeclasses and type families. An understanding of the internals is obviously not necessary to *use* servant, but may help you extend it if needs be.
+
+To be able to write a webservice you only need to read the first two sections, but the goal of this document being to get you started with servant, we also cover the couple of ways you can extend servant for great good.
 
 # A web API as a type
 
@@ -555,13 +557,84 @@ $ curl -X POST -d '{"name":"Alp Mestanogullari", "email" : "alp@foo.com", "age":
 {"subject":"Hey Alp Mestanogullari, we miss you!","body":"Hi Alp Mestanogullari,\n\nSince you've recently turned 25, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
 ```
 
+For reference, here's a list of some combinators from *servant* and for those that get turned into arguments to the handlers, the type of the argument.
+
+> - `Delete`, `Get`, `Patch`, `Post`, `Put`: these do not become arguments. They provide the return type of handlers, which usually is `EitherT ServantErr IO <something>`.
+> - `Capture "something" a` becomes an argument of type `a`.
+> - `QueryParam "something" a`, `MatrixParam "something" a`, `Header "something" a` both become an argument of type `Maybe a`, because there might be no value at all specified by the client for these.
+> - `QueryFlag "something"` and `MatrixFlag "something"` get turned into arguments of type `Bool`.
+> - `QueryParams "something" a` and `MatrixParams "something" a` get turned into arguments of type `[a]`.
+> - `ReqBody contentTypes a` gets turned into an argument of type `a`.
+
 ## The `FromText`/`ToText` classes
 
-## Using content-types with existing or new data types
+Wait... How does *servant* know how to decode the `Int`s from the URL? Or how to decode a `ClientInfo` value from the request body? This is what this section and following two address.
 
-## Failing
+`Capture`s and `QueryParam`s are represented by some textual value in URLs. `Header`s are similarly represented by a pair of a header name and a corresponding (textual) value in the request's "metadata". This is why we decided to provide a pair of typeclasses, `FromText` and `ToText` which just let you say that you can respectively *extract* or *encode* values of some type *from*/*to* text. Here are the definitions:
+
+``` haskell
+class FromText a where
+  fromText :: Text -> Maybe a
+
+class ToText a where
+  toText :: a -> Text
+```
+
+And as long as the type that a `Capture`/`QueryParam`/`Header`/etc will be decoded to provides a `FromText` instance, it will Just Work. *servant* provides a decent amount of instances, but here are a some examples of defining your own instances.
+
+``` haskell
+-- A typical enumeration
+data Direction
+  = Up
+  | Down
+  | Left
+  | Right
+
+instance FromText Direction where
+  -- requires {-# LANGUAGE OverloadedStrings #-}
+  fromText "up"    = Just Up
+  fromText "down"  = Just Down
+  fromText "left"  = Just Left
+  fromText "right" = Just Right
+  fromText       _ = Nothing
+
+instance ToText Direction where
+  toText Up    = "up"
+  toText Down  = "down"
+  toText Left  = "left"
+  toText Right = "right"
+
+newtype UserId = UserId Int64
+  deriving (FromText, ToText)
+  -- requires GeneralizedNewtypeDeriving
+
+-- or writing the instances by hand:
+instance FromText UserId where
+  fromText = fmap UserId fromText
+
+instance ToText UserId where
+  toText (UserId i) = toText i
+```
+
+There's not much else to say about these classes. You will need instances for them when using `Capture`, `QueryParam`, `QueryParams`, `MatrixParam`, `MatrixParams` and `Header` with your types. You will need `FromText` instances for server-side request handlers and `ToText` instances only when using *servant-client*, described in the section about deriving haskell functions to query an API.
+
+## Using content-types with your data types
+
+Something that we have been skipping over since the beginning is how *servant* decodes the request body from JSON to a good old Haskell data type or how it encodes the values returned by our handlers to JSON. And, for that matter, how we could make this work with more than just JSON, or even with custom content-types. This section and the next one will introduce a couple of typeclasses provided by *servant* that make all of this work and that you should use when extending servant.
+
+### The truth behind `JSON`
+
+### Case-studies: *servant-blaze* and *servant-lucid*
+
+## The `EitherT ServantErr IO` monad
+
+### Performing IO
+
+### Failing, through `ServantErr`
 
 ## Serving static files
+
+## Using another monad for handlers
 
 # Deriving Haskell functions to query an API
 
