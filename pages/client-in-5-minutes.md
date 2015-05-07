@@ -113,24 +113,21 @@ Finally, we can automatically derive our client functions:
 hackageAPI :: Proxy HackageAPI
 hackageAPI = Proxy
 
-getUsers :: BaseUrl -> EitherT ServantError IO [UserSummary] 
-getUser :: Username -> BaseUrl -> EitherT ServantError IO UserDetailed
-getPackages :: BaseUrl -> EitherT ServantError IO [Package]
-getUsers :<|> getUser :<|> getPackages = client hackageAPI
+getUsers :: EitherT ServantError IO [UserSummary] 
+getUser :: Username -> EitherT ServantError IO UserDetailed
+getPackages :: EitherT ServantError IO [Package]
+getUsers :<|> getUser :<|> getPackages = client hackageAPI (BaseUrl Http "hackage.haskell.org" 80)
 ```
 
 And here's some runnable code to actually check that everything works as expected:
 
 ``` haskell
-run :: (BaseUrl -> r) -> r
-run f = f (BaseUrl Http "hackage.haskell.org" 80)
-
 main :: IO ()
 main = print =<< uselessNumbers
 
 uselessNumbers :: IO (Either ServantError ())
 uselessNumbers = runEitherT $ do
-  users <- run getUsers
+  users <- getUsers
   liftIO . putStrLn $ show (length users) ++ " users"
 
   user <- liftIO $ do
