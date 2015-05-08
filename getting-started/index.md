@@ -115,7 +115,9 @@ combinators that servant comes with.
 
 ### Static strings
 
-As you've already seen, you can use type-level strings (enabled with the `DataKinds` language extension) for static path fragments. Chaining them amounts to `/`-separating them in an URL.
+As you've already seen, you can use type-level strings (enabled with the
+`DataKinds` language extension) for static path fragments. Chaining
+them amounts to `/`-separating them in an URL.
 
 ``` haskell
 type UserAPI = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
@@ -125,7 +127,11 @@ type UserAPI = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
 
 ### `Delete`, `Get`, `Patch`, `Post` and `Put`
 
-These 5 combinators are very similar except that they obviously each describe a different HTTP method. They all are "dummy", empty types that take a list of content types and the type of the value that will be returned in the response body except for `Delete` which should not return any response body. In fact, here are the 5 declarations for them:
+These 5 combinators are very similar except that they obviously each describe a
+different HTTP method. They all are "dummy", empty types that take a list of
+content types and the type of the value that will be returned in the response
+body except for `Delete` which should not return any response body. In fact,
+here are the 5 declarations for them:
 
 ``` haskell
 data Delete
