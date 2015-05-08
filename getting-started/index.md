@@ -1289,42 +1289,30 @@ The first and main question one might have then is: how do we write handlers tha
 
 ### Natural transformations
 
-Everyone knows and loves the `Functor` class. Given two functors, say lists and `Maybe`, if we can write a function `nat` with type:
-
-``` haskell
-nat :: forall a. [a] -> Maybe a
-```
-
-such that:
-
-``` haskell
-forall a b.
-       f :: a -> b
-nat . fmap f = fmap f . nat
-```
-
-you have a natural transformation. (We however get this for free in Haskell, as a [free theorem](http://homepages.inf.ed.ac.uk/wadler/papers/free/free.ps).)
-
-This means a natural transformation between two functors `f` and `g` can simply be represented by a function `forall a. f a -> g a`. We can wrap this all up in a newtype.
+If we have a function that gets us from an `m a` to an `n a`, for any `a`, what
+do we have?
 
 ``` haskell
 newtype m :~> n = Nat { unNat :: forall a. m a -> n a}
 
--- nat from above has type `[] :~> Maybe`
+-- For example
+-- listToMaybeNat ::`[] :~> Maybe`
+-- listToMaybeNat = Nat listToMaybe  -- from Data.Maybe
 ```
+(`Nat` comes from "natural transformation", in case you're wondering.)
 
-We don't actually require functors in our case though, since we don't necessarily always use the fact that `m` or `n` are functors. But in most cases `n = EitherT ServantErr IO` and `m` is often a monad (hence a functor).
-
-So if you want to write handlers using another monad/type than `EitherT ServantErr IO`, say the `Reader String` monad, the first thing you have to prepare is a function:
+So if you want to write handlers using another monad/type than `EitherT
+ServantErr IO`, say the `Reader String` monad, the first thing you have to
+prepare is a function:
 
 ``` haskell
 readerToEither :: Reader String :~> EitherT ServantErr IO
-
--- somehow equivalent to
-readerToEither' :: forall a. Reader String a -> EitherT ServantErr IO a
 ```
 
-Let's start with `readerToEither'`. We obviously have to run the `Reader` computation by supplying it with a `String`, like `"hi"`. We get an `a` out from that and can then just `return` it into `EitherT`. We can then just wrap that function with the `Nat` constructor to make it have the fancier type.
+Let's start with `readerToEither'`. We obviously have to run the `Reader`
+computation by supplying it with a `String`, like `"hi"`. We get an `a` out
+from that and can then just `return` it into `EitherT`. We can then just wrap
+that function with the `Nat` constructor to make it have the fancier type.
 
 ``` haskell
 readerToEither' :: forall a. Reader String a -> EitherT ServantErr IO a
@@ -1334,7 +1322,7 @@ readerToEither :: Reader String :~> EitherT ServantErr IO
 readerToEither = Nat . readerToEither'
 ```
 
-Now let's write some simple webservice with the handlers running in `Reader String`.
+We can write some simple webservice with the handlers running in `Reader String`.
 
 ``` haskell
 type ReaderAPI = "a" :> Get '[JSON] Int
@@ -1353,11 +1341,17 @@ readerServerT = a :<|> b
         b = ask
 ```
 
-Alright, but we unfortunately can't use `readerServerT` as an argument of `serve`, because `serve` wants a `Server ReaderAPI`, i.e with handlers running in `EitherT ServantErr IO`. But there's a simple solution to this.
+we unfortunately can't use `readerServerT` as an argument of `serve`, because
+`serve` wants a `Server ReaderAPI`, i.e with handlers running in `EitherT
+ServantErr IO`. But there's a simple solution to this.
 
 ### Enter `enter`
 
-That's right. We have just written `readerToEither`, which is exactly what we could need to call on the results of all handlers to make the handlers have the right type for `serve`. Being cumbersome to do by hand, we provide a function `enter` which takes a natural transformation between two parametrized types `m` and `n` and a `ServerT someapi m`, and returns a `ServerT someapi n`.
+That's right. We have just written `readerToEither`, which is exactly what we
+could need to call on the results of all handlers to make the handlers have the
+right type for `serve`. Being cumbersome to do by hand, we provide a function
+`enter` which takes a natural transformation between two parametrized types `m`
+and `n` and a `ServerT someapi m`, and returns a `ServerT someapi n`.
 
 In our case, we can wrap up our little webservice by using `enter readerToEither` on our handlers.
 
