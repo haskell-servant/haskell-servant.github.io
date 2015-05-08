@@ -8,64 +8,78 @@ This is an introductory tutorial to the current version of *servant*, which is *
 
 # Introduction
 
-*servant* was born out of the following needs:
+*servant* has the following guiding principles:
 
-- do not require users to write *any* kind of boilerplate (encoding and decoding things from URL captures or from a JSON request body, etc) ;
-- get client-side functions to query the endpoints for free ;
-- get API doc for your web API for free ;
-- be able to abstract *any* repeating pattern in your web application into a reusable "component" ;
-- overall, make the high-level spec of your webapp something you can inspect and transform, therefore making it a first class citizen and providing more flexibility and extensibility than what we were used to. This isn't something we could get with any existing library so we went ahead and researched a way to make this happen.
+- concision
 
-Just like one can define parsers by combining smaller ones using various operations, we thought there must be a way to *describe* web APIs by combining smaller pieces. Something like "the endpoint at `/users` expects a query string parameter `sortby` whose value can be one of `age` or `name` and returns a list/array of JSON objects describing users, with fields `age`, `name`, `email`, `registration_date`". Such a description is enough for us to be able to automatically interface with the webservice from Haskell or Javascript. We know where to reach the endpoint, what parameters it expects and the shape of what it returns. This is also enough to be able to generate API docs -- as long as we can provide additional details next to the automatically generated bits.
+   This is a pretty wide-ranging principle. You should be able to get nice
+   documentation for you web servers, and client libraries, without repeating
+   yourself. You should not have to manualy serialize and deserialize your
+   resources, but only delcare how to do those things *once per type*. If a
+   bunch of your handlers take the same query parameters, you shouldn't have to
+   repeat that logic for each handler, but instead just "apply" it to all of
+   them at once. Your handlers shouldn't be where composition goes to die. And
+   so on
 
-The above descriptions kind of looks like a type though, doesn't it? We know it takes a `sortby` argument (that it gets from the query string) and produces a list of users. We could have the following code to describe our endpoint:
+- flexibility
 
-``` haskell
-data SortBy = Age | Name
-  deriving Eq
+   If we haven't thought of your use case, it should still be easily
+   achievable. If you want to use templating library X, go ahead. Forms? Do
+   them however you want, but without difficulty. We're not opinionated.
 
-data User = User
-  { name :: String
-  , age :: Int
-  , email :: String
-  , registration_date :: Day
-  }
+- separatation of concerns
 
-endpoint :: SortBy -> IO [User]
-endpoint sortby = ...
-```
+   Your handlers and your HTTP logic should be separate. True to the philosphy
+   at the core of HTTP and REST, with *servant* your handlers return normal
+   Haskell datatypes - that's the resource. And then from a description of your
+   API, *servant* handles the *presentation* (i.e., the Content-Types). But
+   that's just one example.
 
-However, this doesn't let us say where we want to get `sortby` from, which means we'll have to wire everything manually, which is a no-go. What if we instead could create some kind of DSL to describe once and forall everything that relates to HTTP requests and responses so that we can actually describe the endpoint from above and reuse that information in any way we want? A fixed data type with all the possible constructions wouldn't work, we want extensibility. What we came up with is an adaptation of the [tagless-final](http://okmij.org/ftp/tagless-final/) approach which lets us describe web APIs *with types* and interpret these descriptions with typeclasses and type families. An understanding of the internals is obviously not necessary to *use* servant, but may help you extend it if needs be.
+- type safety
 
-To be able to write a webservice you only need to read the first two sections, but the goal of this document being to get you started with servant, we also cover the couple of ways you can extend servant for great good.
+   Want to be sure your API meets a specification? Your compiler can check
+   that for you. Links you can be sure exist? You got it.
+
+To stick true to these principles, we do things a little differently than you
+might expect. The core idea is *reifying the description of your API*. Once
+reified, everything follows. We think we might be the first web framework to
+reify API descriptions in an extensible way. We're pretty sure we're the first
+to reify it as *types*.
+
+
+
+To be able to write a webservice you only need to read the first two sections,
+but the goal of this document being to get you started with servant, we also
+cover the couple of ways you can extend servant for a great good.
+
 
 # A web API as a type
 
-Let's recall the example of endpoint description from the previous section:
+Consider the following informal specificatoin of an API:
 
-> the endpoint at `/users` expects a query string parameter `sortby` whose value can be one of `age` or `name` and returns a list/array of JSON objects describing users, with fields `age`, `name`, `email`, `registration_date`"
+> The endpoint at `/users` expects a GET request with query string parameter
+> `sortby` whose value can be one of `age` or `name` and returns a
+> list/array of JSON objects describing users, with fields `age`, `name`,
+> `email`, `registration_date`".
 
-This could informally be described as:
+You *should* be able to formalize that. And then use the formalized version to
+get you much of the way towards writing a web app. And all the way towards
+getting some client libraries, and documentation (and in the future, who knows
+- tests, HATEOAS, ...).
 
+Now let's describe it with servant. As mentioned earlier, an endpoint
+description is a good old Haskell **type**. We use a couple of recent GHC
+extensions to make our type-level vocabulary concise and expressive. Among them
+is the ability to have type-level strings, which lets us express static path
+fragments (like `"users"` in our example) in URLs.
 
-> `/users[?sortby={age, name}]`
-> 
-> Responds with JSON like:
->
-> ``` javascript
-> [ {"name": "Isaac Newton", "age": 372, "email": "isaac@newton.co.uk", "registration_date": "1683-03-01"}
-> , {"name": "Albert Einstein", "age": 136, "email": "ae@mc2.org", "registration_date": "1905-12-01"}
-> , ...
-> ]
-> ```
-
-Now let's describe it with servant. As mentionned earlier, an endpoint description is a good old Haskell **type**. We use a couple of recent GHC extensions to make our type-level vocabulary concise and expressive. Among them is the ability to have type-level strings, which lets us express static path fragments (like `"users"` in our example) in URLs.
-
-So here's the full type that describes our endpoint, broken down and explained right after.
+So here is the full type that describes our endpoint.
 
 ``` haskell
 type UserAPI = "users" :> QueryParam "sortby" SortBy :> Get '[JSON] [User]
 ```
+
+Let's break that down:
 
 - `"users"` simply says that our endpoint will be accessible under `/users`;
 - `QueryParam "sortby" SortBy`, where `SortBy` is defined by `data SortBy = Age | Name`, says that the endpoint has a query string parameter named `sortby` whose value will be extracted as a value of type `SortBy`.
@@ -336,7 +350,7 @@ Nothing funny going on here. But we now can define our list of two users.
 
 ``` haskell
 users :: [User]
-users = 
+users =
   [ User "Isaac Newton"    372 "isaac@newton.co.uk" (fromGregorian 1683  3 1)
   , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
   ]
@@ -855,7 +869,7 @@ newtype EitherT e m a
 
 In short, this means that a handler of type `EitherT ServantErr IO a` is simply equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO action that either returns an error or a result. `EitherT` also comes with many typeclass instances, among which the following ones that might be of interest to you depending on how much you use monad transformers and standard typeclasses:
 
-``` haskell   
+``` haskell
 Monad m => MonadError e (EitherT e m)
 MonadReader r m => MonadReader r (EitherT e m)
 MonadState s m => MonadState s (EitherT e m)
@@ -1183,7 +1197,7 @@ $ curl --verbose http://localhost:8081/myfile.txt
 > User-Agent: curl/7.30.0
 > Host: localhost:8081
 > Accept: */*
-> 
+>
 < HTTP/1.1 404 Not Found
 [snip]
 myfile.txt just isnt there, please leave this server alone.
@@ -1197,7 +1211,7 @@ $ curl --verbose http://localhost:8081/myfile.txt
 > User-Agent: curl/7.30.0
 > Host: localhost:8081
 > Accept: */*
-> 
+>
 < HTTP/1.1 200 OK
 [snip]
 < Content-Type: application/json
@@ -1276,7 +1290,7 @@ instance ToJSON User
 type UserAPI = "users" :> Get '[JSON] [User]
 
 users :: [User]
-users = 
+users =
   [ User "Isaac Newton"    372 "isaac@newton.co.uk" (fromGregorian 1683  3 1)
   , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
   ]
