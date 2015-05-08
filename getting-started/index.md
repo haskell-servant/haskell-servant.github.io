@@ -998,11 +998,15 @@ $ curl -H 'Accept: text/html' http://localhost:8081/persons
 
 ## The `EitherT ServantErr IO` monad
 
-At the heart of the handlers is the monad they run in, namely `EitherT ServantErr IO`. One might wonder: why this monad? The answer is that it somehow is the simplest monad with the following properties:
+At the heart of the handlers is the monad they run in, namely `EitherT
+ServantErr IO`. One might wonder: why this monad? The answer is that it is the
+simplest monad with the following properties:
 
-- it lets us both return a successful result (with the `Right` branch of `Either`) or "fail" with a descriptive error (with the `Left` branch of `Either`);
-- it lets us perform IO, which is absolutely vital since most webservices exist as interfaces to databases that we interact with in `IO`;
-- it's a monad and thus lets us run a sequence of effectful actions (that can all fail and thus abort the whole computation early).
+- it lets us both return a successful result (with the `Right` branch of
+`Either`) or "fail" with a descriptive error (with the `Left` branch of
+`Either`);
+- it lets us perform IO, which is absolutely vital since most webservices exist
+as interfaces to databases that we interact with in `IO`;
 
 Let's recall some definitions.
 
@@ -1016,42 +1020,22 @@ newtype EitherT e m a
   = EitherT { runEitherT :: m (Either e a) }
 ```
 
-In short, this means that a handler of type `EitherT ServantErr IO a` is simply equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO action that either returns an error or a result. `EitherT` also comes with many typeclass instances, among which the following ones that might be of interest to you depending on how much you use monad transformers and standard typeclasses:
+In short, this means that a handler of type `EitherT ServantErr IO a` is simply
+equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO
+action that either returns an error or a result.
 
-``` haskell
-Monad m => MonadError e (EitherT e m)
-MonadReader r m => MonadReader r (EitherT e m)
-MonadState s m => MonadState s (EitherT e m)
-MonadWriter s m => MonadWriter s (EitherT e m)
-MonadTrans (EitherT e)
-(Monad m, Monoid e) => Alternative (EitherT e m)
-Monad m => Monad (EitherT e m)
-Monad m => Functor (EitherT e m)
-MonadFix m => MonadFix (EitherT e m)
-(Monad m, Monoid e) => MonadPlus (EitherT e m)
-Monad m => Applicative (EitherT e m)
-Foldable m => Foldable (EitherT e m)
-(Monad f, Traversable f) => Traversable (EitherT e f)
-MonadRandom m => MonadRandom (EitherT e m)
-MonadThrow m => MonadThrow (EitherT e m)
-MonadCatch m => MonadCatch (EitherT e m)
-MonadIO m => MonadIO (EitherT e m)
-MonadCont m => MonadCont (EitherT e m)
-(Monad m, Semigroup e) => Alt (EitherT e m)
-Monad m => Apply (EitherT e m)
-Monad m => Bind (EitherT e m)
-Monad m => Semigroup (EitherT e m a)
-```
-
-You might want to sooner or later check out the typeclasses above that you don't know yet since every single one of them adds a way to combine, build or tear down `EitherT` computations.
-
-One important item in this list is the `Monad` instance. `return` just puts the value you give it in the `Right` branch and `>>=` keeps chaining computations in the `Right` branch unless one of the intermediate computations aborts early in the `Left` branch. This is made easy by the `left` function:
+The aforementioned `either` package is worth taking a look at. Perhaps most
+importantly:
 
 ``` haskell
 left :: Monad m => e -> EitherT e m a
 ```
+Allows you to return an error from your handler (whereas `return` is enough to
+return a success).
 
-Now, most of what you'll be doing in your handlers is running some IO and depending on the result, you might sometimes want to throw an error of some kind and abort early. The next two sections cover how to do just that.
+Most of what you'll be doing in your handlers is running some IO and,
+depending on the result, you might sometimes want to throw an error of some
+kind and abort early. The next two sections cover how to do just that.
 
 ### Performing IO
 
@@ -1107,7 +1091,8 @@ failingHandler = left myerr
         myerr = err503 { errBody = "Sorry dear user." }
 ```
 
-Here's an example where we return a customised 404-Not-Found error message in the response body if "myfile.txt" isn't there:
+Here's an example where we return a customised 404-Not-Found error message in
+the response body if "myfile.txt" isn't there:
 
 ``` haskell
 type IOAPI = "myfile.txt" :> Get '[JSON] FileContent
@@ -1128,7 +1113,8 @@ server = do
   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
 ```
 
-Let's run this server (`dist/build/getting-started/getting-started 5`) and query it, first without the file and then with the file.
+Let's run this server (`dist/build/getting-started/getting-started 5`) and
+query it, first without the file and then with the file.
 
 ``` bash
 $ curl --verbose http://localhost:8081/myfile.txt
@@ -1162,14 +1148,22 @@ $ curl --verbose http://localhost:8081/myfile.txt
 
 ## Serving static files
 
-*servant-server* also provides a way to just serve the content of a directory under some path in your web API. As mentionned earlier in this document, the `Raw` combinator can be used in your APIs to mean "plug here any WAI application". Well, servant-server provides a function to get a file and directory serving WAI application, namely:
+*servant-server* also provides a way to just serve the content of a directory
+under some path in your web API. As mentionned earlier in this document, the
+`Raw` combinator can be used in your APIs to mean "plug here any WAI
+application". Well, servant-server provides a function to get a file and
+directory serving WAI application, namely:
 
 ``` haskell
 -- exported by Servant and Servant.Server
 serveDirectory :: FilePath -> Server Raw
 ```
 
-`serveDirectory`'s argument must be a path to a valid directory. You can see a example below, runnable with `dist/build/getting-started/getting-started 6` (you **must** run it from within the *servant-examples/* directory!), which is a webserver that serves the various bits of code covered in this getting-started.
+`serveDirectory`'s argument must be a path to a valid directory. You can see a
+example below, runnable with `dist/build/getting-started/getting-started 6`
+(you **must** run it from within the *servant-examples/* directory!), which is
+a webserver that serves the various bits of code covered in this
+getting-started.
 
 The API type will be the following.
 
