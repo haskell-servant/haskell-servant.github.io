@@ -86,9 +86,7 @@ Let's break that down:
 | Name`, says that the endpoint has a query string parameter named `sortby`
 whose value will be extracted as a value of type `SortBy`.
 - `Get '[JSON] [User]` says that the endpoint will be accessible through HTTP
-GET requests, returning a list of users encoded as JSON. For any reader not
-familiar with the notation `'[JSON]`, it's a type-level list of types that
-represent the content types in which the data can be accessed. You will see
+GET requests, returning a list of users encoded as JSON. You will see
 later how you can make use of this to make your data available under different
 formats, the choice being made depending on the [Accept
 header](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html) specified in
@@ -101,16 +99,17 @@ obviously not the same as `"list-all" :> "users" :> Get '[JSON] [User]`, which
 is equivalent to `/list-all/users`. This means that sometimes `:>` is somehow
 equivalent to `/`, but sometimes it just lets you chain another combinator.
 
-One might wonder: how do we describe an API with more than one endpoint? Our
-answer to this is simple, just a little operator that we named `:<|>`. Here's
-an example:
+We can also describe APIs with multiple endpoints, of course, using the `:<|>`
+combinators. Here's an example:
 
 ``` haskell
 type UserAPI = "users" :> "list-all" :> Get '[JSON] [User]
           :<|> "list-all" :> "users" :> Get '[JSON] [User]
 ```
 
-*servant* provides a fair amount of combinators out-of-the-box and lets you write your owns when you need it. Here's a quick overview of all the combinators that servant comes with.
+*servant* provides a fair amount of combinators out-of-the-box, but you can
+always write your own when you need it. Here's a quick overview of all the
+combinators that servant comes with.
 
 ## Combinators
 
