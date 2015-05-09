@@ -3,8 +3,6 @@ title: Generating documentation from API types
 toc: true
 ---
 
-# Generating documentation from API types
-
 Like client function generation, documentation generation amounts to inspecting the API type and extracting all the data we need to then present it in some format to users of your API.
 
 This time however, we have to assist *servant*. While it is able to deduce a lot of things about our API, it can't magically come up with descriptions of the various pieces of our APIs that are human-friendly and explain what's going on "at the business-logic level". A good example to study for documentation generation is our webservice with the `/position`, `/hello` and `/marketing` endpoints from earlier.

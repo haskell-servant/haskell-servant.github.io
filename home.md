@@ -1,3 +1,7 @@
+---
+title: Home
+---
+
 # Webservice API combinators
 
 *servant* is a set of libraries that makes building Haskell webservices a breeze. With only the thinnest sliver of boilerplate, you get a type-safe service that is capable of generating client-side code (Haskell or Javascript) and documentation for free. See for yourself.
@@ -37,24 +41,29 @@ One handler per endpoint. The handlers' types must match those described in the 
 
 This representation lets us generate client-side querying functions automatically, in Haskell and Javascript. API docs too!
 
-To find out more, please check our [Getting Started](/getting-started/) guide.
+To find out more, please check our [tutorial](/tutorial).
 
-#  Documentation
+# Documentation and community
 
-## Packages
+## Tutorials
+
+- [Tutorial](/tutorial) (it's recommended to start here)
+- [Extending servant](/extending.html)
+- [Hackage API client in 5 minutes](/client-in-5-minutes.html)
+- [Developing a servant application with Halcyon](https://halcyon.sh/tutorial/)
+- See [tha talks](/talks.html)
+
+## Examples
+
+*servant* comes with quite a few examples, among which the ones studied in the [tutorial](/tutorial). You can find them [here](https://github.com/haskell-servant/servant/tree/master/servant-examples).
+
+## Haddocks
 
 - [servant](http://hackage.haskell.org/package/servant), API types and combinators
 - [servant-server](http://hackage.haskell.org/package/servant-server), for creating a server
 - [servant-client](http://hackage.haskell.org/package/servant-client), for generating haskell functions to query APIs automatically
 - [servant-jquery](http://hackage.haskell.org/package/servant-jquery), for generating javascript functions to query APIs automatically
 - [servant-docs](http://hackage.haskell.org/package/servant-docs), for assistance in API docs generation
-
-## Tutorials
-
-- [Getting Started](/getting-started/)
-- [Extending servant](/extending.html)
-- [Developing a servant application with Halcyon](https://halcyon.sh/tutorial/)
-
 
 ## Mailing list and IRC
 

@@ -1,5 +1,5 @@
 ---
-title: Getting started with servant
+title: Tutorial
 author: Alp Mestanogullari
 toc: true
 ---
@@ -52,15 +52,19 @@ cover the couple of ways you can extend servant for a great good.
 
 # Tutorial
 
-## [A web API as a type](/tutorial/api-type.html)
-## [Serving an API](/tutorial/server.html)
-## [Deriving Haskell functions to query an API](/tutorial/client.html)
-## [Generating javascript functions to query an API](/tutorial/javascript.html)
-## [Generating documentation for APIs](/tutorial/docs.html)
+1. [A web API as a type](/tutorial/api-type.html)
+2. [Serving an API](/tutorial/server.html)
+3. [Deriving Haskell functions to query an API](/tutorial/client.html)
+4. [Generating javascript functions to query an API](/tutorial/javascript.html)
+5. [Generating documentation for APIs](/tutorial/docs.html)
 
 # Links, community and more
 
-## Hackage links
+## Examples
+
+*servant* comes with quite a few examples, among which the ones studied in the [tutorial](/tutorial). You can find them [here](https://github.com/haskell-servant/servant/tree/master/servant-examples).
+
+## Haddocks
 
 - [servant](http://hackage.haskell.org/package/servant)
 - [servant-server](http://hackage.haskell.org/package/servant-server)

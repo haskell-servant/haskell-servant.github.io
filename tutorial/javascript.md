@@ -3,8 +3,6 @@ title: Deriving Javascript functions to query an API
 toc: true
 ---
 
-# Deriving Javascript functions to query an API
-
 We will now see how *servant* lets you turn an API type into javascript functions that you can call to query a webservice. The derived code assumes you use *jQuery* but you could very easily adapt the code to generate ajax requests based on vanilla javascript or another library than *jQuery*.
 
 For this, we will consider a simple page divided in two parts. At the top, we will have a search box that lets us search in a list of Haskell books by author/title with a list of results that gets updated every time we enter or remove a character, while at the bottom we will be able to see the classical [probabilistic method to approximate &pi;](http://en.wikipedia.org/wiki/Approximations_of_%CF%80#Summing_a_circle.27s_area), using a webservice to get random points. Finally, we will serve an HTML file along with a couple of Javascript files, among which one that's automatically generated from the API type and which will provide ready-to-use functions to query your API.
