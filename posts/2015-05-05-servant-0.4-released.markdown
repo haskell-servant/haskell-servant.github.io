@@ -183,9 +183,7 @@ client :: HasClient (Canonicalize layout) => Proxy layout -> BaseUrl -> Client l
 
 # Website
 
-We also decided to switch to hakyll in order to be able to have a blog as well as some static pages that collect tips and tricks that people have found. We might as well at some point in the future use this setup to publish some kind of 'manual' that covers extensively *servant*'s features.
-
-We also used this opportunity to rewrite the getting started, now available [here](/getting-started.html). It's now a lot more informative.
+We also decided to switch to hakyll in order to be able to have a blog as well as some static pages that collect tips and tricks that people have found. We also used this opportunity to rewrite the getting started into a more informative tutorial, now available [here](/tutorial).
 
 # Conclusions
 

@@ -3,8 +3,6 @@ title: A web API as a type
 toc: true
 ---
 
-# A web API as a type
-
 Consider the following informal specificatoin of an API:
 
 > The endpoint at `/users` expects a GET request with query string parameter
