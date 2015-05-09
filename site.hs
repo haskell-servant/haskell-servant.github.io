@@ -9,7 +9,7 @@ import Text.Pandoc.Options
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = hakyll $ do
+main = hakyllWith config $ do
     -- improve this to actually call pandoc to generate
     -- the slideshow from the markdown file
     match "getting-started/*" $ do
@@ -133,3 +133,8 @@ myPandocCompiler :: Compiler (Item String)
 myPandocCompiler = do
     ident <- getUnderlying
     myPandocCompiler' =<< getMetadataField ident "toc"
+-----------------
+config :: Configuration
+config = defaultConfiguration
+    { deployCommand = "bash deploy.sh"
+    }
