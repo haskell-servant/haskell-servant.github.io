@@ -198,7 +198,7 @@ type Get' a = Get '[JSON, HTML, PlainText] a
 
 There's still an outstanding issue with the errors servant returns when a
 request doesn't get handled. For example, if the path of a request, but not the
-method nor the request obdy, match, rather than returning a 405 (Method Not
+method nor the request body, match, rather than returning a 405 (Method Not
 Allowed) we return a 400 (Bad Request), which is not the desired behavior.
 Andres Löh made some great suggestions for how to improve our routing time
 complexity, and hopefully we can integrate a fix for this issue when we tackle
