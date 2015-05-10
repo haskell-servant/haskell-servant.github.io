@@ -52,7 +52,7 @@ To find out more, please check our [tutorial](/tutorial).
 - [Extending servant](/extending.html)
 - [Hackage API client in 5 minutes](/client-in-5-minutes.html)
 - [Developing a servant application with Halcyon](https://halcyon.sh/tutorial/)
-- See [tha talks](/talks.html)
+- See [the talks](/talks.html)
 
 ## Examples
 
