@@ -72,13 +72,14 @@ searchBook (Just q) = return (mkSearch q books')
         q' = T.toLower q
 ```
 
-We also need an endpoint that generates random points `(x, y)` with `-1 <= x,y <= 1`. The code below uses [probable](http://hackage.haskell.org/package/probable) because of the `Applicative` interface but any random generation library will do.
+We also need an endpoint that generates random points `(x, y)` with `-1 <= x,y <= 1`. The code below uses [random](http://hackage.haskell.org/package/random)'s `System.Random`.
 
 ``` haskell
 randomPoint :: MonadIO m => m Point
-randomPoint = liftIO . mwc $ Point <$> d <*> d
-  
-  where d = doubleIn (-1, 1)
+randomPoint = liftIO . getStdRandom $ \g ->
+  let (rx, g')  = randomR (-1, 1) g
+      (ry, g'') = randomR (-1, 1) g'
+  in (Point rx ry, g'')
 ```
 
 If we add static file serving, our server is now complete.
@@ -96,7 +97,7 @@ server = randomPoint
 
 server' :: Server API'
 server' = server
-     :<|> serveDirectory "getting-started/gs9"
+     :<|> serveDirectory "tutorial/t9"
 
 app :: Application
 app = serve api' server'
@@ -146,4 +147,4 @@ writeJSFiles = do
   writeFile "getting-started/gs9/jq.js" jq
 ```
 
-And we're good to go. Start the server with `dist/build/getting-started/getting-started 9` and go to [http://localhost:8081/](http://localhost:8081/). Start typing in the name of one of the authors of our database or part of a book title and check out how long it takes to approximate &pi; using the method mentionned above.
+And we're good to go. Start the server with `dist/build/tutorial/tutorial 9` and go to [http://localhost:8081/](http://localhost:8081/). Start typing in the name of one of the authors of our database or part of a book title and check out how long it takes to approximate &pi; using the method mentionned above.
