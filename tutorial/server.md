@@ -19,13 +19,13 @@ cabal install --only-dependencies
 cabal configure && cabal build
 ```
 
-This will produce a `getting-started` executable in the
-`dist/build/getting-started` directory that just runs the example corresponding
+This will produce a `tutorial` executable in the
+`dist/build/tutorial` directory that just runs the example corresponding
 to the number specified as a command line argument:
 
 ``` bash
-$ dist/build/getting-started/getting-started
-Usage:   getting-started N
+$ dist/build/tutorial/tutorial
+Usage:   tutorial N
         where N is the number of the example you want to run.
 ```
 
@@ -132,6 +132,7 @@ userAPI = Proxy
 app :: Application
 app = serve userAPI server
 ```
+
 The `userAPI` bit is, alas, boilerplate (we need it to guide type inference).
 But that's about as much boilerplate as you get.
 
@@ -145,8 +146,8 @@ main = run 8081 app
 You can put this all into a file or just grab [servant's
 repo](http://github.com/haskell-servant/servant) and look at the
 *servant-examples* directory. The code we have just explored is in
-*getting-started/GS1.hs*, runnable with
-`dist/build/getting-started/getting-started 2`.
+*tutorial/T1.hs*, runnable with
+`dist/build/tutorial/tutorial 2`.
 
 If you run it, you can go to `http://localhost:8081/users` in your browser or
 query it with curl and you see:
@@ -191,7 +192,7 @@ server = return users
 ```
 
 And that's it! You can run this example with
-`dist/build/getting-started/getting-started 2` and check out the data available
+`dist/build/tutorial/tutorial 2` and check out the data available
 at `/users`, `/albert` and `/isaac`.
 
 ## From combinators to handler arguments
@@ -298,7 +299,7 @@ string parameter, we decided to "force" handlers to be aware that the
 parameter might not always be there);
 - a `ReqBody contentTypeList a` becomes an argument of type `a`;
 
-And that's it. You can see this example in action by running `dist/build/getting-started/getting-started 3`.
+And that's it. You can see this example in action by running `dist/build/tutorial/tutorial 3`.
 
 ``` bash
 $ curl http://localhost:8081/position/1/2
@@ -639,7 +640,7 @@ app :: Application
 app = serve personAPI server
 ```
 
-And we're good to go. You can run this example with `dist/build/getting-started/getting-started 4`.
+And we're good to go. You can run this example with `dist/build/tutorial/tutorial 4`.
 
 ``` bash
 $ curl http://localhost:8081/persons
@@ -766,7 +767,7 @@ server = do
   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
 ```
 
-Let's run this server (`dist/build/getting-started/getting-started 5`) and
+Let's run this server (`dist/build/tutorial/tutorial 5`) and
 query it, first without the file and then with the file.
 
 ``` bash
@@ -813,7 +814,7 @@ serveDirectory :: FilePath -> Server Raw
 ```
 
 `serveDirectory`'s argument must be a path to a valid directory. You can see a
-example below, runnable with `dist/build/getting-started/getting-started 6`
+example below, runnable with `dist/build/tutorial/tutorial 6`
 (you **must** run it from within the *servant-examples/* directory!), which is
 a webserver that serves the various bits of code covered in this
 getting-started.
@@ -831,29 +832,29 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = serveDirectory "getting-started"
+server = serveDirectory "tutorial"
 
 app :: Application
 app = serve api server
 ```
 
-This server will match any request whose path starts with `/code` and will look for a file at the path described by the rest of the request path, inside the *getting-started/* directory of the path you run the program from.
+This server will match any request whose path starts with `/code` and will look for a file at the path described by the rest of the request path, inside the *tutorial/* directory of the path you run the program from.
 
 In other words:
 
-- If a client requests `/code/foo.txt`, the server will look for a file at `./getting-started/foo.txt` (and fail)
-- If a client requests `/code/GS1.hs`, the server will look for a file at `./getting-started/GS1.hs` (and succeed)
-- If a client requests `/code/foo/bar/baz/movie.mp4`, the server will look for a file at `./getting-started/foo/bar/baz/movie.mp4` (and fail)
+- If a client requests `/code/foo.txt`, the server will look for a file at `./tutorial/foo.txt` (and fail)
+- If a client requests `/code/T1.hs`, the server will look for a file at `./tutorial/T1.hs` (and succeed)
+- If a client requests `/code/foo/bar/baz/movie.mp4`, the server will look for a file at `./tutorial/foo/bar/baz/movie.mp4` (and fail)
 
 Here is our little server in action.
 
 ``` haskell
-$ curl http://localhost:8081/code/GS1.hs
+$ curl http://localhost:8081/code/T1.hs
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
-module GS1 where
+module T1 where
 
 import Data.Aeson
 import Data.Time.Calendar
@@ -891,39 +892,47 @@ server = return users
 
 app :: Application
 app = serve userAPI server
-$ curl http://localhost:8081/code/getting-started.hs
+$ curl http://localhost:8081/code/tutorial.hs
 import Network.Wai
 import Network.Wai.Handler.Warp
 import System.Environment
 
-import qualified GS1
-import qualified GS2
-import qualified GS3
-import qualified GS4
-import qualified GS5
-import qualified GS6
+import qualified T1
+import qualified T2
+import qualified T3
+import qualified T4
+import qualified T5
+import qualified T6
+import qualified T7
+import qualified T9
+import qualified T10
 
-app :: String -> Maybe Application
-app n = case n of
-  "1" -> Just GS1.app
-  "2" -> Just GS2.app
-  "3" -> Just GS3.app
-  "4" -> Just GS4.app
-  "5" -> Just GS5.app
-  "6" -> Just GS6.app
-  _   -> Nothing
+app :: String -> (Application -> IO ()) -> IO ()
+app n f = case n of
+  "1" -> f T1.app
+  "2" -> f T2.app
+  "3" -> f T3.app
+  "4" -> f T4.app
+  "5" -> f T5.app
+  "6" -> f T6.app
+  "7" -> f T7.app
+  "8" -> f T3.app
+  "9" -> T9.writeJSFiles >> f T9.app
+  "10" -> f T10.app
+  _   -> usage
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-    [n] -> maybe usage (run 8081) (app n)
+    [n] -> app n (run 8081)
     _   -> usage
 
 usage :: IO ()
 usage = do
-  putStrLn "Usage:\t getting-started N"
+  putStrLn "Usage:\t tutorial N"
   putStrLn "\t\twhere N is the number of the example you want to run."
+
 $ curl http://localhost:8081/foo
 not found
 ```
@@ -1016,7 +1025,7 @@ app :: Application
 app = serve readerAPI readerServer
 ```
 
-And we can indeed see this webservice in action by running `dist/build/getting-started/getting-started 7`.
+And we can indeed see this webservice in action by running `dist/build/tutorial/tutorial 7`.
 
 ``` bash
 $ curl http://localhost:8081/a

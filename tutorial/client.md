@@ -78,13 +78,13 @@ run = do
       print em
 ```
 
-You can now run `dist/build/getting-started/getting-started 8` (the server) and
-`dist/build/gs8-main/gs8-main` (the client) to see them both in action.
+You can now run `dist/build/tutorial/tutorial 8` (the server) and
+`dist/build/t8-main/t8-main` (the client) to see them both in action.
 
 ``` bash
-$ dist/build/getting-started/getting-started 8
+$ dist/build/tutorial/tutorial 8
 # and in another terminal:
-$ dist/build/gs8-main/gs8-main
+$ dist/build/t8-main/t8-main
 Position {x = 10, y = 10}
 HelloMessage {msg = "Hello, servant"}
 Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we miss you!", body = "Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!"}

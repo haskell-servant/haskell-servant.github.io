@@ -28,8 +28,8 @@ instance ToCapture (Capture "y" Int) where
     DocCapture "y"                                -- name
                "(integer) position on the y axis" -- description
 
-instance ToSample GS3.Position GS3.Position where
-  toSample _ = Just (GS3.Position 3 14) -- example of output
+instance ToSample T3.Position T3.Position where
+  toSample _ = Just (T3.Position 3 14) -- example of output
 
 instance ToParam (QueryParam "name" String) where
   toParam _ =
@@ -38,21 +38,21 @@ instance ToParam (QueryParam "name" String) where
                   "Name of the person to say hello to." -- description
                   Normal -- Normal, List or Flag
 
-instance ToSample GS3.HelloMessage GS3.HelloMessage where
+instance ToSample T3.HelloMessage T3.HelloMessage where
   toSamples _ =
-    [ ("When a value is provided for 'name'", GS3.HelloMessage "Hello, Alp")
-    , ("When 'name' is not specified", GS3.HelloMessage "Hello, anonymous coward")
+    [ ("When a value is provided for 'name'", T3.HelloMessage "Hello, Alp")
+    , ("When 'name' is not specified", T3.HelloMessage "Hello, anonymous coward")
     ]
     -- mutliple examples to display this time
 
-ci :: GS3.ClientInfo
-ci = GS3.ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]
+ci :: T3.ClientInfo
+ci = T3.ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]
 
-instance ToSample GS3.ClientInfo GS3.ClientInfo where
+instance ToSample T3.ClientInfo T3.ClientInfo where
   toSample _ = Just ci
 
-instance ToSample GS3.Email GS3.Email where
-  toSample _ = Just (GS3.emailForClient ci)
+instance ToSample T3.Email T3.Email where
+  toSample _ = Just (T3.emailForClient ci)
 ```
 
 Types that are used as request or response bodies have to instantiate the `ToSample` typeclass which lets you specify one or more examples of values. `Capture`s and `QueryParam`s have to instantiate their respective `ToCapture` and `ToParam` classes and provide a name and some information about the concrete meaning of that argument, as illustrated in the code above.
@@ -61,7 +61,7 @@ With all of this, we can derive docs for our API.
 
 ``` haskell
 apiDocs :: API
-apiDocs = docs GS3.api -- GS3.api is a Proxy from earlier
+apiDocs = docs T3.api -- T3.api is a Proxy from earlier
 ```
 
 `API` is a type provided by *servant-docs* that stores all the information one needs about a web API in order to generate documentation in some format. Out of the box, *servant-docs* only provides a pretty documentation printer that outputs [Markdown](http://en.wikipedia.org/wiki/Markdown), but the [servant-pandoc](http://hackage.haskell.org/package/servant-pandoc) package can be used to target many useful formats.
@@ -171,7 +171,7 @@ docsBS :: ByteString
 docsBS = encodeUtf8
        . pack
        . markdown
-       $ docsWithIntros [intro] GS3.api
+       $ docsWithIntros [intro] T3.api
 
   where intro = DocIntro "Welcome" ["This is our super webservice's API.", "Enjoy!"]
 ```
@@ -181,13 +181,13 @@ docsBS = encodeUtf8
 We can now serve the API *and* the API docs with a simple server.
 
 ``` haskell
-type DocsAPI = GS3.API :<|> Raw
+type DocsAPI = T3.API :<|> Raw
 
 api :: Proxy DocsAPI
 api = Proxy
 
 server :: Server DocsAPI
-server = GS3.server :<|> serveDocs
+server = T3.server :<|> serveDocs
 
   where serveDocs _ respond =
           respond $ responseLBS ok200 [plain] docsBS
@@ -198,4 +198,4 @@ app :: Application
 app = serve api server
 ```
 
-And if you spin up this server with `dist/build/getting-started/getting-started 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
+And if you spin up this server with `dist/build/tutorial/tutorial 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
