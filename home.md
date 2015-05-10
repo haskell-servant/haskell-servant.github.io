@@ -10,9 +10,9 @@ title: Home
 
 ``` haskell
              -- GET /date
-type MyAPI = "date" :> Get Date
+type MyAPI = "date" :> Get '[JSON] Date
              -- GET /time/:tz
-        :<|> "time" :> Capture "tz" Timezone :> Get Time
+        :<|> "time" :> Capture "tz" Timezone :> Get '[JSON] Time
 ```
 
 This represents an API with two endpoints, both of which accept only GET requests, and which return a (JSON representation of) a `Date` and `Time` object, respectively.
@@ -26,6 +26,7 @@ server = getDate :<|> getTimeForTZ
   where getDate = liftIO getCurrentDate
         getTimeForTZ tz = liftIO $ getTimeAtTZ tz
 
+-- assuming we have
 getCurrentDate :: IO Date
 getTimeAtTZ :: Timezone -> IO Time
 

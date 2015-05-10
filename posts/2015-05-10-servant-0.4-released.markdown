@@ -10,7 +10,7 @@ a lot happened in and around *servant*. Definitely enough to justify a new relea
 This post announces new releases of all the servant packages, with many local
 changes but also some major ones that affect all packages. You can find the
 detailed changelogs at the end of this post, but here are a few major features
-you may want to learn about.
+you may want to learn about. This website also features a [new tutorial](/tutorial) that explains how to use *servant* from scratch.
 
 # Multiple content-type support
 
@@ -66,7 +66,7 @@ serialization format based on the request's "Accept" header for you.
  goes the other way around - serialization for `ReqBody`, deserialization for
  methods.)
 
-# Servant-blaze and servant-lucid
+# *servant-blaze* and *servant-lucid*
 
 Declaring new content-types, and the associated constraints for them, is quite
 easy. But to make it easier still, we are also announcing two new packages:
