@@ -93,6 +93,7 @@ pre.sourceCode {
     background-color: #FFFCF6;
     padding: 16px;
     border: 1px solid grey;
+    overflow-x: auto;
 }
 
 p > code, li > code {
