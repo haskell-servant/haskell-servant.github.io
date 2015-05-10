@@ -1,123 +1,103 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>servant - Rethinking webservices and APIs in Haskell, one combinator at a time</title>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Home - haskell-servant</title>
+        <link rel="stylesheet" type="text/css" href="./css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="./">servant</a>
+            </div>
+            <div id="navigation">
+                <a href="./">Home</a>
+                <a href="./blog.html">Blog</a>
+                <a href="./tutorial">Tutorial</a>
+                <a href="./tips.html">Tips and tricks</a>
+                <a href="./talks.html">Talks</a>
+                <a href="https://github.com/haskell-servant/servant">Github</a>
+            </div>
+        </div>
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <!-- <link rel="stylesheet" href="stylesheets/pygment_trac.css">-->
-    <link rel="stylesheet" href="stylesheets/styles/github.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <p><img src="https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png"/></p>
-        <h1>servant</h1>
-        <p>a family of combinators to define webservice APIs, and serve, document and query them</p>
+        <div id="content">
+            <h1>Home</h1>
 
+            <h1 id="webservice-api-combinators">Webservice API combinators</h1>
+<p><em>servant</em> is a set of libraries that makes building Haskell webservices a breeze. With only the thinnest sliver of boilerplate, you get a type-safe service that is capable of generating client-side code (Haskell or Javascript) and documentation for free. See for yourself.</p>
+<h2 id="a-webservice-api-is-a-type">A webservice API is a type</h2>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">             <span class="co">-- GET /date</span>
+<span class="kw">type</span> <span class="dt">MyAPI</span> <span class="fu">=</span> <span class="st">&quot;date&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Date</span>
+             <span class="co">-- GET /time/:tz</span>
+        <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;time&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;tz&quot;</span> <span class="dt">Timezone</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Time</span></code></pre>
+<p>This represents an API with two endpoints, both of which accept only GET requests, and which return a (JSON representation of) a <code>Date</code> and <code>Time</code> object, respectively.</p>
+<h2 id="that-can-be-served">… that can be served …</h2>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">MyAPI</span>
+server <span class="fu">=</span> getDate <span class="fu">:&lt;|&gt;</span> getTimeForTZ
 
-        <p class="view"><a href="https://github.com/haskell-servant">View the repositories</a></p>
+  <span class="kw">where</span> getDate <span class="fu">=</span> liftIO getCurrentDate
+        getTimeForTZ tz <span class="fu">=</span> liftIO <span class="fu">$</span> getTimeAtTZ tz
 
-        <p class="view"><a href="http://haskell-servant.github.io/getting-started/">Getting Started with servant</a></p>
+<span class="co">-- assuming we have</span>
+<span class="ot">getCurrentDate ::</span> <span class="dt">IO</span> <span class="dt">Date</span>
+<span class="ot">getTimeAtTZ ::</span> <span class="dt">Timezone</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Time</span>
 
-      </header>
-      <section>
-        <h2>
-<a id="webservice-api-combinators" class="anchor" href="#webservice-api-combinators" aria-hidden="true"><span class="octicon octicon-link"></span></a>Webservice API combinators</h2>
-
-<p><i>servant</i> is a set of libraries that makes building Haskell webservices a
-breeze. With only the thinnest sliver of boilerplate, you get a type-safe
-service that is capable of generating client-side code (Haskell or Javascript) and documentation for
-free. See for yourself.</p>
-
-    <h3>A webservice API is a type</h3>
-
-<pre>
-<code class="haskell">
-             -- GET /date
-type MyAPI = "date" :> Get Date
-             -- GET /time/:tz
-        :<|> "time" :> Capture "tz" Timezone :> Get Time
-</code>
-</pre>
-
-<p>This represents an API with two endpoints, both of which accept only GET
-requests, and which return a (JSON representation of) a <code>Date</code> and
-<code>Time</code> object, respectively.</p>
-
-    <h3>That can be served</h3>
-
-<pre>
-<code class="haskell">
-server :: Server MyAPI
-server = getDate :<|> getTimeForTZ
-
-  where getDate = liftIO getCurrentDate
-        getTimeForTZ tz = liftIO $ getTimeAtTZ tz
-
-getCurrentDate :: IO Date
-getTimeAtTZ :: Timezone -> IO Time
-
-main :: IO ()
-main = run 8000 $ serve myAPI server
-    where myAPI :: Proxy MyAPI
-          myAPI = Proxy
-</code>
-</pre>
-
-<p>One handler per endpoint. The handlers' types must match those described in
-the endpoint. URL captures, GET parameters, headers or request body must be
-explicitly mentioned and get <em>automatically</em> turned into arguments to
-the handlers.</p>
-
-    <h3>And more!</h3>
-
-<p>This representation lets us generate client-side querying functions
-automatically, in Haskell and Javascript. API docs too!</p>
-
-<p>To find out more, please check our <em><a href="http://haskell-servant.github.io/getting-started/" title="Getting started">Getting Started</a></em> guide.</p>
-
-    <h3>Documentation</h3>
-    <h4>Packages</h4>
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> run <span class="dv">8000</span> <span class="fu">$</span> serve myAPI server
+    <span class="kw">where</span><span class="ot"> myAPI ::</span> <span class="dt">Proxy</span> <span class="dt">MyAPI</span>
+          myAPI <span class="fu">=</span> <span class="dt">Proxy</span></code></pre>
+<p>One handler per endpoint. The handlers’ types must match those described in the endpoint. URL captures, GET parameters, headers or request body must be explicitly mentioned and get automatically turned into arguments to the handlers.</p>
+<h3 id="and-more">… and more!</h3>
+<p>This representation lets us generate client-side querying functions automatically, in Haskell and Javascript. API docs too!</p>
+<p>To find out more, please check our <a href="./tutorial">tutorial</a>.</p>
+<h1 id="documentation-and-community">Documentation and community</h1>
+<h2 id="tutorials">Tutorials</h2>
 <ul>
-  <li><a href="/servant">servant</a>, API types and combinators</li>
-  <li><a href="/servant-server">servant-server</a>, for creating a server </li>
-  <li><a href="/servant-client">servant-client</a>, for generating haskell functions to query APIs automatically</li>
-  <li><a href="/servant-jquery">servant-jquery</a>, for generating javascript functions to query APIs automatically</li>
-  <li><a href="/servant-docs">servant-docs</a>, for assistance in API docs generation</li>
+<li><a href="./tutorial">Tutorial</a> (it’s recommended to start here)</li>
+<li><a href="./extending.html">Extending servant</a></li>
+<li><a href="./client-in-5-minutes.html">Hackage API client in 5 minutes</a></li>
+<li><a href="https://halcyon.sh/tutorial/">Developing a servant application with Halcyon</a></li>
+<li>See <a href="./talks.html">the talks</a></li>
 </ul>
-    <h4>Tutorials</h4>
-    <ul>
-        <li><a href="http://haskell-servant.github.io/getting-started/"
-            title="Getting started">Getting Started</a></li>
-        <li><a href="http://haskell-servant.github.io/extending-servant.html"
-            title="Extending Servant">Extending Servant</a></li>
-        <li><a href="https://halcyon.sh/tutorial/" title="Developing a servant app with Halcyon">Developing a servant application with <i>Halcyon</i></a></li>
-        <!--<li><a href="http://haskell-servant.github.io/versioning-your-api.html"-->
-            <!--title="Versioning Your API">Versioning Your API</a></li>-->
-    </ul>
-    <h4>Mailing list and IRC</h4>
+<h2 id="examples">Examples</h2>
+<p><em>servant</em> comes with quite a few examples, among which the ones studied in the <a href="./tutorial">tutorial</a>. You can find them <a href="https://github.com/haskell-servant/servant/tree/master/servant-examples">here</a>.</p>
+<h2 id="haddocks">Haddocks</h2>
+<ul>
+<li><a href="http://hackage.haskell.org/package/servant">servant</a>, API types and combinators</li>
+<li><a href="http://hackage.haskell.org/package/servant-server">servant-server</a>, for creating a server</li>
+<li><a href="http://hackage.haskell.org/package/servant-client">servant-client</a>, for generating haskell functions to query APIs automatically</li>
+<li><a href="http://hackage.haskell.org/package/servant-jquery">servant-jquery</a>, for generating javascript functions to query APIs automatically</li>
+<li><a href="http://hackage.haskell.org/package/servant-docs">servant-docs</a>, for assistance in API docs generation</li>
+</ul>
+<h2 id="mailing-list-and-irc">Mailing list and IRC</h2>
+<ul>
+<li><a href="https://groups.google.com/forum/#!forum/haskell-servant">Mailing list</a></li>
+<li><strong>#servant</strong> on the freenode IRC network</li>
+</ul>
 
-    <ul>
-        <li><a href="https://groups.google.com/forum/#!forum/haskell-servant"
-            title="Mailing list">Mailing list</a></li>
-        <li>#servant on freenode
+<h2>Blog</h2>
+<p>Latest blog posts (<a href="./blog.html">all</a>)</p>
+<ul>
+    
+        <li>
+            <a href="./posts/2015-05-10-servant-0.4-released.html">servant 0.4 released</a>,
+            
+            	by <i>Alp Mestanogullari, Julian Arni</i>
+            
+            - May 10, 2015
         </li>
-    </ul>
+    
+</ul>
 
-      </section>
-      <footer>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
-    </div>
-    <script src="javascripts/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-    <script src="javascripts/scale.fix.js"></script>
 
-  </body>
+
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            -
+            <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
+        </div>
+    </body>
 </html>

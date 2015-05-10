@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Extending servant - haskell-servant</title>
+        <link rel="stylesheet" type="text/css" href="./css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="./">servant</a>
+            </div>
+            <div id="navigation">
+                <a href="./">Home</a>
+                <a href="./blog.html">Blog</a>
+                <a href="./tutorial">Tutorial</a>
+                <a href="./tips.html">Tips and tricks</a>
+                <a href="./talks.html">Talks</a>
+                <a href="https://github.com/haskell-servant/servant">Github</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>Extending servant</h1>
+
+            <div id="toc"><h3>Table of contents</h3><ul>
+<li><a href="#new-combinators">New combinators</a></li>
+<li><a href="#new-interpreters">New Interpreters</a></li>
+<li><a href="#other-directions">Other Directions</a></li>
+</ul></div>
+<p>One of the best features of servant is that it is easily extensible. Extensions and plugins, such as client-library generation and support for authentication or cookies, generally happen along two axes: through the introduction of new combinators, and through new ‘interpretations’ for the combinators. You can think of the combinators as a little “API DSL”, which is a deep-embedding in that multiple interpretations for it are possible.</p>
+<p>Note that the two axes don’t quite exhaust the ways in which you can extend servant, but they are the most common.</p>
+<section id="new-combinators" class="level1">
+<h1>New combinators</h1>
+<p>Let’s suppose our objective was to add a <code>Post</code>-like combinator that returns a response with an HTTP <a href="http://en.wikipedia.org/wiki/HTTP_location">Location</a> header with the location of a newly-created resource.</p>
+<p>First we define a datatype:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PostWithLocation</span> a
+    <span class="kw">deriving</span> <span class="dt">Typeable</span></code></pre>
+<p>Next, we need to describe how this ought to be interpreted. Interpretations are defined via instances of classes. In particular, when we want to define how the server should behave, we instantiate the <code>HasServer</code> class:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Control.Monad.Trans.Either</span>
+<span class="kw">import </span><span class="dt">Data.Aeson</span>
+<span class="kw">import </span><span class="dt">Data.Proxy</span>
+<span class="kw">import </span><span class="dt">Data.String.Conversions</span>
+<span class="kw">import </span><span class="dt">Data.Typeable</span>
+<span class="kw">import </span><span class="dt">Network.HTTP.Types</span>
+<span class="kw">import </span><span class="dt">Network.Wai</span>
+<span class="kw">import </span><span class="dt">Servant.Server</span>
+
+<span class="kw">data</span> <span class="dt">Link</span> <span class="fu">=</span> <span class="dt">Link</span> <span class="dt">Ascii</span>
+
+<span class="kw">instance</span> <span class="dt">ToJSON</span> a <span class="ot">=&gt;</span> <span class="dt">HasServer</span> (<span class="dt">PostWithLocation</span> a) <span class="kw">where</span>
+  <span class="kw">type</span> <span class="dt">Server</span> (<span class="dt">PostWithLocation</span> a) <span class="fu">=</span> <span class="dt">EitherT</span> (<span class="dt">Int</span>, <span class="dt">String</span>) <span class="dt">IO</span> (<span class="dt">Link</span>, a)
+
+  route <span class="dt">Proxy</span> action request respond
+    <span class="fu">|</span> null (pathInfo request) <span class="fu">&amp;&amp;</span> requestMethod request <span class="fu">==</span> methodPost <span class="fu">=</span> <span class="kw">do</span>
+        e <span class="ot">&lt;-</span> runEitherT action
+        respond <span class="fu">.</span> succeedWith <span class="fu">$</span> <span class="kw">case</span> e <span class="kw">of</span>
+          <span class="dt">Right</span> (<span class="dt">Link</span> link, out) <span class="ot">-&gt;</span>
+            responseLBS status201 [
+                (<span class="st">&quot;Content-Type&quot;</span>, <span class="st">&quot;application/json&quot;</span>)
+                (<span class="st">&quot;Location&quot;</span>, link)
+                ] (encode out)
+          <span class="dt">Left</span> (status, message) <span class="ot">-&gt;</span>
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    <span class="fu">|</span> null (pathInfo request) <span class="fu">&amp;&amp;</span> requestMethod request <span class="fu">/=</span> methodPost <span class="fu">=</span>
+        respond <span class="fu">$</span> failWith <span class="dt">WrongMethod</span>
+    <span class="fu">|</span> otherwise <span class="fu">=</span> respond <span class="fu">$</span> failWith <span class="dt">NotFound</span></code></pre>
+<p>If you compare this with the implementation of <a href="http://haskell-servant.github.io/servant/src/Servant-API-Post.html#Post">Post</a>, you’ll see that very little changed. We’ve changed the type of the associated <code>Server</code> type to be a <code>EitherT (Int, String) IO (Link, a)</code> instead of <code>EitherT (Int, String) IO a</code>. This means that the function that ultimately implements this endpoint must return a tuple of the link and the return value, and not just the return value. In the definition of the <code>route</code> method, we also changed the code to add the link to the <code>Location</code> header. Note how in the definition of the instance, we have access to the details (e.g., headers) of the request and response, whereas the code that implements the endpoint doesn’t (or at least not directly - we could, if we so desired, pass all of the details of the request to the function, creating a new combinator).</p>
+<p>If we look at the original definition of <code>HasServer</code>, we see that the second parameter of <code>route</code> – in this case, <code>action</code> has the type of the <code>Server</code> associated type synonym instance. In this case, that is our <code>EitherT (Int, String) IO (Link, a)</code>. This is just what we wanted in this case, because <code>PostWithLocation</code> should always be the last element of any route type. But if we were defining a combinator that wasn’t at the end, we would likely need to delegate some decision-making to combinators further on down the line. Look at the <code>HasServer</code> instance for <code>(:&gt;)</code> if you’re curious how that works.</p>
+<p>We can now use our combinator:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">PostWithLocation</span> ()
+
+<span class="ot">myAPI ::</span> <span class="dt">Proxy</span> <span class="dt">MyAPI</span>
+myAPI <span class="fu">=</span> <span class="dt">Proxy</span>
+
+<span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">MyAPI</span>
+server <span class="fu">=</span> mkNewUser
+    <span class="kw">where</span>
+<span class="ot">      mkNewUser ::</span> <span class="dt">User</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> (<span class="dt">Int</span>, <span class="dt">String</span>) <span class="dt">IO</span> (<span class="dt">Link</span>, a)
+      mkNewUser <span class="fu">=</span> <span class="fu">...</span></code></pre>
+<p>Depending on your use case, you may also want to define <code>HasClient</code> and <code>HasDocs</code> instances for your combinator, so that you (and other people) can benefit from code and documentation generation.</p>
+</section>
+<section id="new-interpreters" class="level1">
+<h1>New Interpreters</h1>
+<p>If you’ve come this far, you should already have a sense for what defining new ‘interpreters’ for the API consists of. You write a new class, akin to <code>HasServer</code>, and instances of that class for existing combinators.</p>
+<p>The most obvious use of a new interpreter is code generation. I highly recommend taking a look at <a href="http://hackage.haskell.org/packge/servant-jquery">servant-jquery</a> for inspiration. As you’ll see, one approach is to have a record type that represents all the information you need to write a client for a particular endpoint, and then pass that record along, from instance to instance, filling in the details until you reach an end combinator (<code>Get</code>, <code>Post</code>, etc.).</p>
+</section>
+<section id="other-directions" class="level1">
+<h1>Other Directions</h1>
+<p>In rare cases, extensions to servant may involve something that doesn’t quite belong in either of these categories. For instance, a distant dream of mine in getting <em>HATEOAS</em> for free in servant. The idea is that given an API:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> ()
+        <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">User</span></code></pre>
+<p>And a server <code>MyServer</code> for it, we would <em>automatically</em> create a type:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPIResty</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="dt">HATEOASData</span>
+            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">HATEOASData</span>
+            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> ()
+            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">HATEOASData</span>
+            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">User</span></code></pre>
+<p>And a server for it, that behaves just like <code>MyServer</code> insofar as their endpoints coincide, but would return information about the server’s layout beneath the current endpoint for all other endpoints.</p>
+<p>This involves considerable trickery at the type-level. In particular, it involves writing a class that rewrites types and servers hand-in-hand, to generate a new server.</p>
+<p>Similarly, an interesting extension to servant would be a rewrite system that makes a trie out of the API type, and correspondingly changing the data-level implementation of a server, so that route lookups can be faster than linear.</p>
+<p>If this, or related more advanced projects, sounds interesting to you, get in touch!</p>
+</section>
+
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            -
+            <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
+        </div>
+    </body>
+</html>
