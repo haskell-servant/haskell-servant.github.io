@@ -8,7 +8,6 @@ type. Can we have a webservice already?
 
 If you want to follow along with the code and run the examples while you read this guide:
 
-<--! We should provide a script for this -->
 ``` bash
 git clone https://github.com/haskell-servant/servant.git
 cd servant
