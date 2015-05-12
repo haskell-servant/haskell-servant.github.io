@@ -101,11 +101,11 @@ readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span 
 <section id="complete-changelogs" class="level1">
 <h1>Complete CHANGELOGs</h1>
 <ul>
-<li><a href="http://hackage.haskell.org/package/servant-0.4/changelog">servant</a></li>
-<li><a href="http://hackage.haskell.org/package/servant-server-0.4/changelog">servant-server</a></li>
-<li><a href="http://hackage.haskell.org/package/servant-client-0.4/changelog">servant-client</a></li>
-<li><a href="http://hackage.haskell.org/package/servant-docs-0.4/changelog">servant-docs</a></li>
-<li><a href="http://hackage.haskell.org/package/servant-jquery-0.4/changelog">servant-jquery</a></li>
+<li><a href="http://hackage.haskell.org/package/servant-0.4.0/changelog">servant</a></li>
+<li><a href="http://hackage.haskell.org/package/servant-server-0.4.0/changelog">servant-server</a></li>
+<li><a href="http://hackage.haskell.org/package/servant-client-0.4.0/changelog">servant-client</a></li>
+<li><a href="http://hackage.haskell.org/package/servant-docs-0.4.0/changelog">servant-docs</a></li>
+<li><a href="http://hackage.haskell.org/package/servant-jquery-0.4.0/changelog">servant-jquery</a></li>
 </ul>
 </section>
 <section id="website" class="level1">
