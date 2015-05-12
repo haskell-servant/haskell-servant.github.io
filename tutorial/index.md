@@ -82,7 +82,7 @@ cover the couple of ways you can extend servant for a great good.
 ## Github
 
 - the servant packages: [haskell-servant/servant](https://github.com/haskell-servant/servant)
-- the website (including this tutorial): [haskell-servant/haskell-servant.github.io](https://github.com/haskell-servant/haskell-servant.github.io/hakyll/tree)
+- the website (including this tutorial): [haskell-servant/haskell-servant.github.io](https://github.com/haskell-servant/haskell-servant.github.io/tree/hakyll)
 - Feel free to use the issue tracker (or to send PRs!) on the website's repository to give feedback and suggestions about this tutorial
 
 Thanks for reading!
