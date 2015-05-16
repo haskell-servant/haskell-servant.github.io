@@ -6,6 +6,12 @@ toc: true
 
 This is an introductory tutorial to the current version of *servant*, which is **0.4**. Any comment or issue can be directed to [this website's issue tracker](http://github.com/haskell-servant/haskell-servant.github.io/issues).
 
+## Github
+
+- the servant packages: [haskell-servant/servant](https://github.com/haskell-servant/servant)
+- the website (including this tutorial): [haskell-servant/haskell-servant.github.io](https://github.com/haskell-servant/haskell-servant.github.io/tree/hakyll)
+- Feel free to use the issue tracker (or to send PRs!) on the website's repository to give feedback and suggestions about this tutorial
+
 # Introduction
 
 *servant* has the following guiding principles:
@@ -78,11 +84,5 @@ cover the couple of ways you can extend servant for a great good.
 
 - [Mailing list](https://groups.google.com/forum/#!forum/haskell-servant)
 - Join us on IRC: **#servant** on *irc.freenode.net*
-
-## Github
-
-- the servant packages: [haskell-servant/servant](https://github.com/haskell-servant/servant)
-- the website (including this tutorial): [haskell-servant/haskell-servant.github.io](https://github.com/haskell-servant/haskell-servant.github.io/tree/hakyll)
-- Feel free to use the issue tracker (or to send PRs!) on the website's repository to give feedback and suggestions about this tutorial
 
 Thanks for reading!
