@@ -105,7 +105,7 @@ the right type that a bunch of request handlers should have just from the
 corresponding API type.
 
 The first thing to know about the `Server` type family is that behind the
-scenes it will drive the routing , letting you focus only on the business
+scenes it will drive the routing, letting you focus only on the business
 logic. The second thing to know is that for each endpoint, your handlers will
 by default run in the `EitherT ServantErr IO` monad. This is overridable very
 easily, as explained near the end of this guide. Third thing, the type of the
@@ -720,7 +720,7 @@ server = do
 
 If you want to explicitly fail at providing the result promised by an endpoint
 using the appropriate HTTP status code (not found, unauthorized, etc) and some
-error message, all you have to do is use the `left` function mentionned above
+error message, all you have to do is use the `left` function mentioned above
 and provide it with the appropriate value of type `ServantErr`, which is
 defined as:
 
@@ -802,7 +802,7 @@ $ curl --verbose http://localhost:8081/myfile.txt
 ## Serving static files
 
 *servant-server* also provides a way to just serve the content of a directory
-under some path in your web API. As mentionned earlier in this document, the
+under some path in your web API. As mentioned earlier in this document, the
 `Raw` combinator can be used in your APIs to mean "plug here any WAI
 application". Well, servant-server provides a function to get a file and
 directory serving WAI application, namely:
