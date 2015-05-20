@@ -147,4 +147,4 @@ writeJSFiles = do
   writeFile "getting-started/gs9/jq.js" jq
 ```
 
-And we're good to go. Start the server with `dist/build/tutorial/tutorial 9` and go to [http://localhost:8081/](http://localhost:8081/). Start typing in the name of one of the authors of our database or part of a book title and check out how long it takes to approximate &pi; using the method mentionned above.
+And we're good to go. Start the server with `dist/build/tutorial/tutorial 9` and go to [http://localhost:8081/](http://localhost:8081/). Start typing in the name of one of the authors of our database or part of a book title and check out how long it takes to approximate &pi; using the method mentioned above.

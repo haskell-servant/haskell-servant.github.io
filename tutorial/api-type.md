@@ -92,7 +92,7 @@ type UserAPI = "users" :> Get '[JSON] [User]
 ### `Capture`
 
 URL captures are parts of the URL that are variable and whose actual value is
-captured and passed to the request handlers. In may web frameworks, you'll see
+captured and passed to the request handlers. In many web frameworks, you'll see
 it written as in `/users/:userid`, with that leading `:` denoting that `userid`
 is just some kind of variable name or placeholder. For instance, if `userid` is
 supposed to range over all integers greater or equal to 1, our endpoint will
