@@ -1,6 +1,6 @@
 ---
 title: servant 0.4 released
-author: Alp Mestanogullari, Julian Arni
+author: The servant team
 date: 2015-05-10 15:00
 toc: true
 ---
