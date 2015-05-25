@@ -7,8 +7,28 @@
         <description><![CDATA[Posts from the haskell-servant blog]]></description>
         <atom:link href="http://haskell-servant.github.io/rss.xml" rel="self"
                    type="application/rss+xml" />
-        <lastBuildDate>Sun, 10 May 2015 00:00:00 UT</lastBuildDate>
+        <lastBuildDate>Mon, 25 May 2015 00:00:00 UT</lastBuildDate>
         <item>
+    <title>servant paper submitted to WGP 2015</title>
+    <link>http://haskell-servant.github.io/posts/2015-05-25-servant-paper-wgp-2015.html</link>
+    <description><![CDATA[<p>Sönke Hahn, Julian Arni, Andres Löh and myself have submitted a paper about <em>servant</em> to the <a href="http://www.wgp-sigplan.org/farmer/doku.php?id=2015">11th ACM SIGPLAN Workshop on Generic Programming</a>. Here’s the abstract.</p>
+<blockquote>
+<p>We describe the design and motivation for Servant, an extensible, type-level DSL for describing Web APIs. Servant APIs are Haskell types. An API type can be interpreted in several different ways: as a server that processes requests, interprets them and dispatches them to appropriate handlers; as a client that can correctly query the endpoints of the API; as systematic documentation for the API; and more. Servant is fully extensible: the API language can be augmented with new constructs, and new interpretations can be defined. The key Haskell features making all this possible are data kinds, (open) type families and (open) type classes. The techniques we use are reminiscent of general-purpose generic programming. However, where most generic programming libraries are interested in automatically deriving programs for a large class of datatypes from many different domains, we are only interested in a small class of datatypes that is used in the DSL for describing APIs.</p>
+</blockquote>
+<p>The full draft is available <a href="http://alpmestan.com/servant/servant-wgp.pdf">here</a>.</p>
+
+<div class="info">
+    Posted on May 25, 2015
+    
+        by Alp Mestanogullari
+    
+</div>
+]]></description>
+    <pubDate>Mon, 25 May 2015 00:00:00 UT</pubDate>
+    <guid>http://haskell-servant.github.io/posts/2015-05-25-servant-paper-wgp-2015.html</guid>
+    <dc:creator>servant developers</dc:creator>
+</item>
+<item>
     <title>servant 0.4 released</title>
     <link>http://haskell-servant.github.io/posts/2015-05-10-servant-0.4-released.html</link>
     <description><![CDATA[<div id="toc"><h3>Table of contents</h3><ul>
@@ -124,7 +144,7 @@ readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span 
 <div class="info">
     Posted on May 10, 2015
     
-        by Alp Mestanogullari, Julian Arni
+        by The servant team
     
 </div>
 ]]></description>

@@ -78,7 +78,7 @@
 </section>
 <section id="capture" class="level3">
 <h3><code>Capture</code></h3>
-<p>URL captures are parts of the URL that are variable and whose actual value is captured and passed to the request handlers. In may web frameworks, you’ll see it written as in <code>/users/:userid</code>, with that leading <code>:</code> denoting that <code>userid</code> is just some kind of variable name or placeholder. For instance, if <code>userid</code> is supposed to range over all integers greater or equal to 1, our endpoint will match requests made to <code>/users/1</code>, <code>/users/143</code> and so on.</p>
+<p>URL captures are parts of the URL that are variable and whose actual value is captured and passed to the request handlers. In many web frameworks, you’ll see it written as in <code>/users/:userid</code>, with that leading <code>:</code> denoting that <code>userid</code> is just some kind of variable name or placeholder. For instance, if <code>userid</code> is supposed to range over all integers greater or equal to 1, our endpoint will match requests made to <code>/users/1</code>, <code>/users/143</code> and so on.</p>
 <p>The <code>Capture</code> combinator in servant takes a (type-level) string representing the “name of the variable” and a type, which indicates the type we want to decode the “captured value” to.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Capture</span> (<span class="ot">s ::</span> <span class="dt">Symbol</span>) a
 <span class="co">-- s :: Symbol just says that 's' must be a type-level string.</span></code></pre>
