@@ -51,7 +51,7 @@
 <span class="kw">cabal</span> sandbox init
 <span class="kw">cabal</span> sandbox add-source servant/ servant-client/ servant-server/ servant-jquery/ servant-docs/ servant-examples/
 <span class="kw">cd</span> servant-examples
-<span class="kw">cabal</span> install --only-dependencies
+<span class="kw">cabal</span> install --dependencies-only
 <span class="kw">cabal</span> configure <span class="kw">&amp;&amp;</span> <span class="kw">cabal</span> build</code></pre>
 <p>This will produce a <code>tutorial</code> executable in the <code>dist/build/tutorial</code> directory that just runs the example corresponding to the number specified as a command line argument:</p>
 <pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">dist/build/tutorial/tutorial</span>
@@ -383,11 +383,11 @@ eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
 <p>Now, let’s teach <em>lucid</em> how to render a <code>Person</code> as a row in a table, and then a list of <code>Person</code>s as a table with a row per person.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- HTML serialization of a single person</span>
 <span class="kw">instance</span> <span class="dt">ToHtml</span> <span class="dt">Person</span> <span class="kw">where</span>
-  toHtml p <span class="fu">=</span>
+  toHtml person <span class="fu">=</span>
     tr_ <span class="fu">$</span> <span class="kw">do</span>
-      td_ (toHtml <span class="fu">$</span> firstName p)
-      td_ (toHtml <span class="fu">$</span> lastName p)
-      td_ (toHtml <span class="fu">.</span> show <span class="fu">$</span> age p)
+      td_ (toHtml <span class="fu">$</span> firstName person)
+      td_ (toHtml <span class="fu">$</span> lastName person)
+      td_ (toHtml <span class="fu">.</span> show <span class="fu">$</span> age person)
 
   <span class="co">-- do not worry too much about this</span>
   toHtmlRaw <span class="fu">=</span> toHtml
@@ -396,9 +396,9 @@ eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
 <span class="kw">instance</span> <span class="dt">ToHtml</span> [<span class="dt">Person</span>] <span class="kw">where</span>
   toHtml persons <span class="fu">=</span> table_ <span class="fu">$</span> <span class="kw">do</span>
     tr_ <span class="fu">$</span> <span class="kw">do</span>
-      td_ <span class="st">&quot;first name&quot;</span>
-      td_ <span class="st">&quot;last name&quot;</span>
-      td_ <span class="st">&quot;age&quot;</span>
+      th_ <span class="st">&quot;first name&quot;</span>
+      th_ <span class="st">&quot;last name&quot;</span>
+      th_ <span class="st">&quot;age&quot;</span>
 
     <span class="co">-- this just calls toHtml on each person of the list</span>
     <span class="co">-- and concatenates the resulting pieces of HTML together</span>
@@ -533,7 +533,7 @@ $ <span class="kw">curl</span> --verbose http://localhost:8081/myfile.txt
 <p><em>servant-server</em> also provides a way to just serve the content of a directory under some path in your web API. As mentioned earlier in this document, the <code>Raw</code> combinator can be used in your APIs to mean “plug here any WAI application”. Well, servant-server provides a function to get a file and directory serving WAI application, namely:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- exported by Servant and Servant.Server</span>
 <span class="ot">serveDirectory ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Server</span> <span class="dt">Raw</span></code></pre>
-<p><code>serveDirectory</code>’s argument must be a path to a valid directory. You can see a example below, runnable with <code>dist/build/tutorial/tutorial 6</code> (you <strong>must</strong> run it from within the <em>servant-examples/</em> directory!), which is a webserver that serves the various bits of code covered in this getting-started.</p>
+<p><code>serveDirectory</code>’s argument must be a path to a valid directory. You can see an example below, runnable with <code>dist/build/tutorial/tutorial 6</code> (you <strong>must</strong> run it from within the <em>servant-examples/</em> directory!), which is a webserver that serves the various bits of code covered in this getting-started.</p>
 <p>The API type will be the following.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;code&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Raw</span></code></pre>
 <p>And the server:</p>
@@ -682,7 +682,7 @@ readerServerT <span class="fu">=</span> a <span class="fu">:&lt;|&gt;</span> b
 </section>
 <section id="enter-enter" class="level3">
 <h3>Enter <code>enter</code></h3>
-<p>That’s right. We have just written <code>readerToEither</code>, which is exactly what we could need to call on the results of all handlers to make the handlers have the right type for <code>serve</code>. Being cumbersome to do by hand, we provide a function <code>enter</code> which takes a natural transformation between two parametrized types <code>m</code> and <code>n</code> and a <code>ServerT someapi m</code>, and returns a <code>ServerT someapi n</code>.</p>
+<p>That’s right. We have just written <code>readerToEither</code>, which is exactly what we would need to apply to the results of all handlers to make the handlers have the right type for <code>serve</code>. Being cumbersome to do by hand, we provide a function <code>enter</code> which takes a natural transformation between two parametrized types <code>m</code> and <code>n</code> and a <code>ServerT someapi m</code>, and returns a <code>ServerT someapi n</code>.</p>
 <p>In our case, we can wrap up our little webservice by using <code>enter readerToEither</code> on our handlers.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">readerServer ::</span> <span class="dt">Server</span> <span class="dt">ReaderAPI</span>
 readerServer <span class="fu">=</span> enter readerToEither readerServerT
