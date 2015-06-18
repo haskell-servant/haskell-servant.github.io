@@ -209,7 +209,7 @@ type UserAPI = "users" :> ReqBody '[JSON] User :> Post '[JSON] User
                        :> Put '[JSON] User
                -- - equivalent to 'PUT /users/:userid' with a JSON
                --   object describing an User in the request body
-               --- returns an User encoded in JSON
+               -- - returns an User encoded in JSON
 ```
 
 ### Request `Header`s

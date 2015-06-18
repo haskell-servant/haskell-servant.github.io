@@ -14,7 +14,7 @@ cd servant
 cabal sandbox init
 cabal sandbox add-source servant/ servant-client/ servant-server/ servant-jquery/ servant-docs/ servant-examples/
 cd servant-examples
-cabal install --only-dependencies
+cabal install --dependencies-only
 cabal configure && cabal build
 ```
 
@@ -596,11 +596,11 @@ a list of `Person`s as a table with a row per person.
 ``` haskell
 -- HTML serialization of a single person
 instance ToHtml Person where
-  toHtml p =
+  toHtml person =
     tr_ $ do
-      td_ (toHtml $ firstName p)
-      td_ (toHtml $ lastName p)
-      td_ (toHtml . show $ age p)
+      td_ (toHtml $ firstName person)
+      td_ (toHtml $ lastName person)
+      td_ (toHtml . show $ age person)
 
   -- do not worry too much about this
   toHtmlRaw = toHtml
@@ -609,9 +609,9 @@ instance ToHtml Person where
 instance ToHtml [Person] where
   toHtml persons = table_ $ do
     tr_ $ do
-      td_ "first name"
-      td_ "last name"
-      td_ "age"
+      th_ "first name"
+      th_ "last name"
+      th_ "age"
 
     -- this just calls toHtml on each person of the list
     -- and concatenates the resulting pieces of HTML together
@@ -812,7 +812,7 @@ directory serving WAI application, namely:
 serveDirectory :: FilePath -> Server Raw
 ```
 
-`serveDirectory`'s argument must be a path to a valid directory. You can see a
+`serveDirectory`'s argument must be a path to a valid directory. You can see an
 example below, runnable with `dist/build/tutorial/tutorial 6`
 (you **must** run it from within the *servant-examples/* directory!), which is
 a webserver that serves the various bits of code covered in this
@@ -1009,7 +1009,7 @@ ServantErr IO`. But there's a simple solution to this.
 ### Enter `enter`
 
 That's right. We have just written `readerToEither`, which is exactly what we
-could need to call on the results of all handlers to make the handlers have the
+would need to apply to the results of all handlers to make the handlers have the
 right type for `serve`. Being cumbersome to do by hand, we provide a function
 `enter` which takes a natural transformation between two parametrized types `m`
 and `n` and a `ServerT someapi m`, and returns a `ServerT someapi n`.
