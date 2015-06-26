@@ -76,7 +76,7 @@ Depending on your use case, you may also want to define `HasClient` and `HasDocs
 
 If you've come this far, you should already have a sense for what defining new 'interpreters' for the API consists of. You write a new class, akin to `HasServer`, and instances of that class for existing combinators.
 
-The most obvious use of a new interpreter is code generation. I highly recommend taking a look at [servant-jquery](http://hackage.haskell.org/packge/servant-jquery) for inspiration. As you'll see, one approach is to have a record type that represents all the information you need to write a client for a particular endpoint, and then pass that record along, from instance to instance, filling in the details until you reach an end combinator (`Get`, `Post`, etc.).
+The most obvious use of a new interpreter is code generation. I highly recommend taking a look at [servant-jquery](http://hackage.haskell.org/package/servant-jquery) for inspiration. As you'll see, one approach is to have a record type that represents all the information you need to write a client for a particular endpoint, and then pass that record along, from instance to instance, filling in the details until you reach an end combinator (`Get`, `Post`, etc.).
 
 # Other Directions
 
