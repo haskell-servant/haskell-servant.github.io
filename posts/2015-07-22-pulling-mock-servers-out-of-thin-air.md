@@ -21,7 +21,7 @@ mock :: HasMock api => Proxy api -> Server api
 
 i.e "given an API type, please generate a mock server for such an API". This effectively means "please pull a mock server out of thing air for me".
 
-Out of thing air, really? Not exactly. But let's start by clearly stating the problem.
+Out of thin air, really? Not exactly. But let's start by clearly stating the problem.
 
 # The Problem
 
