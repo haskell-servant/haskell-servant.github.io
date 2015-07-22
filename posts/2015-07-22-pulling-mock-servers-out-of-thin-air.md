@@ -204,6 +204,6 @@ There are many more `HasMock` instances than the ones I have shown here of cours
 
 - I mentionned in [a previous post](https://haskell-servant.github.io/posts/2015-05-25-servant-paper-wgp-2015.html) that we had submitted a paper for the *Workshop on Generic Programming*, co-located with ICFP'15, in Vancouver this year. Well, the paper has been accepted!
 - Therefore, Julian Arni and/or Andres Löh will be giving a talk about servant there.
-- In addition to this, Julian recently gave a talk at [Curry-On!](http://www.curry-on.org/). The video will be uploaded on [their Youtube channel](https://www.youtube.com/channel/UC-WICcSW1k3HsScuXxDrp0w) in the upcoming days.
-- I submitted a very hands-on talk proposal for [the Haskell eXchange 2015](https://skillsmatter.com/conferences/7069-haskell-exchange-2015) in London. The programme hasn't been decided yet, but this is a very nice event nonetheless, so if you're not too far, consider attending!
+- In addition to this, Julian Arni recently gave a talk about servant at [Curry-On!](http://www.curry-on.org/). The video will be uploaded on [their Youtube channel](https://www.youtube.com/channel/UC-WICcSW1k3HsScuXxDrp0w) in the upcoming days.
+- I have submitted a very hands-on servant talk proposal for [the Haskell eXchange 2015](https://skillsmatter.com/conferences/7069-haskell-exchange-2015) in London. The programme hasn't been decided yet, but this is a very nice event nonetheless, so if you're not too far, consider attending!
 
