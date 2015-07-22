@@ -5,7 +5,23 @@ date: 2015-07-22 22:00
 toc: true
 ---
 
-A couple of days ago, *marcushg* mentionned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post. Let's start by clearly stating the problem.
+# Summary 
+
+A couple of days ago, *marcushg* mentionned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post and lets us taking a type describing a web API, such as:
+
+``` haskell
+type API = "user" :> Get '[JSON] User
+```
+
+and generate request handlers that just respond with random values of the appropriate type, `User` in our case. In *servant*/*wai* terms, this means we get a `mock` function with the type:
+
+``` haskell
+mock :: HasMock api => Proxy api -> Server api
+```
+
+i.e "given an API type, please generate a mock server for such an API". This effectively means "please pull a mock server out of thing air for me".
+
+Out of thing air, really? Not exactly. But let's start by clearly stating the problem.
 
 # The Problem
 
@@ -172,5 +188,22 @@ main :: IO ()
 main = run 8080 (serve api $ mock api)
 ```
 
+Our little program in action:
+
+``` bash
+$ curl localhost:8080/user
+{"username":"Yv\rG\u0014±Ssv\u001e>\u001aVF\u001e\u000fM5ø\u000ctefÚJ\u0001K4"}
+# yes, a truly original username.
+```
+
 In practice, this is really, honestly all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress [servant-mock](https://github.com/haskell-servant/servant/tree/servant-mock/servant-mock) package on github. The example can be found under `example/main.hs` there.
+
+There are many more `HasMock` instances than the ones I have shown here of course -- there's one for all the combinators provided by the *servant* package! So you can take any API type out there and just create a mock server for it, as long as you provide `Arbitrary` instances for your data types. Nothing too interesting though, but feel free to take a look at `src/Servant/Mock.hs` in the repository if you want to read the other instances.
+
+# Other news
+
+- I mentionned in [a previous post](https://haskell-servant.github.io/posts/2015-05-25-servant-paper-wgp-2015.html) that we had submitted a paper for the *Workshop on Generic Programming*, co-located with ICFP'15, in Vancouver this year. Well, the paper has been accepted!
+- Therefore, Julian Arni and/or Andres Löh will be giving a talk about servant there.
+- In addition to this, Julian recently gave a talk at [Curry-On!](http://www.curry-on.org/). The video will be uploadedd on [their Youtube channel](https://www.youtube.com/channel/UC-WICcSW1k3HsScuXxDrp0w) in the upcoming days.
+- I submitted a very hands-on talk proposal for [the Haskell eXchange 2015](https://skillsmatter.com/conferences/7069-haskell-exchange-2015) in London. The programme hasn't been decided yet, but this is a very nice event nonetheless, so if you're not too far, consider attending!
 
