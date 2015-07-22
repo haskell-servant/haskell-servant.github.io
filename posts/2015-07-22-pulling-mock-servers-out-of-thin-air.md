@@ -42,7 +42,7 @@ newtype User = User { username :: String }
 
 The goal would be to "automagically" derive a request handler of the right type that we could use as a placeholder until we properly implement a handler that talks to the database and responds with "the real data".
 
-For anyone not familiar with *servant* already, you just need to know that it means we need to somehow automatically implement a function with the type:
+For anyone not familiar with *servant* already, you just need to know that it means we need to somehow automatically implement a computation with the type:
 
 ``` haskell
 getUser :: EitherT ServantErr IO User
