@@ -1,7 +1,7 @@
 ---
 title: Pulling a mock server for your APIs out of thin air
 author: Alp Mestanogullari
-date: 2015-07-22 22:00
+date: 2015-07-24 17:15
 toc: true
 ---
 
