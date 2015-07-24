@@ -193,7 +193,7 @@ $ curl localhost:8080/user
 # yes, a truly original username.
 ```
 
-This is really all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress [servant-mock](https://github.com/haskell-servant/servant/tree/servant-mock/servant-mock) package on github. The example can be found under `example/main.hs` there.
+This is really all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress [servant-mock](https://github.com/haskell-servant/servant/tree/master/servant-mock) package on github. The example can be found under `example/main.hs` there.
 
 There are many more `HasMock` instances than the ones I have shown here of course -- there's one for all the combinators provided by the *servant* package! So you can take any API type out there and just create a mock server for it, as long as you provide `Arbitrary` instances for your data types. Nothing too interesting though, but feel free to take a look at `src/Servant/Mock.hs` in the repository if you want to read the other instances.
 
