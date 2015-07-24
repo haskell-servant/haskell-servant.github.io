@@ -179,15 +179,15 @@ data CommonGeneratorOptions = CommonGeneratorOptions
   }
 ```
 
-This pattern is available with all supported backends, and a default instance
+This pattern is available with all supported backends, and default values are provided.
 
 ## Vanilla support
 
-If you don't require JQuery for your application, you can reduce your
-dependencies to simply use `XMLHttpRequest` object from standard API.
+If you don't use JQuery for your application, you can reduce your
+dependencies to simply use the `XMLHttpRequest` object from the standard API.
 
-Follow the same code as previous part, and simply replace the `apiJS`
-definition to this one:
+Use the same code as before but simply replace the previous `apiJS` with
+the following one:
 
 ``` haskell
 apiJS :: String

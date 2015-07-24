@@ -70,16 +70,15 @@ to use and to extend (if you want to use the *next new javascript framework*.
 
 ## More options
 
-Yes it may sound counter-intuitive with previous paragraph... but It's not!
-
-A simple "configuration" mecanism lets you
+A simple "configuration" mechanism lets you
 
 - Rename *success* and *error* callbacks
 - prefix your function definitions (to put them in a namespace, or simply
 change the name)
 - even customize the naming heuristics
 
-Some generators have even more options (Namely Angular).
+The angular generator even has more options specific to Angular.js, unlike JQuery
+and Vanilla javascript ones.
 
 ## Simpler interface to deal with more environments
 
@@ -98,20 +97,20 @@ also possible to connect them using
 
 If you play with Angular applications, you are used to the *$http* service from
 the core library. By default, our `angular` generator creates top level functions
-that depend on this service (using Angular dependency mecanism).
+that depend on this service (using Angular dependency mechanism).
 
 There is an alternative solution if you simply want an _Angular service_ mapping
 exactly your _Servant service_, in this case, generated code will depend on
 *$service*.
 
-This extension helped us to define new needs and demonstrate how a more complexe
+This extension helped us to define new needs and demonstrate how a more complex
 generator can be included.
 
 # Future
 
-There are still room for improvements to make the generators even richer in
+There is still room for improvements to make the generators even richer in
 features, and we are open to suggestions. Please play with this tool and tell
 us if you have any idea.
 
 One particular aspect is about the generated function names. Currently,
-they are derived from url, but we need to deal with potential conflicts.
+they are derived from the URL, but we need to deal with potential conflicts.
