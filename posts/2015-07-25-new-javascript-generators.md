@@ -1,5 +1,5 @@
 ---
-title: New JavaScript Magic
+title: New JavaScript Generators
 author: Freezeboy
 date: 2015-07-25 00:00
 toc: true
