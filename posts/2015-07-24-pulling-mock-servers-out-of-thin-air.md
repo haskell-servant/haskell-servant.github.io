@@ -7,7 +7,7 @@ toc: true
 
 # Summary
 
-A couple of days ago, *marcushg* mentionned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post, but in short, it lets us take a type describing a web API, such as:
+A couple of days ago, *marcushg* mentioned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post, but in short, it lets us take a type describing a web API, such as:
 
 ``` haskell
 type API = "user" :> Get '[JSON] User
