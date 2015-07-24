@@ -7,22 +7,19 @@ toc: true
 
 # Summary
 
-With the upcoming Servant version, it will be way easier to build a javascript
+In the upcoming Servant version, it will be way easier to build a javascript
 connector to your webservice. The chosen API is *as usual with Servant*
-putting the magic away from your eyes to let you concentrate on what you are
+putting the hard work away from your eyes to let you concentrate on what you are
 working on in most situations.
-
-Extensibility is still available, again *as usual with Servant*, each part of
-this library is kind of a plugin, and it is future-proof: If you want more, just
-get it, it's possible.
 
 # The Problem
 
-Until Servant 0.4 branch, we had a javascript generator using exclusively
+Until recently, we had a javascript generator using exclusively
 JQuery, but depending on the framework you might want to use in your project,
-it can be overkill to fetch [JQuery](http://jquery.org) library and for example
+it can be overkill to fetch [JQuery](http://jquery.org), or else you are using
+a library that prefers doing things differently, such as 
 [AngularJS](http://angular.io), which contains its own solution to handle
-Ajax calls. On the other hand, sometimes your need is so simple that you don't even want Query.
+Ajax calls. On the other hand, sometimes your need is so simple that you don't even want JQuery.
 
 One solution could have been to have multiple packages `servant-jquery`,
 `servant-angular`, and so on... But we chose to put them all in the same
@@ -30,7 +27,7 @@ package because the generators share lots of *problems & solutions*.
 
 We have to provide a function for each endpoint defined in the API, with as many
 parameter as needed. In most cases the client application will simply call
-these functions throuthout its flow.
+these functions throughout its flow.
 
 # How do I use it?
 
