@@ -5,9 +5,9 @@ date: 2015-07-22 22:00
 toc: true
 ---
 
-# Summary 
+# Summary
 
-A couple of days ago, *marcushg* mentionned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post and lets us taking a type describing a web API, such as:
+A couple of days ago, *marcushg* mentionned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post, but in short, it lets us taking a type describing a web API, such as:
 
 ``` haskell
 type API = "user" :> Get '[JSON] User
@@ -132,9 +132,6 @@ All we need to do is just "lift" that up into our `EitherT ServantErr IO` monad,
 
 ``` haskell
 liftIO (generate arbitrary) :: Arbitrary a => EitherT ServantErr IO a
--- actually, since `liftIO` comes from the `MonadIO` class,
--- the most general type for this expression is:
-liftIO (generate arbitrary) :: (MonadIO m, Arbitrary a) => m a
 ```
 
 In order to automatically "fill" request handlers with this expression we just need to write the `HasMock` instance for `Get`, shown below.
@@ -176,7 +173,7 @@ type API = "user" :> Get '[JSON] User
 api :: Proxy API
 api = Proxy
 
--- 5/ we magically "derive" the mock server.
+-- 5/ we magically derive the mock server.
 -- the run function comes from the warp webserver,
 -- http://hackage.haskell.org/package/warp
 -- 'mock' is the method of the `HasMock` class we've
@@ -196,13 +193,15 @@ $ curl localhost:8080/user
 # yes, a truly original username.
 ```
 
-In practice, this is really, honestly all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress [servant-mock](https://github.com/haskell-servant/servant/tree/servant-mock/servant-mock) package on github. The example can be found under `example/main.hs` there.
+This is really all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress [servant-mock](https://github.com/haskell-servant/servant/tree/servant-mock/servant-mock) package on github. The example can be found under `example/main.hs` there.
 
 There are many more `HasMock` instances than the ones I have shown here of course -- there's one for all the combinators provided by the *servant* package! So you can take any API type out there and just create a mock server for it, as long as you provide `Arbitrary` instances for your data types. Nothing too interesting though, but feel free to take a look at `src/Servant/Mock.hs` in the repository if you want to read the other instances.
 
+I hope this makes clear how simple writing your own servant interpretation can be, and encourages you to try your hand at it!
+
 # Other news
 
-- I mentionned in [a previous post](https://haskell-servant.github.io/posts/2015-05-25-servant-paper-wgp-2015.html) that we had submitted a paper for the *Workshop on Generic Programming*, co-located with ICFP'15, in Vancouver this year. Well, the paper has been accepted!
+- I mentioned in [a previous post](https://haskell-servant.github.io/posts/2015-05-25-servant-paper-wgp-2015.html) that we had submitted a paper for the *Workshop on Generic Programming*, co-located with ICFP'15, in Vancouver this year. Well, the paper has been accepted!
 - Therefore, Julian Arni and/or Andres Löh will be giving a talk about servant there.
 - In addition to this, Julian Arni recently gave a talk about servant at [Curry-On!](http://www.curry-on.org/). The video will be uploaded on [their Youtube channel](https://www.youtube.com/channel/UC-WICcSW1k3HsScuXxDrp0w) in the upcoming days.
 - I have submitted a very hands-on servant talk proposal for [the Haskell eXchange 2015](https://skillsmatter.com/conferences/7069-haskell-exchange-2015) in London. The programme hasn't been decided yet, but this is a very nice event nonetheless, so if you're not too far, consider attending!
