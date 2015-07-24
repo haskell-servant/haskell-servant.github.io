@@ -7,7 +7,7 @@ toc: true
 
 # Summary
 
-A couple of days ago, *marcushg* mentionned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post, but in short, it lets us taking a type describing a web API, such as:
+A couple of days ago, *marcushg* mentionned on the **#servant** IRC channel that one could probably easily use the information available from API types to "derive" a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post, but in short, it lets us take a type describing a web API, such as:
 
 ``` haskell
 type API = "user" :> Get '[JSON] User
@@ -19,7 +19,7 @@ and generate request handlers that just respond with random values of the approp
 mock :: HasMock api => Proxy api -> Server api
 ```
 
-i.e "given an API type, please generate a mock server for such an API". This effectively means "please pull a mock server out of thing air for me".
+i.e "given an API type, please generate a mock server for such an API". This effectively means "please pull a mock server out of thin air for me".
 
 Out of thin air, really? Not exactly. But let's start by clearly stating the problem.
 
@@ -204,5 +204,4 @@ I hope this makes clear how simple writing your own servant interpretation can b
 - I mentioned in [a previous post](https://haskell-servant.github.io/posts/2015-05-25-servant-paper-wgp-2015.html) that we had submitted a paper for the *Workshop on Generic Programming*, co-located with ICFP'15, in Vancouver this year. Well, the paper has been accepted!
 - Therefore, Julian Arni and/or Andres Löh will be giving a talk about servant there.
 - In addition to this, Julian Arni recently gave a talk about servant at [Curry-On!](http://www.curry-on.org/). The video will be uploaded on [their Youtube channel](https://www.youtube.com/channel/UC-WICcSW1k3HsScuXxDrp0w) in the upcoming days.
-- I have submitted a very hands-on servant talk proposal for [the Haskell eXchange 2015](https://skillsmatter.com/conferences/7069-haskell-exchange-2015) in London. The programme hasn't been decided yet, but this is a very nice event nonetheless, so if you're not too far, consider attending!
-
+- I have submitted a very hands-on servant talk proposal for [the Haskell eXchange 2015](https://skillsmatter.com/conferences/7069-haskell-exchange-2015) in London, and it has been accepted! See you there, folks.
