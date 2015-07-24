@@ -65,7 +65,7 @@ main = do
 
 ## API simplification
 
-Since `0.4` branch, we drastically simplified the API so that it is easier
+Since last release, we drastically simplified the API so that it is easier
 to use and to extend (if you want to use the *next new javascript framework*.
 
 ## More options
