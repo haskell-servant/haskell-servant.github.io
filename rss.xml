@@ -7,10 +7,10 @@
         <description><![CDATA[Posts from the haskell-servant blog]]></description>
         <atom:link href="http://haskell-servant.github.io/rss.xml" rel="self"
                    type="application/rss+xml" />
-        <lastBuildDate>Wed, 22 Jul 2015 00:00:00 UT</lastBuildDate>
+        <lastBuildDate>Fri, 24 Jul 2015 00:00:00 UT</lastBuildDate>
         <item>
     <title>Pulling a mock server for your APIs out of thin air</title>
-    <link>http://haskell-servant.github.io/posts/2015-07-22-pulling-mock-servers-out-of-thin-air.html</link>
+    <link>http://haskell-servant.github.io/posts/2015-07-24-pulling-mock-servers-out-of-thin-air.html</link>
     <description><![CDATA[<div id="toc"><h3>Table of contents</h3><ul>
 <li><a href="#summary">Summary</a></li>
 <li><a href="#the-problem">The Problem</a></li>
@@ -148,14 +148,14 @@ main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span
 </section>
 
 <div class="info">
-    Posted on July 22, 2015
+    Posted on July 24, 2015
     
         by Alp Mestanogullari
     
 </div>
 ]]></description>
-    <pubDate>Wed, 22 Jul 2015 00:00:00 UT</pubDate>
-    <guid>http://haskell-servant.github.io/posts/2015-07-22-pulling-mock-servers-out-of-thin-air.html</guid>
+    <pubDate>Fri, 24 Jul 2015 00:00:00 UT</pubDate>
+    <guid>http://haskell-servant.github.io/posts/2015-07-24-pulling-mock-servers-out-of-thin-air.html</guid>
     <dc:creator>servant developers</dc:creator>
 </item>
 <item>
