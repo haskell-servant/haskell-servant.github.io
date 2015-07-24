@@ -146,7 +146,7 @@ main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span
 <pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> localhost:8080/user
 <span class="dt">{&quot;username&quot;:&quot;Yv\rG\u0014±Ssv\u001e&gt;\u001aVF\u001e\u000fM5ø\u000ctefÚJ\u0001K4&quot;}</span>
 <span class="co"># yes, a truly original username.</span></code></pre>
-<p>This is really all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress <a href="https://github.com/haskell-servant/servant/tree/servant-mock/servant-mock">servant-mock</a> package on github. The example can be found under <code>example/main.hs</code> there.</p>
+<p>This is really all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress <a href="https://github.com/haskell-servant/servant/tree/master/servant-mock">servant-mock</a> package on github. The example can be found under <code>example/main.hs</code> there.</p>
 <p>There are many more <code>HasMock</code> instances than the ones I have shown here of course – there’s one for all the combinators provided by the <em>servant</em> package! So you can take any API type out there and just create a mock server for it, as long as you provide <code>Arbitrary</code> instances for your data types. Nothing too interesting though, but feel free to take a look at <code>src/Servant/Mock.hs</code> in the repository if you want to read the other instances.</p>
 <p>I hope this makes clear how simple writing your own servant interpretation can be, and encourages you to try your hand at it!</p>
 </section>
