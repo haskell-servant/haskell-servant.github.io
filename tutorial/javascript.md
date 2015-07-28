@@ -116,7 +116,7 @@ This `String` contains 2 Javascript functions:
 
 ``` javascript
 
-var getpoint = function (onSuccess, onError)
+var getPoint = function (onSuccess, onError)
 {
   $.ajax(
     { url: '/point'
@@ -126,7 +126,7 @@ var getpoint = function (onSuccess, onError)
     });
 };
 
-var getbooks = function (q, onSuccess, onError)
+var getBooks = function (q, onSuccess, onError)
 {
   $.ajax(
     { url: '/books' + '?q=' + encodeURIComponent(q)
@@ -166,8 +166,8 @@ available options:
 ```haskell
 data CommonGeneratorOptions = CommonGeneratorOptions
   { 
-    -- | function transforming function names
-    functionRenamer :: FunctionName -> String
+    -- | function generating function names
+    functionNameBuilder :: FunctionName -> String
     -- | name used when a user want to send the request body (to let you redefine it)
   , requestBody :: String
     -- | name of the callback parameter when the request was successful
@@ -202,7 +202,7 @@ The output file is a bit different, but it has the same parameters,
 
 ``` javascript
 
-var getpoint = function (onSuccess, onError)
+var getPoint = function (onSuccess, onError)
 {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/point', true);
@@ -220,7 +220,7 @@ var getpoint = function (onSuccess, onError)
     xhr.send(null);
 };
 
-var getbooks = function (q, onSuccess, onError)
+var getBooks = function (q, onSuccess, onError)
 {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/books' + '?q=' + encodeURIComponent(q), true);
@@ -244,6 +244,8 @@ two clients at the same time!
 
 ## Axios support
 
+### Simple usage
+
 If you use Axios library for your application, we support that too!
 
 Use the same code as before but simply replace the previous `apiJS` with
@@ -251,7 +253,7 @@ the following one:
 
 ``` haskell
 apiJS :: String
-apiJS = jsForAPI api axios
+apiJS = jsForAPI api $ axios defAxiosOptions
 ```
 
 The rest is *completely* unchanged.
@@ -260,14 +262,14 @@ The output file is a bit different,
 
 ``` javascript
 
-var getpoint = function ()
+var getPoint = function ()
 {
     return axios({ url: '/point'
       , method: 'get'
       });
 };
 
-var getbooks = function (q)
+var getBooks = function (q)
 {
     return axios({ url: '/books' + '?q=' + encodeURIComponent(q)
       , method: 'get'
@@ -275,13 +277,31 @@ var getbooks = function (q)
 };
 ```
 
-**Caution: ** In order to support the promise style of the API, there are no onSuccess
+**Caution:** In order to support the promise style of the API, there are no onSuccess
 nor onError callback functions.
 
+### Defining Axios configuration
+
+Axios lets you define a 'configuration' to determine the behavior of the
+program when the AJAX request is sent.
+
+We mapped this into a configuration
+
+``` haskell
+data AxiosOptions = AxiosOptions
+  { -- | indicates whether or not cross-site Access-Control requests
+    -- should be made using credentials
+    withCredentials :: !Bool
+    -- | the name of the cookie to use as a value for xsrf token
+  , xsrfCookieName :: !(Maybe String)
+    -- | the name of the header to use as a value for xsrf token
+  , xsrfHeaderName :: !(Maybe String)
+  }
+```
 
 ## Angular support
 
-### Simple version
+### Simple usage
 
 You can apply the same procedure as with `vanillaJS` and `jquery`, and
 generate top level functions.
@@ -297,12 +317,12 @@ The generated code will be a bit different than previous generators. An extra
 argument `$http` will be added to let Angular magical Dependency Injector
 operate.
 
-**Caution: ** In order to support the promise style of the API, there are no onSuccess
+**Caution:** In order to support the promise style of the API, there are no onSuccess
 nor onError callback functions.
 
 ``` javascript
 
-var getpoint = function($http)
+var getPoint = function($http)
 {
   return $http(
    { url: '/counter'
@@ -310,7 +330,7 @@ var getpoint = function($http)
    });
 }
 
-var getbooks = function($http, q)
+var getBooks = function($http, q)
 {
   return $http(
     { url: '/books' + '?q=' + encodeURIComponent(q), true);
@@ -324,11 +344,11 @@ You can then build your controllers easily
 ``` javascript
 
 app.controller("MyController", function($http) {
-  this.getpoint = getpoint($http)
+  this.getPoint = getPoint($http)
     .success(/* Do something */)
     .error(/* Report error */);
     
-  this.getpoint = getbooks($http, q)
+  this.getPoint = getBooks($http, q)
     .success(/* Do something */)
     .error(/* Report error */);
 });
@@ -342,14 +362,14 @@ a single Angular service:
 ``` javascript
 app.service('MyService', function($http) {
   return ({
-  postcounter: function()
+  postCounter: function()
   {
    return $http(
      { url: '/counter'
      , method: 'POST'
       });
   },
-  getcounter: function()
+  getCounter: function()
   {
    return $http(
      { url: '/books' + '?q=' + encodeURIComponent(q), true);
@@ -380,19 +400,19 @@ data AngularOptions = AngularOptions
   }
 ```
 
-# Custom function renamer
+# Custom function name builder
 
-Servant comes with three renamers included:
+Servant comes with three name builders included:
 
-- concatRenamer (the default)
-- snakeCaseRenamer
-- camelCaseRenamer
+- camelCase (the default)
+- concatCase
+- snakeCase
 
 Keeping the JQuery as an example, let's see the impact:
 
 ``` haskell
 apiJS :: String
-apiJS = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionRenamer: camelCaseRenamer }
+apiJS = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionNameBuilder: snakeCase }
 ```
 
 This `String` contains 2 Javascript functions:
