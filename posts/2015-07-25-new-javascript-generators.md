@@ -66,7 +66,7 @@ main = do
 ## API simplification
 
 Since last release, we drastically simplified the API so that it is easier
-to use and to extend (if you want to use the *next new javascript framework*.
+to use and to extend (if you want to use the *next new javascript framework*).
 
 ## More options
 
@@ -79,6 +79,15 @@ change the name)
 
 The angular generator even has more options specific to Angular.js, unlike JQuery
 and Vanilla javascript ones.
+
+## What JavaScript flavours do we support?
+
+Now we support different backends:
+
+- Vanilla JS (using XMLHttpRequest)
+- JQuery (as before)
+- Axios
+- Angular.js (As a simple handler, and as a service)
 
 ## Simpler interface to deal with more environments
 

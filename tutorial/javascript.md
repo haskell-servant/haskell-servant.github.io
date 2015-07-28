@@ -167,15 +167,17 @@ available options:
 data CommonGeneratorOptions = CommonGeneratorOptions
   { 
     -- | function transforming function names
-    functionRenamer :: String -> String
+    functionRenamer :: FunctionName -> String
     -- | name used when a user want to send the request body (to let you redefine it)
   , requestBody :: String
     -- | name of the callback parameter when the request was successful
   , successCallback :: String
     -- | name of the callback parameter when the request reported an error
   , errorCallback :: String
-    -- ^ namespace on which we define the js function (empty mean local var)
+    -- | namespace on which we define the js function (empty mean local var)
   , moduleName :: String
+    -- | a prefix that should be prepended to the URL in the generated JS
+  , urlPrefix :: String
   }
 ```
 
@@ -240,6 +242,43 @@ var getbooks = function (q, onSuccess, onError)
 And that's all, your web service can of course be accessible from those
 two clients at the same time!
 
+## Axios support
+
+If you use Axios library for your application, we support that too!
+
+Use the same code as before but simply replace the previous `apiJS` with
+the following one:
+
+``` haskell
+apiJS :: String
+apiJS = jsForAPI api axios
+```
+
+The rest is *completely* unchanged.
+
+The output file is a bit different,
+
+``` javascript
+
+var getpoint = function ()
+{
+    return axios({ url: '/point'
+      , method: 'get'
+      });
+};
+
+var getbooks = function (q)
+{
+    return axios({ url: '/books' + '?q=' + encodeURIComponent(q)
+      , method: 'get'
+      });
+};
+```
+
+**Caution: ** In order to support the promise style of the API, there are no onSuccess
+nor onError callback functions.
+
+
 ## Angular support
 
 ### Simple version
@@ -257,6 +296,9 @@ apiJS = jsForAPI api $ angular defAngularOptions
 The generated code will be a bit different than previous generators. An extra
 argument `$http` will be added to let Angular magical Dependency Injector
 operate.
+
+**Caution: ** In order to support the promise style of the API, there are no onSuccess
+nor onError callback functions.
 
 ``` javascript
 
@@ -336,6 +378,46 @@ data AngularOptions = AngularOptions
   , -- | end of the service definition
     epilogue :: String
   }
+```
+
+# Custom function renamer
+
+Servant comes with three renamers included:
+
+- concatRenamer (the default)
+- snakeCaseRenamer
+- camelCaseRenamer
+
+Keeping the JQuery as an example, let's see the impact:
+
+``` haskell
+apiJS :: String
+apiJS = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionRenamer: camelCaseRenamer }
+```
+
+This `String` contains 2 Javascript functions:
+
+``` javascript
+
+var getPoint = function (onSuccess, onError)
+{
+  $.ajax(
+    { url: '/point'
+    , success: onSuccess
+    , error: onError
+    , method: 'GET'
+    });
+};
+
+var getBooks = function (q, onSuccess, onError)
+{
+  $.ajax(
+    { url: '/books' + '?q=' + encodeURIComponent(q)
+    , success: onSuccess
+    , error: onError
+    , method: 'GET'
+    });
+};
 ```
 
 # Example
