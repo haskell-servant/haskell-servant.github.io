@@ -37,6 +37,7 @@
 <li><a href="#performing-io">Performing IO</a></li>
 <li><a href="#failing-through-servanterr">Failing, through <code>ServantErr</code></a></li>
 </ul></li>
+<li><a href="#response-headers">Response headers</a></li>
 <li><a href="#serving-static-files">Serving static files</a></li>
 <li><a href="#using-another-monad-for-your-handlers">Using another monad for your handlers</a><ul>
 <li><a href="#natural-transformations">Natural transformations</a></li>
@@ -326,7 +327,7 @@ eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
 <p>This function is exactly what we need for our <code>MimeUnrender</code> instance.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">FromJSON</span> a <span class="ot">=&gt;</span> <span class="dt">MimeUnrender</span> <span class="dt">JSON</span> a <span class="kw">where</span>
     mimeUnrender _ <span class="fu">=</span> eitherDecodeLenient</code></pre>
-<p>And this is all the code that lets you use <code>JSON</code> for with <code>ReqBody</code>, <code>Get</code>, <code>Post</code> and friends. We can check our understanding by implementing support for an <code>HTML</code> content type, so that users of your webservice can access an HTML representation of the data they want, ready to be included in any HTML document, e.g using <a href="https://api.jquery.com/load/">jQuery’s <code>load</code> function</a>, simply by adding <code>Accept: text/html</code> to their request headers.</p>
+<p>And this is all the code that lets you use <code>JSON</code> for with <code>ReqBody</code>, <code>Get</code>, <code>Post</code> and friends. We can check our understanding by implementing support for an <code>HTML</code> content type, so that users of your webservice can access an HTML representation of the data they want, ready to be included in any HTML document, e.g. using <a href="https://api.jquery.com/load/">jQuery’s <code>load</code> function</a>, simply by adding <code>Accept: text/html</code> to their request headers.</p>
 </section>
 <section id="case-studies-servant-blaze-and-servant-lucid" class="level3">
 <h3>Case-studies: <em>servant-blaze</em> and <em>servant-lucid</em></h3>
@@ -527,6 +528,14 @@ $ <span class="kw">curl</span> --verbose http://localhost:8081/myfile.txt
 [<span class="kw">snip</span>]
 <span class="dt">{&quot;content&quot;:&quot;Hello\n&quot;}</span></code></pre>
 </section>
+</section>
+<section id="response-headers" class="level2">
+<h2>Response headers</h2>
+<p>To add headers to your response, use <a href="http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html">addHeader</a>. Note that this changes the type of your API, as we can see in the following example:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers '</span>[<span class="dt">Header</span> <span class="st">&quot;X-An-Int&quot;</span> <span class="dt">Int</span>] <span class="dt">User</span>)
+
+<span class="ot">myHandler ::</span> <span class="dt">Server</span> <span class="dt">MyHandler</span>
+myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="dv">1797</span> someUser</code></pre>
 </section>
 <section id="serving-static-files" class="level2">
 <h2>Serving static files</h2>
