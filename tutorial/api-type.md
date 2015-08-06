@@ -3,7 +3,7 @@ title: A web API as a type
 toc: true
 ---
 
-Consider the following informal specificatoin of an API:
+Consider the following informal specification of an API:
 
 > The endpoint at `/users` expects a GET request with query string parameter
 > `sortby` whose value can be one of `age` or `name` and returns a

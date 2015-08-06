@@ -490,7 +490,7 @@ And this is all the code that lets you use `JSON` for with `ReqBody`, `Get`,
 `Post` and friends. We can check our understanding by implementing support
 for an `HTML` content type, so that users of your webservice can access an
 HTML representation of the data they want, ready to be included in any HTML
-document, e.g using [jQuery's `load` function](https://api.jquery.com/load/), simply by adding `Accept:
+document, e.g. using [jQuery's `load` function](https://api.jquery.com/load/), simply by adding `Accept:
 text/html` to their request headers.
 
 ### Case-studies: *servant-blaze* and *servant-lucid*
