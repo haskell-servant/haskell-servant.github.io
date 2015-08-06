@@ -9,11 +9,18 @@ Recently I came across Timo von Holtz's
 package. It describes `servant`-compatible content-types for JuicyPixel's
 `DynamicImage` data type, and clocks under 100 airy lines.
 
-Timo and I realized there is a pretty neat demonstration of abstracting away
-content-type serialization and deserialization: the world's most concise
-image-conversion web service.
+Timo and I realized there is a pretty neat demonstration of the advantage of
+abstracting away content-type serialization and deserialization: the world's
+most concise image-conversion web service. Essentially the same application is
+available as the [`image conversion` example](https://github.com/tvh/servant-JuicyPixels/blob/master/examples/image-conversion.hs) in
+Timo's package.
 
-To convert, we'll use `Content-Type` and `Accept` headers:
+(If you want to know more about how content-types work in `servant`, the
+ [content-type section of the tutorial](http://haskell-servant.github.io/tutorial/server.html#using-content-types-with-your-data-types)
+ has more information.)
+
+Our goal is to provide a service that converts images between formats based on
+the `Content-Type` and `Accept` headers of the request:
 
 ```shell
 $ curl localhost:8001 -H "Content-Type: image/png"  \
@@ -22,14 +29,15 @@ $ curl localhost:8001 -H "Content-Type: image/png"  \
                       > haskell-logo.jpeg
 ```
 
-We need to do a couple of things. Run the application:
+To get there, we need to do a couple of things. We need to of course run the
+application:
 
 ```haskell
 main :: IO ()
 main = run 8001 conversion
 ```
 
-Describe the API:
+And describe the API:
 
 ```haskell
 type ConversionApi
@@ -40,7 +48,7 @@ type ConversionApi
 As you can see, we state that we accept and can return a variety of image
 formats.
 
-The application:
+The application is then:
 
 ```haskell
 conversion :: Application
