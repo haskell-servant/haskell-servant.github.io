@@ -799,6 +799,19 @@ $ curl --verbose http://localhost:8081/myfile.txt
 {"content":"Hello\n"}
 ```
 
+## Response headers
+
+To add headers to your response, use [addHeader](http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html).
+Note that this changes the type of your API, as we can see in the following example:
+
+```haskell
+type MyHandler = Get '[JSON] (Headers '[Header "X-An-Int" Int] User)
+
+myHandler :: Server MyHandler
+myHandler = return $ addHeader 1797 someUser
+```
+
+
 ## Serving static files
 
 *servant-server* also provides a way to just serve the content of a directory
