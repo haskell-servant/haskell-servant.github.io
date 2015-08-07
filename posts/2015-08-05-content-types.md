@@ -1,7 +1,7 @@
 ---
 title: Content Type Bliss
 author: Julian K. Arni
-date: 2015-08-05 12:00
+date: 2015-08-07 12:00
 ---
 
 Recently I came across Timo von Holtz's
@@ -18,6 +18,8 @@ Timo's package.
 (If you want to know more about how content-types work in `servant`, the
  [content-type section of the tutorial](http://haskell-servant.github.io/tutorial/server.html#using-content-types-with-your-data-types)
  has more information.)
+
+# The Application
 
 Our goal is to provide a service that converts images between formats based on
 the `Content-Type` and `Accept` headers of the request:
@@ -60,3 +62,12 @@ And for the clincher, the handler:
 ```haskell
     where handler = return
 ```
+And that's it!
+
+# Conclusion
+
+This is just the limit of the relative gain of abstracting
+content-types - there is nothing to the application besides them!
+
+Essentially the same idea could of course be applied to other areas. Document
+conversion with Pandoc, video and audio formats, etc.
