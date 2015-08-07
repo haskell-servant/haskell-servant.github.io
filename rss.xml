@@ -34,10 +34,11 @@ main <span class="fu">=</span> run <span class="dv">8001</span> conversion</code
 conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> <span class="dt">ConversionApi</span>) handler</code></pre>
 <p>And for the clincher, the handler:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">    <span class="kw">where</span> handler <span class="fu">=</span> return</code></pre>
+<p>And that’s it!</p>
 </section>
 <section id="conclusion" class="level1">
 <h1>Conclusion</h1>
-<p>This is just the limit of the relative gain of abstracting content-types - there is nothing to the application besides them! But it nicely distills the benefits.</p>
+<p>This is just the limit of the relative gain of abstracting content-types - there is nothing to the application besides them!</p>
 <p>Essentially the same idea could of course be applied to other areas. Document conversion with Pandoc, video and audio formats, etc.</p>
 </section>
 
