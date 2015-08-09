@@ -146,7 +146,7 @@ You can put this all into a file or just grab [servant's
 repo](http://github.com/haskell-servant/servant) and look at the
 *servant-examples* directory. The code we have just explored is in
 *tutorial/T1.hs*, runnable with
-`dist/build/tutorial/tutorial 2`.
+`dist/build/tutorial/tutorial 1`.
 
 If you run it, you can go to `http://localhost:8081/users` in your browser or
 query it with curl and you see:
