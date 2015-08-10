@@ -37,6 +37,7 @@
 <li><a href="#performing-io">Performing IO</a></li>
 <li><a href="#failing-through-servanterr">Failing, through <code>ServantErr</code></a></li>
 </ul></li>
+<li><a href="#response-headers">Response headers</a></li>
 <li><a href="#serving-static-files">Serving static files</a></li>
 <li><a href="#using-another-monad-for-your-handlers">Using another monad for your handlers</a><ul>
 <li><a href="#natural-transformations">Natural transformations</a></li>
@@ -117,7 +118,7 @@ app <span class="fu">=</span> serve userAPI server</code></pre>
 <p>And we’re done! Let’s run our webservice on the port 8081.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> run <span class="dv">8081</span> app</code></pre>
-<p>You can put this all into a file or just grab <a href="http://github.com/haskell-servant/servant">servant’s repo</a> and look at the <em>servant-examples</em> directory. The code we have just explored is in <em>tutorial/T1.hs</em>, runnable with <code>dist/build/tutorial/tutorial 2</code>.</p>
+<p>You can put this all into a file or just grab <a href="http://github.com/haskell-servant/servant">servant’s repo</a> and look at the <em>servant-examples</em> directory. The code we have just explored is in <em>tutorial/T1.hs</em>, runnable with <code>dist/build/tutorial/tutorial 1</code>.</p>
 <p>If you run it, you can go to <code>http://localhost:8081/users</code> in your browser or query it with curl and you see:</p>
 <pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> http://localhost:8081/users
 [{<span class="st">&quot;email&quot;</span>:<span class="st">&quot;isaac@newton.co.uk&quot;</span>,<span class="st">&quot;registration_date&quot;</span>:<span class="st">&quot;1683-03-01&quot;</span>,<span class="st">&quot;age&quot;</span>:<span class="kw">372</span>,<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Isaac Newton&quot;</span>},{<span class="st">&quot;email&quot;</span>:<span class="st">&quot;ae@mc2.org&quot;</span>,<span class="st">&quot;registration_date&quot;</span>:<span class="st">&quot;1905-12-01&quot;</span>,<span class="st">&quot;age&quot;</span>:<span class="kw">136</span>,<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Albert Einstein&quot;</span>}]</code></pre>
@@ -235,7 +236,7 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
 <ul>
 <li><code>Delete</code>, <code>Get</code>, <code>Patch</code>, <code>Post</code>, <code>Put</code>: these do not become arguments. They provide the return type of handlers, which usually is <code>EitherT ServantErr IO &lt;something&gt;</code>.</li>
 <li><code>Capture &quot;something&quot; a</code> becomes an argument of type <code>a</code>.</li>
-<li><code>QueryParam &quot;something&quot; a</code>, <code>MatrixParam &quot;something&quot; a</code>, <code>Header &quot;something&quot; a</code> both become an argument of type <code>Maybe a</code>, because there might be no value at all specified by the client for these.</li>
+<li><code>QueryParam &quot;something&quot; a</code>, <code>MatrixParam &quot;something&quot; a</code>, <code>Header &quot;something&quot; a</code> all become arguments of type <code>Maybe a</code>, because there might be no value at all specified by the client for these.</li>
 <li><code>QueryFlag &quot;something&quot;</code> and <code>MatrixFlag &quot;something&quot;</code> get turned into arguments of type <code>Bool</code>.</li>
 <li><code>QueryParams &quot;something&quot; a</code> and <code>MatrixParams &quot;something&quot; a</code> get turned into arguments of type <code>[a]</code>.</li>
 <li><code>ReqBody contentTypes a</code> gets turned into an argument of type <code>a</code>.</li>
@@ -326,7 +327,7 @@ eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
 <p>This function is exactly what we need for our <code>MimeUnrender</code> instance.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">FromJSON</span> a <span class="ot">=&gt;</span> <span class="dt">MimeUnrender</span> <span class="dt">JSON</span> a <span class="kw">where</span>
     mimeUnrender _ <span class="fu">=</span> eitherDecodeLenient</code></pre>
-<p>And this is all the code that lets you use <code>JSON</code> for with <code>ReqBody</code>, <code>Get</code>, <code>Post</code> and friends. We can check our understanding by implementing support for an <code>HTML</code> content type, so that users of your webservice can access an HTML representation of the data they want, ready to be included in any HTML document, e.g using <a href="https://api.jquery.com/load/">jQuery’s <code>load</code> function</a>, simply by adding <code>Accept: text/html</code> to their request headers.</p>
+<p>And this is all the code that lets you use <code>JSON</code> for with <code>ReqBody</code>, <code>Get</code>, <code>Post</code> and friends. We can check our understanding by implementing support for an <code>HTML</code> content type, so that users of your webservice can access an HTML representation of the data they want, ready to be included in any HTML document, e.g. using <a href="https://api.jquery.com/load/">jQuery’s <code>load</code> function</a>, simply by adding <code>Accept: text/html</code> to their request headers.</p>
 </section>
 <section id="case-studies-servant-blaze-and-servant-lucid" class="level3">
 <h3>Case-studies: <em>servant-blaze</em> and <em>servant-lucid</em></h3>
@@ -527,6 +528,14 @@ $ <span class="kw">curl</span> --verbose http://localhost:8081/myfile.txt
 [<span class="kw">snip</span>]
 <span class="dt">{&quot;content&quot;:&quot;Hello\n&quot;}</span></code></pre>
 </section>
+</section>
+<section id="response-headers" class="level2">
+<h2>Response headers</h2>
+<p>To add headers to your response, use <a href="http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html">addHeader</a>. Note that this changes the type of your API, as we can see in the following example:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers '</span>[<span class="dt">Header</span> <span class="st">&quot;X-An-Int&quot;</span> <span class="dt">Int</span>] <span class="dt">User</span>)
+
+<span class="ot">myHandler ::</span> <span class="dt">Server</span> <span class="dt">MyHandler</span>
+myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="dv">1797</span> someUser</code></pre>
 </section>
 <section id="serving-static-files" class="level2">
 <h2>Serving static files</h2>
