@@ -9,11 +9,9 @@ type. Can we have a webservice already?
 If you want to follow along with the code and run the examples while you read this guide:
 
 ``` bash
-git clone https://github.com/haskell-servant/servant.git
-cd servant
+cabal get servant-examples
+cd servant-examples-<VERSION>
 cabal sandbox init
-cabal sandbox add-source servant/ servant-client/ servant-server/ servant-jquery/ servant-docs/ servant-examples/
-cd servant-examples
 cabal install --dependencies-only
 cabal configure && cabal build
 ```
