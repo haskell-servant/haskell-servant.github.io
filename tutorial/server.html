@@ -47,11 +47,9 @@
 </ul></div>
 <p>Enough chit-chat about type-level combinators and representing an API as a type. Can we have a webservice already?</p>
 <p>If you want to follow along with the code and run the examples while you read this guide:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">git</span> clone https://github.com/haskell-servant/servant.git
-<span class="kw">cd</span> servant
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cabal</span> get servant-examples
+<span class="kw">cd</span> servant-examples-<span class="kw">&lt;</span>VERSION<span class="kw">&gt;</span>
 <span class="kw">cabal</span> sandbox init
-<span class="kw">cabal</span> sandbox add-source servant/ servant-client/ servant-server/ servant-jquery/ servant-docs/ servant-examples/
-<span class="kw">cd</span> servant-examples
 <span class="kw">cabal</span> install --dependencies-only
 <span class="kw">cabal</span> configure <span class="kw">&amp;&amp;</span> <span class="kw">cabal</span> build</code></pre>
 <p>This will produce a <code>tutorial</code> executable in the <code>dist/build/tutorial</code> directory that just runs the example corresponding to the number specified as a command line argument:</p>
