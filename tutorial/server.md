@@ -947,6 +947,186 @@ $ curl http://localhost:8081/foo
 not found
 ```
 
+## Nested APIs
+
+Let's take a break from introducing new combinators and functions and talk about how you can modularly define your *APIs*, avoiding as much as possible any kind of repetition. Consider this simple example:
+
+``` haskell
+type UserAPI1 = -- view the user with given userid, in JSON
+                Capture "userid" Int :> Get '[JSON] User
+          
+           :<|> -- delete the user with given userid. empty response
+                Capture "userid" Int :> Delete '[] ()
+```
+
+That's repetition, right here! Can't we somehow factor out the "userid", shared by both endpoints? As a matter of fact, we can.
+
+``` haskell
+type UserAPI2 = Capture "userid" Int :>
+  (    Get '[JSON] User
+  :<|> Delete '[] ()
+  )
+```
+
+However, you have to be aware that this has an effect on the type of the corresponding `Server`:
+
+``` haskell
+Server UserAPI1 = (Int -> EitherT ServantErr IO User)
+             :<|> (Int -> EitherT ServantErr IO ())
+
+Server UserAPI2 = Int -> (    EitherT ServantErr IO User
+                         :<|> EitherT ServantErr IO ()
+                         )
+```
+
+In the first case, each handler receives the *userid* argument. In the latter,
+the whole `Server` takes the *userid* and has handlers that are just computations in `EitherT`, with no arguments. In other words:
+
+``` haskell
+server1 :: Server UserAPI1
+server1 = getUser :<|> deleteUser
+
+  where getUser :: Int -> EitherT ServantErr IO User
+        getUser userid = ...
+
+        deleteUser :: Int -> EitherT ServantErr IO ()
+        deleteUser userid = ...
+
+-- notice how getUser and deleteUser
+-- have a different type! no argument anymore,
+-- the argument directly goes to the whole Server
+server2 :: Server UserAPI2
+server2 userid = getUser :<|> deleteUser
+
+  where getUser :: EitherT ServantErr IO User
+        getUser = ...
+
+        deleteUser :: EitherT ServantErr IO ()
+        deleteUser = ...
+```
+
+Note that there's nothing special about `Capture` that lets you "factor it out": this can be done with any combinator. Here are a few examples of APIs with a combinator factored out for which we can write a perfectly valid `Server`.
+
+``` haskell
+-- we just factor out the "users" path fragment
+type API1 = "users" :>
+  (    Get '[JSON] [User] -- user listing
+  :<|> Capture "userid" Int :> Get '[JSON] User -- view a particular user
+  )
+
+-- we factor out the Request Body
+type API2 = ReqBody '[JSON] User :>
+  (    Get '[JSON] User -- just display the same user back, don't register it
+  :<|> Post '[JSON] ()  -- register the user. empty response
+  )
+
+-- we factor out a Header
+type API3 = Header "Authorization" Token :>
+  (    Get '[JSON] SecretData -- get some secret data, if authorized
+  :<|> ReqBody '[JSON] MoreSecretData :> Post '[] () -- add some secret data, if authorized
+  )
+```
+
+When taken to the extreme, so to speak, this approach lets you define APIs modularly and assemble them all into one big API type only at the end.
+
+``` haskell
+-- Users.hs
+module Users where
+
+type UsersAPI =
+       Get '[JSON] [User] -- list users
+  :<|> ReqBody '[JSON] User :> Post '[] () -- add an user
+  :<|> Capture "userid" Int :>
+         ( Get '[JSON]' User -- view an user
+      :<|> ReqBody '[JSON] User :> Put '[] () -- update an user
+      :<|> Delete '[] () -- delete an user
+         )
+
+usersServer :: Server UsersAPI
+usersServer = getUsers :<|> newUser :<|> userOperations
+
+  where getUsers :: EitherT ServantErr IO [User]
+        getUsers = ...
+
+        newUser :: EitherT ServantErr IO ()
+        newUser = ...
+
+        userOperations userid =
+          viewUser :<|> updateUser :<|> deleteUser
+
+          where ...  
+```
+
+``` haskell
+-- Products.hs
+module Products where
+
+type ProductsAPI =
+       Get '[JSON] [Product] -- list products
+  :<|> ReqBody '[JSON] Product :> Post '[] () -- add a product
+  :<|> Capture "productid" Int :>
+         ( Get '[JSON]' Product -- view a product
+      :<|> ReqBody '[JSON] Product :> Put '[] () -- update a product
+      :<|> Delete '[] () -- delete a product
+         )
+
+productsServer :: Server ProductsAPI
+productsServer = getProducts :<|> newProduct :<|> productOperations
+
+  where getProducts :: EitherT ServantErr IO [Product]
+        getProducts = ...
+
+        newProduct :: EitherT ServantErr IO ()
+        newProduct = ...
+
+        productOperations productid =
+          viewProduct :<|> updateProduct :<|> deleteProduct
+
+          where ...    
+
+```
+
+``` haskell
+-- API.hs
+module API where
+
+import Products
+import Users
+
+type API = "users" :> UsersAPI
+      :<|> "products" :> ProductsAPI
+
+server :: Server API
+server = usersServer :<|> productsServer
+```
+
+Finally, we can realize the user and product APIs are quite similar and abstract that away:
+
+``` haskell
+-- API for values of type 'a'
+-- indexed by values of type 'i'
+type APIFor a i =
+       Get '[JSON] [a] -- list 'a's
+  :<|> ReqBody '[JSON] a :> Post '[] () -- add an 'a'
+  :<|> Capture "id" i :>
+         ( Get '[JSON]' a -- view an 'a' given its "identifier" of type 'i'
+      :<|> ReqBody '[JSON] a :> Put '[] () -- update an 'a'
+      :<|> Delete '[] () -- delete an 'a'
+         )
+
+-- Build the appropriate 'Server'
+-- given the handlers of the right type.
+serverFor :: EitherT ServantErr IO [a] -- handler for listing of 'a's
+          -> (a -> EitherT ServantErr IO ()) -- handler for adding an 'a'
+          -> (i -> EitherT ServantErr IO a) -- handler for viewing an 'a' given its identifier of type 'i'
+          -> (i -> a -> EitherT ServantErr IO ()) -- updating an 'a' with given id
+          -> (i -> EitherT ServantErr IO ()) -- deleting an 'a' given its id
+          -> Server (APIFor a i)
+serverFor = undefined
+-- implementation left as an exercise. contact us on IRC
+-- or the mailing list if you get stuck!
+```
+
 ## Using another monad for your handlers
 
 Remember how `Server` turns combinators for HTTP methods into `EitherT ServantErr IO`? Well, actually, there's more to that. `Server` is actually a simple type synonym.
