@@ -46,7 +46,7 @@ To find out more, please check our [tutorial](/tutorial).
 
 # Documentation and community
 
-## Tutorials
+## Tutorials and Blog Posts
 
 - [Tutorial](/tutorial) (it's recommended to start here)
 - [Paper](http://www.andres-loeh.de/Servant/servant-wgp.pdf) for a more technical introduction
@@ -56,6 +56,7 @@ To find out more, please check our [tutorial](/tutorial).
 - [Type-Safe Microservices in Haskell with Servant](https://github.com/k-bx/owlcloud)
 - [Type-safe web services in Haskell with servant](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)
 - [Servant, Type Families, and Type-level Everything](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)
+- [Combining Servant With Persistent](http://www.parsonsmatt.org/programming/2015/06/07/servant-persistent.html)
 - See [the talks](/talks.html)
 
 ## Examples
