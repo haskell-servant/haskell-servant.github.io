@@ -3,7 +3,9 @@ title: Write a client library for any web API in 5 minutes
 toc: true
 ---
 
-*servant* lets us write request handlers for webservices in a quite straighforward way, without polluting your logic with encoding/decoding of all sorts. What may be less obvious is that you also get a somehow symetric benefit too by being able to *derive* (without *actually writing them*) functions to query an API described by some servant API type. Here's an example.
+*servant* lets us write request handlers for webservices in a quite
+straighforward way, without polluting your logic with encoding/decoding of all
+sorts. What may be less obvious is that you also get a somehow symmetric benefit too by being able to *derive* (without *actually writing them*) functions to query an API described by some servant API type. Here's an example.
 
 # The Hackage API
 
@@ -113,7 +115,7 @@ Finally, we can automatically derive our client functions:
 hackageAPI :: Proxy HackageAPI
 hackageAPI = Proxy
 
-getUsers :: EitherT ServantError IO [UserSummary] 
+getUsers :: EitherT ServantError IO [UserSummary]
 getUser :: Username -> EitherT ServantError IO UserDetailed
 getPackages :: EitherT ServantError IO [Package]
 getUsers :<|> getUser :<|> getPackages = client hackageAPI (BaseUrl Http "hackage.haskell.org" 80)
@@ -135,8 +137,8 @@ uselessNumbers = runEitherT $ do
     T.getLine
   userDetailed <- run (getUser user)
   liftIO . T.putStrLn $ user <> " maintains " <> T.pack (show (length $ groups userDetailed)) <> " packages"
-  
-  packages <- run getPackages 
+
+  packages <- run getPackages
   let monadPackages = filter (isMonadPackage . packageName) packages
   liftIO . putStrLn $ show (length monadPackages) ++ " monad packages"
 
