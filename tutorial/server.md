@@ -949,7 +949,7 @@ not found
 
 ## Nested APIs
 
-Let's take a break from introducing new combinators and functions and talk about how you can modularly define your *APIs*, avoiding as much as possible any kind of repetition. Consider this simple example:
+Let's see how you can define APIs in a modular way, while avoiding repetition. Consider this simple example:
 
 ``` haskell
 type UserAPI1 = -- view the user with given userid, in JSON
@@ -959,7 +959,7 @@ type UserAPI1 = -- view the user with given userid, in JSON
                 Capture "userid" Int :> Delete '[] ()
 ```
 
-That's repetition, right here! Can't we somehow factor out the "userid", shared by both endpoints? As a matter of fact, we can.
+We can instead factor out the `userid`:
 
 ``` haskell
 type UserAPI2 = Capture "userid" Int :>
@@ -1027,7 +1027,7 @@ type API3 = Header "Authorization" Token :>
   )
 ```
 
-When taken to the extreme, so to speak, this approach lets you define APIs modularly and assemble them all into one big API type only at the end.
+This approach lets you define APIs modularly and assemble them all into one big API type only at the end.
 
 ``` haskell
 -- Users.hs
