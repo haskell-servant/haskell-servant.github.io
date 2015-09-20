@@ -46,12 +46,17 @@ To find out more, please check our [tutorial](/tutorial).
 
 # Documentation and community
 
-## Tutorials
+## Tutorials and Blog Posts
 
 - [Tutorial](/tutorial) (it's recommended to start here)
+- [Paper](http://www.andres-loeh.de/Servant/servant-wgp.pdf) for a more technical introduction
 - [Extending servant](/extending.html)
 - [Hackage API client in 5 minutes](/client-in-5-minutes.html)
 - [Developing a servant application with Halcyon](https://halcyon.sh/tutorial/)
+- [Type-Safe Microservices in Haskell with Servant](https://github.com/k-bx/owlcloud)
+- [Type-safe web services in Haskell with servant](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)
+- [Servant, Type Families, and Type-level Everything](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)
+- [Combining Servant With Persistent](http://www.parsonsmatt.org/programming/2015/06/07/servant-persistent.html)
 - See [the talks](/talks.html)
 
 ## Examples
@@ -62,9 +67,16 @@ To find out more, please check our [tutorial](/tutorial).
 
 - [servant](http://hackage.haskell.org/package/servant), API types and combinators
 - [servant-server](http://hackage.haskell.org/package/servant-server), for creating a server
-- [servant-client](http://hackage.haskell.org/package/servant-client), for generating haskell functions to query APIs automatically
-- [servant-jquery](http://hackage.haskell.org/package/servant-jquery), for generating javascript functions to query APIs automatically
+- [servant-client](http://hackage.haskell.org/package/servant-client), for generating Haskell functions to query APIs
+- [servant-jquery](http://hackage.haskell.org/package/servant-jquery), for generating Javascript functions to query APIs
+- [lackey](https://hackage.haskell.org/package/lackey), for generating Ruby functions to query APIs
 - [servant-docs](http://hackage.haskell.org/package/servant-docs), for assistance in API docs generation
+- [servant-mock](http://hackage.haskell.org/package/servant-mock), for generating conformant servers automatically
+- [servant-blaze](http://hackage.haskell.org/package/servant-blaze), for HTML with blaze-html
+- [servant-lucid](http://hackage.haskell.org/package/servant-lucid), for HTML with lucid
+- [servant-ede](https://hackage.haskell.org/package/servant-ede), for EDE templates
+- [servant-JuicyPixels](https://hackage.haskell.org/package/servant-JuicyPixels), for using JuicyPixels-backend content-types
+- [servant-pandoc](https://hackage.haskell.org/package/servant-pandoc), for rendering API documentation with Pandoc.
 
 ## Mailing list and IRC
 
