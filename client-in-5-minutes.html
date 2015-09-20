@@ -31,7 +31,7 @@
 <li><a href="#deriving-functions-to-query-hackage">Deriving functions to query hackage</a></li>
 <li><a href="#code">Code</a></li>
 </ul></div>
-<p><em>servant</em> lets us write request handlers for webservices in a quite straighforward way, without polluting your logic with encoding/decoding of all sorts. What may be less obvious is that you also get a somehow symetric benefit too by being able to <em>derive</em> (without <em>actually writing them</em>) functions to query an API described by some servant API type. Here’s an example.</p>
+<p><em>servant</em> lets us write request handlers for webservices in a quite straighforward way, without polluting your logic with encoding/decoding of all sorts. What may be less obvious is that you also get a somehow symmetric benefit too by being able to <em>derive</em> (without <em>actually writing them</em>) functions to query an API described by some servant API type. Here’s an example.</p>
 <section id="the-hackage-api" class="level1">
 <h1>The Hackage API</h1>
 <p>Let’s write some functions to query a couple of endpoints of <a href="http://hackage.haskell.org/api">Hackage’s API</a>. Let’s just consider the following ones:</p>
@@ -118,7 +118,7 @@ $ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/jso
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hackageAPI ::</span> <span class="dt">Proxy</span> <span class="dt">HackageAPI</span>
 hackageAPI <span class="fu">=</span> <span class="dt">Proxy</span>
 
-<span class="ot">getUsers ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">UserSummary</span>] 
+<span class="ot">getUsers ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">UserSummary</span>]
 <span class="ot">getUser ::</span> <span class="dt">Username</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">UserDetailed</span>
 <span class="ot">getPackages ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">Package</span>]
 getUsers <span class="fu">:&lt;|&gt;</span> getUser <span class="fu">:&lt;|&gt;</span> getPackages <span class="fu">=</span> client hackageAPI (<span class="dt">BaseUrl</span> <span class="dt">Http</span> <span class="st">&quot;hackage.haskell.org&quot;</span> <span class="dv">80</span>)</code></pre>
@@ -136,8 +136,8 @@ uselessNumbers <span class="fu">=</span> runEitherT <span class="fu">$</span> <s
     T.getLine
   userDetailed <span class="ot">&lt;-</span> run (getUser user)
   liftIO <span class="fu">.</span> T.putStrLn <span class="fu">$</span> user <span class="fu">&lt;&gt;</span> <span class="st">&quot; maintains &quot;</span> <span class="fu">&lt;&gt;</span> T.pack (show (length <span class="fu">$</span> groups userDetailed)) <span class="fu">&lt;&gt;</span> <span class="st">&quot; packages&quot;</span>
-  
-  packages <span class="ot">&lt;-</span> run getPackages 
+
+  packages <span class="ot">&lt;-</span> run getPackages
   <span class="kw">let</span> monadPackages <span class="fu">=</span> filter (isMonadPackage <span class="fu">.</span> packageName) packages
   liftIO <span class="fu">.</span> putStrLn <span class="fu">$</span> show (length monadPackages) <span class="fu">++</span> <span class="st">&quot; monad packages&quot;</span>
 
