@@ -39,6 +39,7 @@
 </ul></li>
 <li><a href="#response-headers">Response headers</a></li>
 <li><a href="#serving-static-files">Serving static files</a></li>
+<li><a href="#nested-apis">Nested APIs</a></li>
 <li><a href="#using-another-monad-for-your-handlers">Using another monad for your handlers</a><ul>
 <li><a href="#natural-transformations">Natural transformations</a></li>
 <li><a href="#enter-enter">Enter <code>enter</code></a></li>
@@ -646,6 +647,151 @@ usage <span class="fu">=</span> <span class="kw">do</span>
 
 <span class="fu">$</span> curl http<span class="fu">://</span>localhost<span class="fu">:</span><span class="dv">8081</span><span class="fu">/</span>foo
 not found</code></pre>
+</section>
+<section id="nested-apis" class="level2">
+<h2>Nested APIs</h2>
+<p>Let’s see how you can define APIs in a modular way, while avoiding repetition. Consider this simple example:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI1</span> <span class="fu">=</span> <span class="co">-- view the user with given userid, in JSON</span>
+                <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
+          
+           <span class="fu">:&lt;|&gt;</span> <span class="co">-- delete the user with given userid. empty response</span>
+                <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] ()</span></code></pre>
+<p>We can instead factor out the <code>userid</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI2</span> <span class="fu">=</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
+  (    <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] ()</span>
+  )</code></pre>
+<p>However, you have to be aware that this has an effect on the type of the corresponding <code>Server</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Server</span> <span class="dt">UserAPI1</span> <span class="fu">=</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>)
+             <span class="fu">:&lt;|&gt;</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ())
+
+<span class="dt">Server</span> <span class="dt">UserAPI2</span> <span class="fu">=</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (    <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
+                         <span class="fu">:&lt;|&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+                         )</code></pre>
+<p>In the first case, each handler receives the <em>userid</em> argument. In the latter, the whole <code>Server</code> takes the <em>userid</em> and has handlers that are just computations in <code>EitherT</code>, with no arguments. In other words:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">server1 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI1</span>
+server1 <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</span> deleteUser
+
+  <span class="kw">where</span><span class="ot"> getUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
+        getUser userid <span class="fu">=</span> <span class="fu">...</span>
+
+<span class="ot">        deleteUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+        deleteUser userid <span class="fu">=</span> <span class="fu">...</span>
+
+<span class="co">-- notice how getUser and deleteUser</span>
+<span class="co">-- have a different type! no argument anymore,</span>
+<span class="co">-- the argument directly goes to the whole Server</span>
+<span class="ot">server2 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI2</span>
+server2 userid <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</span> deleteUser
+
+  <span class="kw">where</span><span class="ot"> getUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
+        getUser <span class="fu">=</span> <span class="fu">...</span>
+
+<span class="ot">        deleteUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+        deleteUser <span class="fu">=</span> <span class="fu">...</span></code></pre>
+<p>Note that there’s nothing special about <code>Capture</code> that lets you “factor it out”: this can be done with any combinator. Here are a few examples of APIs with a combinator factored out for which we can write a perfectly valid <code>Server</code>.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- we just factor out the &quot;users&quot; path fragment</span>
+<span class="kw">type</span> <span class="dt">API1</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span>
+  (    <span class="dt">Get</span> <span class="ch">'[JSON] [User] -- user listing</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User -- view a particular user</span>
+  )
+
+<span class="co">-- we factor out the Request Body</span>
+<span class="kw">type</span> <span class="dt">API2</span> <span class="fu">=</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt;</span>
+  (    <span class="dt">Get</span> <span class="ch">'[JSON] User -- just display the same user back, don'</span>t register it
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">Post</span> <span class="ch">'[JSON] ()  -- register the user. empty response</span>
+  )
+
+<span class="co">-- we factor out a Header</span>
+<span class="kw">type</span> <span class="dt">API3</span> <span class="fu">=</span> <span class="dt">Header</span> <span class="st">&quot;Authorization&quot;</span> <span class="dt">Token</span> <span class="fu">:&gt;</span>
+  (    <span class="dt">Get</span> <span class="ch">'[JSON] SecretData -- get some secret data, if authorized</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] MoreSecretData :&gt; Post '</span>[] () <span class="co">-- add some secret data, if authorized</span>
+  )</code></pre>
+<p>This approach lets you define APIs modularly and assemble them all into one big API type only at the end.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Users.hs</span>
+<span class="kw">module</span> <span class="dt">Users</span> <span class="kw">where</span>
+
+<span class="kw">type</span> <span class="dt">UsersAPI</span> <span class="fu">=</span>
+       <span class="dt">Get</span> <span class="ch">'[JSON] [User] -- list users</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Post '</span>[] () <span class="co">-- add an user</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
+         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> <span class="dt">User</span> <span class="co">-- view an user</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Put '</span>[] () <span class="co">-- update an user</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete an user</span>
+         )
+
+<span class="ot">usersServer ::</span> <span class="dt">Server</span> <span class="dt">UsersAPI</span>
+usersServer <span class="fu">=</span> getUsers <span class="fu">:&lt;|&gt;</span> newUser <span class="fu">:&lt;|&gt;</span> userOperations
+
+  <span class="kw">where</span><span class="ot"> getUsers ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> [<span class="dt">User</span>]
+        getUsers <span class="fu">=</span> <span class="fu">...</span>
+
+<span class="ot">        newUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+        newUser <span class="fu">=</span> <span class="fu">...</span>
+
+        userOperations userid <span class="fu">=</span>
+          viewUser <span class="fu">:&lt;|&gt;</span> updateUser <span class="fu">:&lt;|&gt;</span> deleteUser
+
+          <span class="kw">where</span> <span class="fu">...</span>  </code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Products.hs</span>
+<span class="kw">module</span> <span class="dt">Products</span> <span class="kw">where</span>
+
+<span class="kw">type</span> <span class="dt">ProductsAPI</span> <span class="fu">=</span>
+       <span class="dt">Get</span> <span class="ch">'[JSON] [Product] -- list products</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] Product :&gt; Post '</span>[] () <span class="co">-- add a product</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;productid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
+         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> <span class="dt">Product</span> <span class="co">-- view a product</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] Product :&gt; Put '</span>[] () <span class="co">-- update a product</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete a product</span>
+         )
+
+<span class="ot">productsServer ::</span> <span class="dt">Server</span> <span class="dt">ProductsAPI</span>
+productsServer <span class="fu">=</span> getProducts <span class="fu">:&lt;|&gt;</span> newProduct <span class="fu">:&lt;|&gt;</span> productOperations
+
+  <span class="kw">where</span><span class="ot"> getProducts ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> [<span class="dt">Product</span>]
+        getProducts <span class="fu">=</span> <span class="fu">...</span>
+
+<span class="ot">        newProduct ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+        newProduct <span class="fu">=</span> <span class="fu">...</span>
+
+        productOperations productid <span class="fu">=</span>
+          viewProduct <span class="fu">:&lt;|&gt;</span> updateProduct <span class="fu">:&lt;|&gt;</span> deleteProduct
+
+          <span class="kw">where</span> <span class="fu">...</span>    </code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- API.hs</span>
+<span class="kw">module</span> <span class="dt">API</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Products</span>
+<span class="kw">import </span><span class="dt">Users</span>
+
+<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">UsersAPI</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;products&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ProductsAPI</span>
+
+<span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">API</span>
+server <span class="fu">=</span> usersServer <span class="fu">:&lt;|&gt;</span> productsServer</code></pre>
+<p>Finally, we can realize the user and product APIs are quite similar and abstract that away:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- API for values of type 'a'</span>
+<span class="co">-- indexed by values of type 'i'</span>
+<span class="kw">type</span> <span class="dt">APIFor</span> a i <span class="fu">=</span>
+       <span class="dt">Get</span> <span class="ch">'[JSON] [a] -- list '</span>a's
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] a :&gt; Post '</span>[] () <span class="co">-- add an 'a'</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> i <span class="fu">:&gt;</span>
+         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> a <span class="co">-- view an 'a' given its &quot;identifier&quot; of type 'i'</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] a :&gt; Put '</span>[] () <span class="co">-- update an 'a'</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete an '</span>a'
+         )
+
+<span class="co">-- Build the appropriate 'Server'</span>
+<span class="co">-- given the handlers of the right type.</span>
+<span class="ot">serverFor ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> [a] <span class="co">-- handler for listing of 'a's</span>
+          <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()) <span class="co">-- handler for adding an 'a'</span>
+          <span class="ot">-&gt;</span> (i <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> a) <span class="co">-- handler for viewing an 'a' given its identifier of type 'i'</span>
+          <span class="ot">-&gt;</span> (i <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()) <span class="co">-- updating an 'a' with given id</span>
+          <span class="ot">-&gt;</span> (i <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()) <span class="co">-- deleting an 'a' given its id</span>
+          <span class="ot">-&gt;</span> <span class="dt">Server</span> (<span class="dt">APIFor</span> a i)
+serverFor <span class="fu">=</span> undefined
+<span class="co">-- implementation left as an exercise. contact us on IRC</span>
+<span class="co">-- or the mailing list if you get stuck!</span></code></pre>
 </section>
 <section id="using-another-monad-for-your-handlers" class="level2">
 <h2>Using another monad for your handlers</h2>
