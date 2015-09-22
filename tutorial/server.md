@@ -60,6 +60,8 @@ import Network.Wai.Handler.Warp
 import Servant
 ```
 
+**Important**: the `Servant` module comes from the *servant-server* package, the one that lets us run webservers that implement a particular API type. It reexports all the types from the *servant* package that let you declare API types as well as everything you need to turn your request handlers into a fully-fledged webserver. This means that in your applications, you can just add *servant-server* as a dependency, import `Servant` and not worry about anything else.
+
 Now let's define our `User` data type and write some instances for it.
 
 ``` haskell
@@ -1227,3 +1229,8 @@ $ curl http://localhost:8081/b
 ## Conclusion
 
 You're now equipped to write any kind of webservice/web-application using *servant*. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on *servant-client*, *servant-jquery* and *servant-docs*.
+
+<div style="text-align: center;">
+  <p><a href="/tutorial/api-type.html">Previous page: A web API as a type</a></p>
+  <p><a href="/tutorial/client.html">Next page: Deriving Haskell functions to query an API</a></p>
+</div>

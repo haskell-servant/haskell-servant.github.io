@@ -295,3 +295,7 @@ Finally, we also include a combinator named `Raw` that can be used for two reaso
 into your webservice. Static file serving is a specific example of that. The API type would look the
 same as above though. (You can even combine *servant* with other web frameworks
 this way!)
+
+<div style="text-align: center;">
+  <a href="/tutorial/server.html">Next page: Serving an API</a>
+</div>
