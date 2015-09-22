@@ -91,3 +91,8 @@ Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we mi
 ```
 
 The types of the arguments for the functions are the same as for (server-side) request handlers. You now know how to use *servant-client*!
+
+<div style="text-align: center;">
+  <p><a href="/tutorial/server.html">Previous page: Serving an API</a></p>
+  <p><a href="/tutorial/javascript.html">Next page: Generating javascript functions to query an API</a></p>
+</div>

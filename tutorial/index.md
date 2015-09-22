@@ -64,25 +64,3 @@ cover the couple of ways you can extend servant for a great good.
 4. [Generating javascript functions to query an API](/tutorial/javascript.html)
 5. [Generating documentation for APIs](/tutorial/docs.html)
 
-# Links, community and more
-
-## Examples
-
-*servant* comes with quite a few examples, among which the ones studied in the [tutorial](/tutorial). You can find them [here](https://github.com/haskell-servant/servant/tree/master/servant-examples).
-
-## Haddocks
-
-- [servant](http://hackage.haskell.org/package/servant)
-- [servant-server](http://hackage.haskell.org/package/servant-server)
-- [servant-lucid](http://hackage.haskell.org/package/servant-lucid)
-- [servant-blaze](http://hackage.haskell.org/package/servant-blaze)
-- [servant-client](http://hackage.haskell.org/package/servant-client)
-- [servant-docs](http://hackage.haskell.org/package/servant-docs)
-- [servant-jquery](http://hackage.haskell.org/package/servant-jquery)
-
-## Community
-
-- [Mailing list](https://groups.google.com/forum/#!forum/haskell-servant)
-- Join us on IRC: **#servant** on *irc.freenode.net*
-
-Thanks for reading!
