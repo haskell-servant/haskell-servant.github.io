@@ -78,6 +78,7 @@
 <span class="kw">import </span><span class="dt">Network.Wai</span>
 <span class="kw">import </span><span class="dt">Network.Wai.Handler.Warp</span>
 <span class="kw">import </span><span class="dt">Servant</span></code></pre>
+<p><strong>Important</strong>: the <code>Servant</code> module comes from the <em>servant-server</em> package, the one that lets us run webservers that implement a particular API type. It reexports all the types from the <em>servant</em> package that let you declare API types as well as everything you need to turn your request handlers into a fully-fledged webserver. This means that in your applications, you can just add <em>servant-server</em> as a dependency, import <code>Servant</code> and not worry about anything else.</p>
 <p>Now let’s define our <code>User</code> data type and write some instances for it.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span>
   {<span class="ot"> name ::</span> <span class="dt">String</span>
@@ -852,6 +853,14 @@ $ <span class="kw">curl</span> http://localhost:8081/b
 <section id="conclusion" class="level2">
 <h2>Conclusion</h2>
 <p>You’re now equipped to write any kind of webservice/web-application using <em>servant</em>. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on <em>servant-client</em>, <em>servant-jquery</em> and <em>servant-docs</em>.</p>
+<div style="text-align: center;">
+<p>
+<a href="../tutorial/api-type.html">Previous page: A web API as a type</a>
+</p>
+<p>
+<a href="../tutorial/client.html">Next page: Deriving Haskell functions to query an API</a>
+</p>
+</div>
 </section>
 
         </div>

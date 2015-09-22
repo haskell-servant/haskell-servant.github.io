@@ -188,6 +188,9 @@ server <span class="fu">=</span> T3.server <span class="fu">:&lt;|&gt;</span> se
 <span class="ot">app ::</span> <span class="dt">Application</span>
 app <span class="fu">=</span> serve api server</code></pre>
 <p>And if you spin up this server with <code>dist/build/tutorial/tutorial 10</code> and go to anywhere else than <code>/position</code>, <code>/hello</code> and <code>/marketing</code>, you will see the API docs in markdown. This is because <code>serveDocs</code> is attempted if the 3 other endpoints don’t match and systematically succeeds since its definition is to just return some fixed bytestring with the <code>text/plain</code> content type.</p>
+<div style="text-align: center;">
+<p><a href="../tutorial/javascript.html">Previous page: Generating javascript functions to query an API</a></p>
+</div>
 
         </div>
         <div id="footer">
