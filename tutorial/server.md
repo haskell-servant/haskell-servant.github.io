@@ -1173,7 +1173,7 @@ readerToEither' :: forall a. Reader String a -> EitherT ServantErr IO a
 readerToEither' r = return (runReader r "hi")
 
 readerToEither :: Reader String :~> EitherT ServantErr IO
-readerToEither = Nat . readerToEither'
+readerToEither = Nat readerToEither'
 ```
 
 We can write some simple webservice with the handlers running in `Reader String`.
