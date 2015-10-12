@@ -18,7 +18,7 @@ type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Posit
 
 What we are going to get with *servant-client* here is 3 functions, one to query each endpoint:
 
-```
+```haskell
 position :: Int -- ^ value for "x"
          -> Int -- ^ value for "y"
          -> EitherT ServantError IO Position
