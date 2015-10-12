@@ -118,7 +118,7 @@ type UserAPI = "user" :> Capture "userid" Integer :> Get '[JSON] User
                -- except that we explicitly say that "userid"
                -- must be an integer
 
-          :<|> "user" :> Capture "userid" Integer :> Delete
+          :<|> "user" :> Capture "userid" Integer :> Delete '[] ()
                -- equivalent to 'DELETE /user/:userid'
 ```
 
