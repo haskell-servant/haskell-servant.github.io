@@ -344,7 +344,7 @@ class ToText a where
 
 And as long as the type that a `Capture`/`QueryParam`/`Header`/etc will be
 decoded to provides a `FromText` instance, it will Just Work. *servant*
-provides a decent number of instances, but here are a some examples of defining
+provides a decent number of instances, but here are some examples of defining
 your own.
 
 ``` haskell
