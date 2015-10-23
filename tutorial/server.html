@@ -252,7 +252,7 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
 
 <span class="kw">class</span> <span class="dt">ToText</span> a <span class="kw">where</span>
 <span class="ot">  toText ::</span> a <span class="ot">-&gt;</span> <span class="dt">Text</span></code></pre>
-<p>And as long as the type that a <code>Capture</code>/<code>QueryParam</code>/<code>Header</code>/etc will be decoded to provides a <code>FromText</code> instance, it will Just Work. <em>servant</em> provides a decent number of instances, but here are a some examples of defining your own.</p>
+<p>And as long as the type that a <code>Capture</code>/<code>QueryParam</code>/<code>Header</code>/etc will be decoded to provides a <code>FromText</code> instance, it will Just Work. <em>servant</em> provides a decent number of instances, but here are some examples of defining your own.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- A typical enumeration</span>
 <span class="kw">data</span> <span class="dt">Direction</span>
   <span class="fu">=</span> <span class="dt">Up</span>
@@ -816,7 +816,7 @@ serverFor <span class="fu">=</span> undefined
 readerToEither' r <span class="fu">=</span> return (runReader r <span class="st">&quot;hi&quot;</span>)
 
 <span class="ot">readerToEither ::</span> <span class="dt">Reader</span> <span class="dt">String</span> <span class="fu">:~&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span>
-readerToEither <span class="fu">=</span> <span class="dt">Nat</span> <span class="fu">.</span> readerToEither'</code></pre>
+readerToEither <span class="fu">=</span> <span class="dt">Nat</span> readerToEither'</code></pre>
 <p>We can write some simple webservice with the handlers running in <code>Reader String</code>.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ReaderAPI</span> <span class="fu">=</span> <span class="st">&quot;a&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Int</span>
             <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;b&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] String</span>

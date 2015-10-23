@@ -32,15 +32,15 @@
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] HelloMessage</span>
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;marketing&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] ClientInfo :&gt; Post '</span>[<span class="dt">JSON</span>] <span class="dt">Email</span></code></pre>
 <p>What we are going to get with <em>servant-client</em> here is 3 functions, one to query each endpoint:</p>
-<pre><code>position :: Int -- ^ value for &quot;x&quot;
-         -&gt; Int -- ^ value for &quot;y&quot;
-         -&gt; EitherT ServantError IO Position
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">position ::</span> <span class="dt">Int</span> <span class="co">-- ^ value for &quot;x&quot;</span>
+         <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="co">-- ^ value for &quot;y&quot;</span>
+         <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">Position</span>
 
-hello :: Maybe String -- ^ an optional value for &quot;name&quot;
-      -&gt; EitherT ServantError IO HelloMessage
+<span class="ot">hello ::</span> <span class="dt">Maybe</span> <span class="dt">String</span> <span class="co">-- ^ an optional value for &quot;name&quot;</span>
+      <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">HelloMessage</span>
 
-marketing :: ClientInfo -- ^ value for the request body
-          -&gt; EitherT ServantError IO Email</code></pre>
+<span class="ot">marketing ::</span> <span class="dt">ClientInfo</span> <span class="co">-- ^ value for the request body</span>
+          <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">Email</span></code></pre>
 <p>Each function makes available as an argument any value that the response may depend on, as evidenced in the API type. How do we get these functions? Just give a <code>Proxy</code> to your API and a host to make the requests to:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
 api <span class="fu">=</span> <span class="dt">Proxy</span>
