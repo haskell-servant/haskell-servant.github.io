@@ -42,7 +42,7 @@ obviously not the same as `"list-all" :> "users" :> Get '[JSON] [User]`, which
 is equivalent to `/list-all/users`. This means that sometimes `:>` is somehow
 equivalent to `/`, but sometimes it just lets you chain another combinator.
 
-We can also describe APIs with multiple endpoints, of course, using the `:<|>`
+We can also describe APIs with multiple endpoints by using the `:<|>`
 combinators. Here's an example:
 
 ``` haskell
@@ -60,7 +60,7 @@ combinators that servant comes with.
 
 As you've already seen, you can use type-level strings (enabled with the
 `DataKinds` language extension) for static path fragments. Chaining
-them amounts to `/`-separating them in an URL.
+them amounts to `/`-separating them in a URL.
 
 ``` haskell
 type UserAPI = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
@@ -70,7 +70,7 @@ type UserAPI = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
 
 ### `Delete`, `Get`, `Patch`, `Post` and `Put`
 
-These 5 combinators are very similar except that they obviously each describe a
+These 5 combinators are very similar except that they each describe a
 different HTTP method. This is how they're declared
 
 ``` haskell
@@ -107,8 +107,9 @@ data Capture (s :: Symbol) a
 -- s :: Symbol just says that 's' must be a type-level string.
 ```
 
-In some web frameworks, you use regexes for captures. We use a `FromText` class
-which the captured value must be an instance of.
+In some web frameworks, you use regexes for captures. We use a
+[`FromText`](https://hackage.haskell.org/package/servant/docs/Servant-Common-Text.html#t:FromText)
+class, which the captured value must be an instance of.
 
 Examples:
 
@@ -124,17 +125,18 @@ type UserAPI = "user" :> Capture "userid" Integer :> Get '[JSON] User
 
 ### `QueryParam`, `QueryParams`, `QueryFlag`, `MatrixParam`, `MatrixParams` and `MatrixFlag`
 
-`QueryParam`, `QueryParams` and `QueryFlag` are about query string parameters,
-i.e those parameters that come after the question mark (`?`) in URLs, like
-`sortby` in `/users?sortby=age`, whose value is here set to `age`. The
-difference is that `QueryParams` lets you specify that the query parameter
+`QueryParam`, `QueryParams` and `QueryFlag` are about query string
+parameters, i.e., those parameters that come after the question mark
+(`?`) in URLs, like `sortby` in `/users?sortby=age`, whose value is
+set to `age`. `QueryParams` lets you specify that the query parameter
 is actually a list of values, which can be specified using
-`?param[]=value1&param[]=value2`. This represents a list of values composed
-of `value1` and `value2`. `QueryFlag` lets you specify a boolean-like query
-parameter where a client isn't forced to specify a value. The absence or
-presence of the parameter's name in the query string determines whether the
-parameter is considered to have value `True` or `False`. `/users?active`
-would list only active users whereas `/users` would list them all.
+`?param[]=value1&param[]=value2`. This represents a list of values
+composed of `value1` and `value2`. `QueryFlag` lets you specify a
+boolean-like query parameter where a client isn't forced to specify a
+value. The absence or presence of the parameter's name in the query
+string determines whether the parameter is considered to have the
+value `True` or `False`. For instance, `/users?active` would list only
+active users whereas `/users` would list them all.
 
 Here are the corresponding data type declarations.
 
@@ -144,15 +146,15 @@ data QueryParams (sym :: Symbol) a
 data QueryFlag (sym :: Symbol)
 ```
 
-[Matrix parameters](http://www.w3.org/DesignIssues/MatrixURIs.html), on the
-other hand, are like query string parameters that can appear anywhere in the
-paths (click the link for more details). An URL with matrix parameters in it
-looks like `/users;sortby=age`, as opposed to `/users?sortby=age` with query
-string parameters. The big advantage is that they are not necessarily at the
-end of the URL. You could have
-`/users;active=true;registered_after=2005-01-01/locations` to get geolocation
-data about your users that are still active and who registered after *January
-1st, 2005*.
+[Matrix parameters](http://www.w3.org/DesignIssues/MatrixURIs.html)
+are similar to query string parameters, but they can appear anywhere
+in the paths (click the link for more details). A URL with matrix
+parameters in it looks like `/users;sortby=age`, as opposed to
+`/users?sortby=age` with query string parameters. The big advantage is
+that they are not necessarily at the end of the URL. You could have
+`/users;active=true;registered_after=2005-01-01/locations` to get
+geolocation data about users whom are still active and registered
+after *January 1st, 2005*.
 
 Corresponding data type declarations below.
 
@@ -178,10 +180,10 @@ a `SortBy`). *servant* takes care of it.
 ### `ReqBody`
 
 Each HTTP request can carry some additional data that the server can use in its
-*body* and the said data can be encoded in any format -- as long as the server
+*body*, and this data can be encoded in any format -- as long as the server
 understands it. This can be used for example for an endpoint for creating new
 users: instead of passing each field of the user as a separate query string
-parameter or anything dirty like that, we can group all the data into a JSON
+parameter or something dirty like that, we can group all the data into a JSON
 object. This has the advantage of supporting nested objects.
 
 *servant*'s `ReqBody` combinator takes a list of content types in which the
@@ -201,15 +203,15 @@ Examples:
 ``` haskell
 type UserAPI = "users" :> ReqBody '[JSON] User :> Post '[JSON] User
                -- - equivalent to 'POST /users' with a JSON object
-               --   describing an User in the request body
-               -- - returns an User encoded in JSON
+               --   describing a User in the request body
+               -- - returns a User encoded in JSON
 
           :<|> "users" :> Capture "userid" Integer
                        :> ReqBody '[JSON] User
                        :> Put '[JSON] User
                -- - equivalent to 'PUT /users/:userid' with a JSON
-               --   object describing an User in the request body
-               -- - returns an User encoded in JSON
+               --   object describing a User in the request body
+               -- - returns a User encoded in JSON
 ```
 
 ### Request `Header`s
@@ -237,8 +239,8 @@ type UserAPI = "users" :> Header "User-Agent" Text :> Get '[JSON] [User]
 ### Content types
 
 So far, whenever we have used a combinator that carries a list of content
-types, we've always specified `'[JSON]`. *servant* however lets you use several
-content types and define your owns.
+types, we've always specified `'[JSON]`. However, *servant* lets you use several
+content types, and also lets you define your own content types.
 
 Four content-types are provided out-of-the-box by the core *servant* package:
 `JSON`, `PlainText`, `FormUrlEncoded` and `OctetStream`. If for some obscure
@@ -249,12 +251,12 @@ those 4 formats, you would write the API type as below.
 type UserAPI = "users" :> Get '[JSON, PlainText, FormUrlEncoded, OctetStream] [User]
 ```
 
-We obviously provide an HTML content-type, but since there's no single library
+We also provide an HTML content-type, but since there's no single library
 that everyone uses, we decided to release 2 packages, *servant-lucid* and
 *servant-blaze*, to provide HTML encoding of your data.
 
 We will further explain how these content types and your data types can play
-together in the section about serving an API.
+together in the [section about serving an API](/tutorial/server.html).
 
 ### Response `Headers`
 
