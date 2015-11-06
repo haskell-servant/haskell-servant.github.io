@@ -291,12 +291,14 @@ server = position
 
 Did you see that? The types for your handlers changed to be just what we
 needed! In particular:
-- a `Capture "something" a` becomes an argument of type `a` (for `position`);
-- a `QueryParam "something" a` becomes an argument of type `Maybe a` (because
+
+  - a `Capture "something" a` becomes an argument of type `a` (for `position`);
+  - a `QueryParam "something" a` becomes an argument of type `Maybe a` (because
 an endpoint can technically be accessed without specifying any query
 string parameter, we decided to "force" handlers to be aware that the
 parameter might not always be there);
-- a `ReqBody contentTypeList a` becomes an argument of type `a`;
+
+  - a `ReqBody contentTypeList a` becomes an argument of type `a`;
 
 And that's it. You can see this example in action by running `dist/build/tutorial/tutorial 3`.
 
@@ -385,8 +387,8 @@ There's not much else to say about these classes. You will need instances for
 them when using `Capture`, `QueryParam`, `QueryParams`, `MatrixParam`,
 `MatrixParams` and `Header` with your types. You will need `FromText` instances
 for server-side request handlers and `ToText` instances only when using
-*servant-client*, described in the section about deriving haskell
-functions to query an API.
+*servant-client*, as described in the [section about deriving haskell
+functions to query an API](/tutorial/client.html).
 
 ## Using content-types with your data types
 
@@ -1037,11 +1039,11 @@ module Users where
 
 type UsersAPI =
        Get '[JSON] [User] -- list users
-  :<|> ReqBody '[JSON] User :> Post '[] () -- add an user
+  :<|> ReqBody '[JSON] User :> Post '[] () -- add a user
   :<|> Capture "userid" Int :>
-         ( Get '[JSON]' User -- view an user
-      :<|> ReqBody '[JSON] User :> Put '[] () -- update an user
-      :<|> Delete '[] () -- delete an user
+         ( Get '[JSON]' User -- view a user
+      :<|> ReqBody '[JSON] User :> Put '[] () -- update a user
+      :<|> Delete '[] () -- delete a user
          )
 
 usersServer :: Server UsersAPI
