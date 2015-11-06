@@ -21,7 +21,7 @@ This is an introductory tutorial to the current version of *servant*, which is *
    This is a pretty wide-ranging principle. You should be able to get nice
    documentation for you web servers, and client libraries, without repeating
    yourself. You should not have to manualy serialize and deserialize your
-   resources, but only delcare how to do those things *once per type*. If a
+   resources, but only declare how to do those things *once per type*. If a
    bunch of your handlers take the same query parameters, you shouldn't have to
    repeat that logic for each handler, but instead just "apply" it to all of
    them at once. Your handlers shouldn't be where composition goes to die. And
