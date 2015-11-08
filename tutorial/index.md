@@ -20,12 +20,12 @@ This is an introductory tutorial to the current version of *servant*, which is *
 
    This is a pretty wide-ranging principle. You should be able to get nice
    documentation for you web servers, and client libraries, without repeating
-   yourself. You should not have to manualy serialize and deserialize your
-   resources, but only delcare how to do those things *once per type*. If a
+   yourself. You should not have to manually serialize and deserialize your
+   resources, but only declare how to do those things *once per type*. If a
    bunch of your handlers take the same query parameters, you shouldn't have to
    repeat that logic for each handler, but instead just "apply" it to all of
    them at once. Your handlers shouldn't be where composition goes to die. And
-   so on
+   so on.
 
 - flexibility
 
@@ -33,7 +33,7 @@ This is an introductory tutorial to the current version of *servant*, which is *
    achievable. If you want to use templating library X, go ahead. Forms? Do
    them however you want, but without difficulty. We're not opinionated.
 
-- separatation of concerns
+- separation of concerns
 
    Your handlers and your HTTP logic should be separate. True to the philosphy
    at the core of HTTP and REST, with *servant* your handlers return normal
@@ -63,4 +63,3 @@ cover the couple of ways you can extend servant for a great good.
 3. [Deriving Haskell functions to query an API](/tutorial/client.html)
 4. [Generating javascript functions to query an API](/tutorial/javascript.html)
 5. [Generating documentation for APIs](/tutorial/docs.html)
-
