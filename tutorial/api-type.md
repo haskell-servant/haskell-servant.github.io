@@ -138,7 +138,7 @@ string determines whether the parameter is considered to have the
 value `True` or `False`. For instance, `/users?active` would list only
 active users whereas `/users` would list them all.
 
-Here are the corresponding data type declarations.
+Here are the corresponding data type declarations:
 
 ``` haskell
 data QueryParam (sym :: Symbol) a
@@ -192,7 +192,7 @@ And, as you might have guessed, you don't have to check the content-type
 header, and do the deserialization yourself. We do it for you. And return `Bad
 Request` or `Unsupported Content Type` as appropriate.
 
-Here's the data type declaration for it.
+Here's the data type declaration for it:
 
 ``` haskell
 data ReqBody (contentTypes :: [*]) a
@@ -222,7 +222,7 @@ example would be `Accept: application/json`.
 
 The `Header` combinator in servant takes a type-level string for the header
 name and the type to which we want to decode the header's value (from some
-textual representation), as illustrated below.
+textual representation), as illustrated below:
 
 ``` haskell
 data Header (sym :: Symbol) a
@@ -245,7 +245,7 @@ content types, and also lets you define your own content types.
 Four content-types are provided out-of-the-box by the core *servant* package:
 `JSON`, `PlainText`, `FormUrlEncoded` and `OctetStream`. If for some obscure
 reason you wanted one of your endpoints to make your user data available under
-those 4 formats, you would write the API type as below.
+those 4 formats, you would write the API type as below:
 
 ``` haskell
 type UserAPI = "users" :> Get '[JSON, PlainText, FormUrlEncoded, OctetStream] [User]
@@ -270,7 +270,7 @@ data Headers (ls :: [*]) a
 ```
 
 If you want to describe an endpoint that returns a "User-Count" header in each
-response, you could write it as below.
+response, you could write it as below:
 
 ``` haskell
 type UserAPI = "users" :> Get '[JSON] (Headers [Header "User-Count" Integer] [User])
