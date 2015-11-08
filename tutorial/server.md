@@ -1198,7 +1198,7 @@ readerServerT = a :<|> b
 ```
 
 we unfortunately can't use `readerServerT` as an argument of `serve`, because
-`serve` wants a `Server ReaderAPI`, i.e with handlers running in `EitherT
+`serve` wants a `Server ReaderAPI`, i.e., with handlers running in `EitherT
 ServantErr IO`. But there's a simple solution to this.
 
 ### Enter `enter`

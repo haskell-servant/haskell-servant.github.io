@@ -125,10 +125,10 @@ type UserAPI = "user" :> Capture "userid" Integer :> Get '[JSON] User
 
 ### `QueryParam`, `QueryParams`, `QueryFlag`, `MatrixParam`, `MatrixParams` and `MatrixFlag`
 
-`QueryParam`, `QueryParams` and `QueryFlag` are about query string
-parameters, i.e., those parameters that come after the question mark
-(`?`) in URLs, like `sortby` in `/users?sortby=age`, whose value is
-set to `age`. `QueryParams` lets you specify that the query parameter
+`QueryParam`, `QueryParams` and `QueryFlag` are about query string parameters,
+i.e., those parameters that come after the question mark (`?`) in URLs, like
+`sortby` in `/users?sortby=age`, whose value is here set to `age`. The
+difference is that `QueryParams` lets you specify that the query parameter
 is actually a list of values, which can be specified using
 `?param[]=value1&param[]=value2`. This represents a list of values
 composed of `value1` and `value2`. `QueryFlag` lets you specify a
