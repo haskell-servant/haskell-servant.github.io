@@ -71,7 +71,7 @@ type UserAPI = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
 ### `Delete`, `Get`, `Patch`, `Post` and `Put`
 
 These 5 combinators are very similar except that they obviously each describe a
-different HTTP method. This is how they're declared
+different HTTP method. This is how they're declared:
 
 ``` haskell
 data Delete (contentTypes :: [*]) a
