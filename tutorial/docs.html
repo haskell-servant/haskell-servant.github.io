@@ -172,7 +172,7 @@ docsBS <span class="fu">=</span> encodeUtf8
   <span class="kw">where</span> intro <span class="fu">=</span> <span class="dt">DocIntro</span> <span class="st">&quot;Welcome&quot;</span> [<span class="st">&quot;This is our super webservice's API.&quot;</span>, <span class="st">&quot;Enjoy!&quot;</span>]</code></pre>
 <p><code>docsWithIntros</code> just takes an additional parameter, a list of <code>DocIntro</code>s that must be displayed before any endpoint docs.</p>
 <p>We can now serve the API <em>and</em> the API docs with a simple server.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">DocsAPI</span> <span class="fu">=</span> <span class="dt">T3.API</span> <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">DocsAPI</span> <span class="fu">=</span> <span class="dt">T3.API</span> <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw IO Application</span>
 
 <span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">DocsAPI</span>
 api <span class="fu">=</span> <span class="dt">Proxy</span>

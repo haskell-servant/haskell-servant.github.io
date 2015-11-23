@@ -539,12 +539,12 @@ myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <
 </section>
 <section id="serving-static-files" class="level2">
 <h2>Serving static files</h2>
-<p><em>servant-server</em> also provides a way to just serve the content of a directory under some path in your web API. As mentioned earlier in this document, the <code>Raw</code> combinator can be used in your APIs to mean “plug here any WAI application”. Well, servant-server provides a function to get a file and directory serving WAI application, namely:</p>
+<p><em>servant-server</em> also provides a way to just serve the content of a directory under some path in your web API. As mentioned earlier in this document, the <code>Raw m a</code> combinator can be used in your APIs to mean “plug here any application running in monad <code>m</code> with return value <code>a</code>." Well, servant-server provides a function to get a file and directory serving WAI application, namely:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- exported by Servant and Servant.Server</span>
-<span class="ot">serveDirectory ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Server</span> <span class="dt">Raw</span></code></pre>
+<span class="ot">serveDirectory ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Server</span> <span class="dt">(Raw IO Application)</span></code></pre>
 <p><code>serveDirectory</code>’s argument must be a path to a valid directory. You can see an example below, runnable with <code>dist/build/tutorial/tutorial 6</code> (you <strong>must</strong> run it from within the <em>servant-examples/</em> directory!), which is a webserver that serves the various bits of code covered in this getting-started.</p>
 <p>The API type will be the following.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;code&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Raw</span></code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;code&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Raw IO Application</span></code></pre>
 <p>And the server:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
 api <span class="fu">=</span> <span class="dt">Proxy</span>

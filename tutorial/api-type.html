@@ -156,19 +156,20 @@
 </section>
 <section id="interoperability-with-other-wai-applications-raw" class="level3">
 <h3>Interoperability with other WAI <code>Application</code>s: <code>Raw</code></h3>
-<p>Finally, we also include a combinator named <code>Raw</code> that can be used for two reasons:</p>
+<p>Finally, we include a combinator named <code>Raw</code> for handing control to the underlying framework. <code>Raw</code> endpoints trade away the type safety of normal Servant endpoints, in return for direct access to the HTTP request and response. This can be useful for two reasons:</p>
 <ul>
 <li><p>You want to serve static files from a given directory. In that case you can just say:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
                <span class="co">-- a /users endpoint</span>
 
-          <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw</span>
+          <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw IO Application</span>
                <span class="co">-- requests to anything else than /users</span>
                <span class="co">-- go here, where the server will try to</span>
                <span class="co">-- find a file with the right name</span>
                <span class="co">-- at the right path</span></code></pre></li>
 <li><p>You more generally want to plug a <a href="http://hackage.haskell.org/package/wai">WAI <code>Application</code></a> into your webservice. Static file serving is a specific example of that. The API type would look the same as above though. (You can even combine <em>servant</em> with other web frameworks this way!)</p></li>
 </ul>
+<p> <code>Raw</code> takes two type arguments <code>m</code> and <code>a</code> corresponding to the underlying monad your web handler will run in, and the handler's return type. This information is often needed by an API's server but ignored by other inerpretations. As we will see later, it can be useful to have a version of you API that is free of <code>Raw</code> combinators.</p> 
 <div style="text-align: center;">
 <p><a href="../tutorial/server.html">Next page: Serving an API</a></p>
 </div>

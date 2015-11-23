@@ -31,7 +31,7 @@
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;point&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Point</span>
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;books&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;q&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Search Book)</span>
 
-<span class="kw">type</span> <span class="dt">API'</span> <span class="fu">=</span> <span class="dt">API</span> <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw</span>
+<span class="kw">type</span> <span class="dt">API'</span> <span class="fu">=</span> <span class="dt">API</span> <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw IO Application</span>
 
 <span class="kw">data</span> <span class="dt">Point</span> <span class="fu">=</span> <span class="dt">Point</span>
   {<span class="ot"> x ::</span> <span class="dt">Double</span>
