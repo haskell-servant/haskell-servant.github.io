@@ -13,7 +13,7 @@ Let's start with the API type(s) and the accompanying datatypes.
 type API = "point" :> Get '[JSON] Point
       :<|> "books" :> QueryParam "q" Text :> Get '[JSON] (Search Book)
 
-type API' = API :<|> Raw
+type API' = API :<|> Raw IO Application
 
 data Point = Point
   { x :: Double
