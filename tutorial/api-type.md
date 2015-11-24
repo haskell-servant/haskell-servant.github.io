@@ -277,7 +277,7 @@ type UserAPI = "users" :> Get '[JSON] (Headers [Header "User-Count" Integer] [Us
 ### Interoperability with other WAI `Application`s: `Raw`
 
 Finally, we include a combinator named `Raw` for handing control to the underlying
-framework. `Raw`  endpoints trade away the type safety of normal Servant endpoints
+framework. `Raw` endpoints trade away the type safety of normal Servant endpoints
 in return for direct access to the HTTP request and response. This can be useful for
 two reasons:
 
