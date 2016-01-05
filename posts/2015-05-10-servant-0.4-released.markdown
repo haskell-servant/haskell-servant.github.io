@@ -175,9 +175,9 @@ client :: HasClient (Canonicalize layout) => Proxy layout -> BaseUrl -> Client l
 
 # Complete CHANGELOGs
 
-- [servant](http://hackage.haskell.org/package/servant-0.4.0/changelog)
+- [servant](https://github.com/haskell-servant/servant/blob/b81ea9eee200803e764bc924302bb32d7fa81f0f/servant/CHANGELOG.md)
 - [servant-server](http://hackage.haskell.org/package/servant-server-0.4.0/changelog)
-- [servant-client](http://hackage.haskell.org/package/servant-client-0.4.0/changelog)
+- [servant-client](https://github.com/haskell-servant/servant/blob/b81ea9eee200803e764bc924302bb32d7fa81f0f/servant-client/CHANGELOG.md)
 - [servant-docs](http://hackage.haskell.org/package/servant-docs-0.4.0/changelog)
 - [servant-jquery](http://hackage.haskell.org/package/servant-jquery-0.4.0/changelog)
 
