@@ -1,0 +1,2 @@
+dependencies:
+  - servant == 0.4.4.6
