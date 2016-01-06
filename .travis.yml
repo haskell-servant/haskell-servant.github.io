@@ -14,6 +14,10 @@ addons:
       - cabal-install-1.22
       - libgmp-dev
 
+branches:
+  except:
+    - master
+
 install:
   - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
   - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/1.22/bin:$PATH
