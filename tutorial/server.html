@@ -832,7 +832,7 @@ readerServerT <span class="fu">=</span> a <span class="fu">:&lt;|&gt;</span> b
 
 <span class="ot">        b ::</span> <span class="dt">Reader</span> <span class="dt">String</span> <span class="dt">String</span>
         b <span class="fu">=</span> ask</code></pre></div>
-<p>we unfortunately can’t use <code>readerServerT</code> as an argument of <code>serve</code>, because <code>serve</code> wants a <code>Server ReaderAPI</code>, i.e with handlers running in <code>EitherT ServantErr IO</code>. But there’s a simple solution to this.</p>
+<p>we unfortunately can’t use <code>readerServerT</code> as an argument of <code>serve</code>, because <code>serve</code> wants a <code>Server ReaderAPI</code>, i.e., with handlers running in <code>EitherT ServantErr IO</code>. But there’s a simple solution to this.</p>
 </section>
 <section id="enter-enter" class="level3">
 <h3>Enter <code>enter</code></h3>

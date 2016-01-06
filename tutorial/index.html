@@ -44,13 +44,13 @@
 <ul>
 <li>concision</li>
 </ul>
-<p>This is a pretty wide-ranging principle. You should be able to get nice documentation for your web servers, and client libraries, without repeating yourself. You should not have to manually serialize and deserialize your resources, but only delcare how to do those things <em>once per type</em>. If a bunch of your handlers take the same query parameters, you shouldn’t have to repeat that logic for each handler, but instead just “apply” it to all of them at once. Your handlers shouldn’t be where composition goes to die. And so on</p>
+<p>This is a pretty wide-ranging principle. You should be able to get nice documentation for your web servers, and client libraries, without repeating yourself. You should not have to manually serialize and deserialize your resources, but only declare how to do those things <em>once per type</em>. If a bunch of your handlers take the same query parameters, you shouldn’t have to repeat that logic for each handler, but instead just “apply” it to all of them at once. Your handlers shouldn’t be where composition goes to die. And so on.</p>
 <ul>
 <li>flexibility</li>
 </ul>
 <p>If we haven’t thought of your use case, it should still be easily achievable. If you want to use templating library X, go ahead. Forms? Do them however you want, but without difficulty. We’re not opinionated.</p>
 <ul>
-<li>separatation of concerns</li>
+<li>separation of concerns</li>
 </ul>
 <p>Your handlers and your HTTP logic should be separate. True to the philosphy at the core of HTTP and REST, with <em>servant</em> your handlers return normal Haskell datatypes - that’s the resource. And then from a description of your API, <em>servant</em> handles the <em>presentation</em> (i.e., the Content-Types). But that’s just one example.</p>
 <ul>

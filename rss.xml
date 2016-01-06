@@ -70,7 +70,7 @@ conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span c
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] User</span></code></pre></div>
 <p>and generate request handlers that just respond with random values of the appropriate type, <code>User</code> in our case. In <em>servant</em>/<em>wai</em> terms, this means we get a <code>mock</code> function with the type:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mock ::</span> <span class="dt">HasMock</span> api <span class="ot">=&gt;</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</code></pre></div>
-<p>i.e “given an API type, please generate a mock server for such an API”. This effectively means “please pull a mock server out of thin air for me”.</p>
+<p>i.e., “given an API type, please generate a mock server for such an API”. This effectively means “please pull a mock server out of thin air for me”.</p>
 <p>Out of thin air, really? Not exactly. But let’s start by clearly stating the problem.</p>
 </section>
 <section id="the-problem" class="level1">
@@ -89,7 +89,7 @@ conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span c
 </section>
 <section id="the-plan" class="level1">
 <h1>The Plan</h1>
-<p>Just like <em>servant-server</em>, <em>servant-client</em> and others, we need a class whose instances will define the way we interpret each combinator, in a way very specific to this task: we will produce what <em>servant-server</em> takes as input, i.e request handlers! This all means we are basically looking at a class like:</p>
+<p>Just like <em>servant-server</em>, <em>servant-client</em> and others, we need a class whose instances will define the way we interpret each combinator, in a way very specific to this task: we will produce what <em>servant-server</em> takes as input, i.e., request handlers! This all means we are basically looking at a class like:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">HasServer</span> api <span class="ot">=&gt;</span> <span class="dt">HasMock</span> api <span class="kw">where</span>
 <span class="ot">  mock ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</code></pre></div>
 <p>where <code>Server api</code> just computes the types of the all the request handlers of an <em>API type</em>. In our case, <code>Server api</code> is computed as follows:</p>
@@ -118,9 +118,9 @@ conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span c
 <p>This essentially means writing an <code>Arbitrary</code> instance for <code>User</code> is as simple as:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">User</span> <span class="kw">where</span>
   <span class="co">-- we just rely on the arbitrary instance for lists of</span>
-  <span class="co">-- chars, i.e Strings, and use the Functor instance for Gen</span>
+  <span class="co">-- chars, i.e., Strings, and use the Functor instance for Gen</span>
   arbitrary <span class="fu">=</span> fmap <span class="dt">User</span> arbitrary</code></pre></div>
-<p>If you have multiple fields, you can use the usual combo of <code>&lt;$&gt;</code> (i.e <code>fmap</code>) and <code>&lt;*&gt;</code> (comes with <code>Applicative</code>).</p>
+<p>If you have multiple fields, you can use the usual combo of <code>&lt;$&gt;</code> (i.e., <code>fmap</code>) and <code>&lt;*&gt;</code> (comes with <code>Applicative</code>).</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- a point: x, y coordinates</span>
 <span class="kw">data</span> <span class="dt">Point</span> <span class="fu">=</span> <span class="dt">Point</span> <span class="dt">Double</span> <span class="dt">Double</span>
 
@@ -251,7 +251,7 @@ main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span>
            <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] [User]</span>
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">&#39;[JSON] User :&gt; Put &#39;</span>[<span class="dt">JSON</span>] ()</code></pre></div>
-<p>Wherever applicable (i.e <code>ReqBody</code> and all the combinators that correspond to an HTTP method), you can now specify all the content types in which you want to want to be able to encode/decode values. As you can see, we use the <code>DataKinds</code> GHC extension to let you specify a type-level list of content-types, which are simple dummy types:</p>
+<p>Wherever applicable (i.e., <code>ReqBody</code> and all the combinators that correspond to an HTTP method), you can now specify all the content types in which you want to want to be able to encode/decode values. As you can see, we use the <code>DataKinds</code> GHC extension to let you specify a type-level list of content-types, which are simple dummy types:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">JSON</span></code></pre></div>
 <p>In <em>servant-server</em>, a list of these content-types as the first argument of a method gets translated into a set of constraints on the return type:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Get</span> <span class="ch">&#39;[JSON, PlainText] Int</span>
