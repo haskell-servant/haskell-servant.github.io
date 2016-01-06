@@ -221,7 +221,12 @@ server <span class="fu">=</span> position
 
 <span class="ot">        marketing ::</span> <span class="dt">ClientInfo</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">Email</span>
         marketing clientinfo <span class="fu">=</span> return (emailForClient clientinfo)</code></pre></div>
-<p>Did you see that? The types for your handlers changed to be just what we needed! In particular: - a <code>Capture &quot;something&quot; a</code> becomes an argument of type <code>a</code> (for <code>position</code>); - a <code>QueryParam &quot;something&quot; a</code> becomes an argument of type <code>Maybe a</code> (because an endpoint can technically be accessed without specifying any query string parameter, we decided to “force” handlers to be aware that the parameter might not always be there); - a <code>ReqBody contentTypeList a</code> becomes an argument of type <code>a</code>;</p>
+<p>Did you see that? The types for your handlers changed to be just what we needed! In particular:</p>
+<ul>
+<li>a <code>Capture &quot;something&quot; a</code> becomes an argument of type <code>a</code> (for <code>position</code>);</li>
+<li><p>a <code>QueryParam &quot;something&quot; a</code> becomes an argument of type <code>Maybe a</code> (because an endpoint can technically be accessed without specifying any query string parameter, we decided to “force” handlers to be aware that the parameter might not always be there);</p></li>
+<li><p>a <code>ReqBody contentTypeList a</code> becomes an argument of type <code>a</code>;</p></li>
+</ul>
 <p>And that’s it. You can see this example in action by running <code>dist/build/tutorial/tutorial 3</code>.</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> http://localhost:8081/position/1/2
 <span class="dt">{&quot;x&quot;:1,&quot;y&quot;:2}</span>
@@ -284,7 +289,7 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
 
 <span class="kw">instance</span> <span class="dt">ToText</span> <span class="dt">UserId</span> <span class="kw">where</span>
   toText (<span class="dt">UserId</span> i) <span class="fu">=</span> toText i</code></pre></div>
-<p>There’s not much else to say about these classes. You will need instances for them when using <code>Capture</code>, <code>QueryParam</code>, <code>QueryParams</code>, <code>MatrixParam</code>, <code>MatrixParams</code> and <code>Header</code> with your types. You will need <code>FromText</code> instances for server-side request handlers and <code>ToText</code> instances only when using <em>servant-client</em>, described in the section about deriving haskell functions to query an API.</p>
+<p>There’s not much else to say about these classes. You will need instances for them when using <code>Capture</code>, <code>QueryParam</code>, <code>QueryParams</code>, <code>MatrixParam</code>, <code>MatrixParams</code> and <code>Header</code> with your types. You will need <code>FromText</code> instances for server-side request handlers and <code>ToText</code> instances only when using <em>servant-client</em>, as described in the <a href="../tutorial/client.html">section about deriving haskell functions to query an API</a>.</p>
 </section>
 <section id="using-content-types-with-your-data-types" class="level2">
 <h2>Using content-types with your data types</h2>
@@ -714,11 +719,11 @@ server2 userid <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</sp
 
 <span class="kw">type</span> <span class="dt">UsersAPI</span> <span class="fu">=</span>
        <span class="dt">Get</span> <span class="ch">'[JSON] [User] -- list users</span>
-  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Post '</span>[] () <span class="co">-- add an user</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Post '</span>[] () <span class="co">-- add a user</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
-         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> <span class="dt">User</span> <span class="co">-- view an user</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Put '</span>[] () <span class="co">-- update an user</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete an user</span>
+         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> <span class="dt">User</span> <span class="co">-- view a user</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Put '</span>[] () <span class="co">-- update a user</span>
+      <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete a user</span>
          )
 
 <span class="ot">usersServer ::</span> <span class="dt">Server</span> <span class="dt">UsersAPI</span>
