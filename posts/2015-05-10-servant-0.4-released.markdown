@@ -33,7 +33,7 @@ type API = -- list users
       :<|> "user" :> Capture "username" Text :> ReqBody '[JSON] User :> Put '[JSON] ()
 ```
 
-Wherever applicable (i.e `ReqBody` and all the combinators that correspond to
+Wherever applicable (i.e., `ReqBody` and all the combinators that correspond to
 an HTTP method), you can now specify all the content types in which you
 want to want to be able to encode/decode values. As you can see, we use the
 `DataKinds` GHC extension to let you specify a type-level list of

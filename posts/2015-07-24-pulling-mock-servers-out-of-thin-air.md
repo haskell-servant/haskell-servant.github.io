@@ -19,7 +19,7 @@ and generate request handlers that just respond with random values of the approp
 mock :: HasMock api => Proxy api -> Server api
 ```
 
-i.e "given an API type, please generate a mock server for such an API". This effectively means "please pull a mock server out of thin air for me".
+i.e., "given an API type, please generate a mock server for such an API". This effectively means "please pull a mock server out of thin air for me".
 
 Out of thin air, really? Not exactly. But let's start by clearly stating the problem.
 
@@ -52,7 +52,7 @@ possibly by constraining the user to provide an instance for some random generat
 
 # The Plan
 
-Just like *servant-server*, *servant-client* and others, we need a class whose instances will define the way we interpret each combinator, in a way very specific to this task: we will produce what *servant-server* takes as input, i.e request handlers! This all means we are basically looking at a class like:
+Just like *servant-server*, *servant-client* and others, we need a class whose instances will define the way we interpret each combinator, in a way very specific to this task: we will produce what *servant-server* takes as input, i.e., request handlers! This all means we are basically looking at a class like:
 
 ``` haskell
 class HasServer api => HasMock api where
@@ -102,11 +102,11 @@ This essentially means writing an `Arbitrary` instance for `User` is as simple a
 ``` haskell
 instance Arbitrary User where
   -- we just rely on the arbitrary instance for lists of
-  -- chars, i.e Strings, and use the Functor instance for Gen
+  -- chars, i.e., Strings, and use the Functor instance for Gen
   arbitrary = fmap User arbitrary
 ```
 
-If you have multiple fields, you can use the usual combo of `<$>` (i.e `fmap`) and `<*>` (comes with `Applicative`).
+If you have multiple fields, you can use the usual combo of `<$>` (i.e., `fmap`) and `<*>` (comes with `Applicative`).
 
 ``` haskell
 -- a point: x, y coordinates

@@ -71,7 +71,7 @@ type UserAPI = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
 ### `Delete`, `Get`, `Patch`, `Post` and `Put`
 
 These 5 combinators are very similar except that they obviously each describe a
-different HTTP method. This is how they're declared
+different HTTP method. This is how they're declared:
 
 ``` haskell
 data Delete (contentTypes :: [*]) a
@@ -125,7 +125,7 @@ type UserAPI = "user" :> Capture "userid" Integer :> Get '[JSON] User
 ### `QueryParam`, `QueryParams`, `QueryFlag`, `MatrixParam`, `MatrixParams` and `MatrixFlag`
 
 `QueryParam`, `QueryParams` and `QueryFlag` are about query string parameters,
-i.e those parameters that come after the question mark (`?`) in URLs, like
+i.e., those parameters that come after the question mark (`?`) in URLs, like
 `sortby` in `/users?sortby=age`, whose value is here set to `age`. The
 difference is that `QueryParams` lets you specify that the query parameter
 is actually a list of values, which can be specified using
@@ -136,7 +136,7 @@ presence of the parameter's name in the query string determines whether the
 parameter is considered to have value `True` or `False`. `/users?active`
 would list only active users whereas `/users` would list them all.
 
-Here are the corresponding data type declarations.
+Here are the corresponding data type declarations:
 
 ``` haskell
 data QueryParam (sym :: Symbol) a
@@ -190,7 +190,7 @@ And, as you might have guessed, you don't have to check the content-type
 header, and do the deserialization yourself. We do it for you. And return `Bad
 Request` or `Unsupported Content Type` as appropriate.
 
-Here's the data type declaration for it.
+Here's the data type declaration for it:
 
 ``` haskell
 data ReqBody (contentTypes :: [*]) a
@@ -220,7 +220,7 @@ example would be `Accept: application/json`.
 
 The `Header` combinator in servant takes a type-level string for the header
 name and the type to which we want to decode the header's value (from some
-textual representation), as illustrated below.
+textual representation), as illustrated below:
 
 ``` haskell
 data Header (sym :: Symbol) a
@@ -243,7 +243,7 @@ content types and define your owns.
 Four content-types are provided out-of-the-box by the core *servant* package:
 `JSON`, `PlainText`, `FormUrlEncoded` and `OctetStream`. If for some obscure
 reason you wanted one of your endpoints to make your user data available under
-those 4 formats, you would write the API type as below.
+those 4 formats, you would write the API type as below:
 
 ``` haskell
 type UserAPI = "users" :> Get '[JSON, PlainText, FormUrlEncoded, OctetStream] [User]
@@ -268,7 +268,7 @@ data Headers (ls :: [*]) a
 ```
 
 If you want to describe an endpoint that returns a "User-Count" header in each
-response, you could write it as below.
+response, you could write it as below:
 
 ``` haskell
 type UserAPI = "users" :> Get '[JSON] (Headers [Header "User-Count" Integer] [User])
