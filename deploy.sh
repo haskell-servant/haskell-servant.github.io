@@ -43,8 +43,13 @@ deploy_tutorial_version () {
     git push origin master
 }
 
+# Deploy top-level (non-tutorial) content. These are the things that need not be
+# versioned.
 deploy_main_version () {
-    # TODO
+    prepare_deploy
+    for f in $(find "$SERVANT_WWW/$SITE" -type f | grep -v "$SERVANT_WWW/$SITE/tutorial"); do
+        cp $f "$SERVANT_WWW"
+    done
 }
 
 
