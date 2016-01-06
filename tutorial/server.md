@@ -816,13 +816,13 @@ myHandler = return $ addHeader 1797 someUser
 
 *servant-server* also provides a way to just serve the content of a directory
 under some path in your web API. As mentioned earlier in this document, the
-`Raw` combinator can be used in your APIs to mean "plug here any WAI
-application". Well, servant-server provides a function to get a file and
+`Raw m a` combinator can be used in your APIs to mean "plug here any handler
+running in monad `m` returning `a`". Well, servant-server provides a function to get a file and
 directory serving WAI application, namely:
 
 ``` haskell
 -- exported by Servant and Servant.Server
-serveDirectory :: FilePath -> Server Raw
+serveDirectory :: FilePath -> Server (Raw IO Application)
 ```
 
 `serveDirectory`'s argument must be a path to a valid directory. You can see an
@@ -834,7 +834,7 @@ getting-started.
 The API type will be the following.
 
 ``` haskell
-type API = "code" :> Raw
+type API = "code" :> Raw IO Application
 ```
 
 And the server:

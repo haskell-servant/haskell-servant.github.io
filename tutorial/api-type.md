@@ -276,7 +276,10 @@ type UserAPI = "users" :> Get '[JSON] (Headers [Header "User-Count" Integer] [Us
 
 ### Interoperability with other WAI `Application`s: `Raw`
 
-Finally, we also include a combinator named `Raw` that can be used for two reasons:
+Finally, we include a combinator named `Raw` for handing control to the underlying
+framework. `Raw` endpoints trade away the type safety of normal Servant endpoints
+in return for direct access to the HTTP request and response. This can be useful for
+two reasons:
 
 - You want to serve static files from a given directory. In that case you can just say:
 
@@ -284,7 +287,7 @@ Finally, we also include a combinator named `Raw` that can be used for two reaso
     type UserAPI = "users" :> Get '[JSON] [User]
                    -- a /users endpoint
 
-              :<|> Raw
+              :<|> Raw IO Application
                    -- requests to anything else than /users
                    -- go here, where the server will try to
                    -- find a file with the right name
@@ -295,6 +298,11 @@ Finally, we also include a combinator named `Raw` that can be used for two reaso
 into your webservice. Static file serving is a specific example of that. The API type would look the
 same as above though. (You can even combine *servant* with other web frameworks
 this way!)
+
+`Raw` takes two type arguments `m` and `a` corresponding to the underlying monad your
+web handler will run in and the handler's return type. This information is often needed
+by an API's server but ignored by other interpretations. As we will see later, it can be
+useful to have a version of your API that is free of `Raw` combinators.
 
 <div style="text-align: center;">
   <a href="/tutorial/server.html">Next page: Serving an API</a>

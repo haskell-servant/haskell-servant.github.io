@@ -181,7 +181,7 @@ docsBS = encodeUtf8
 We can now serve the API *and* the API docs with a simple server.
 
 ``` haskell
-type DocsAPI = T3.API :<|> Raw
+type DocsAPI = T3.API :<|> Raw IO Application
 
 api :: Proxy DocsAPI
 api = Proxy
