@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Data.Char   (toLower)
 import Data.Monoid (mappend)
+import Data.Set    (delete)
 import Hakyll
 import Text.Pandoc
 import Text.Pandoc.Options
@@ -122,6 +123,9 @@ myPandocCompiler' withToc =
                            , writerHtml5 = True
                            , writerHTMLMathMethod = MathJax "http://cdn.mathjax.org/mathjax/latest/MathJax.js"
                            , writerColumns = 100 
+                           , writerExtensions =
+                              delete Ext_literate_haskell
+                                (writerExtensions defaultHakyllWriterOptions)
                            }
           writerWithToc = 
             writerOpts { writerTableOfContents = True 

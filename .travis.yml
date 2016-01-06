@@ -32,6 +32,8 @@ script:
   - ./dist/build/site/site build
   - ./dist/build/site/site check
 
+  - (cd check-code ; make test)
+
 cache:
   directories:
     - $HOME/.tinc/cache
