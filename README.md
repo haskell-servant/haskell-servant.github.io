@@ -1,9 +1,13 @@
+Different branches are used to allow for multiple versions of the tutorial
+(that track versions of servant). For example, branch 0.4 is built for the 0.4
+version of the tutorial.
+
 Instructions:
 
 ``` bash
 $ git clone https://github.com/haskell-servant/haskell-servant.github.io.git
 $ cd haskell-servant.github.io/
-$ git checkout hakyll
+$ git checkout (0.2 | 0.4 | ...)
 $ cabal sandbox init && cabal install --dep
 # go for a walk
 $ cabal build

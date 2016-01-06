@@ -30,9 +30,9 @@ fi
 
 cd $SERVANT_WWW
 git rm -r ./*
-cp -R $SITE/* ./
+cp -R $SITE/tutorial/* ./tutorial/${BRANCH}/
 git add ./**
-git commit -m "Built from $COMMIT"
+git commit -m "Built tutorial for version $BRANCH from $COMMIT"
 git push origin master
 echo $MSG
 cd $CURRDIR
