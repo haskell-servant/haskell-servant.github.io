@@ -43,7 +43,7 @@
 </blockquote>
 <p>You <em>should</em> be able to formalize that. And then use the formalized version to get you much of the way towards writing a web app. And all the way towards getting some client libraries, and documentation (and in the future, who knows - tests, HATEOAS, …).</p>
 <p>How would we describe it with servant? As mentioned earlier, an endpoint description is a good old Haskell <strong>type</strong>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;sortby&quot;</span> <span class="dt">SortBy</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;sortby&quot;</span> <span class="dt">SortBy</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
 <p>Let’s break that down:</p>
 <ul>
 <li><code>&quot;users&quot;</code> says that our endpoint will be accessible under <code>/users</code>;</li>
@@ -52,64 +52,64 @@
 <li>the <code>:&gt;</code> operator that separates the various “combinators” just lets you sequence static path fragments, URL captures and other combinators. The ordering only matters for static path fragments and URL captures. <code>&quot;users&quot; :&gt; &quot;list-all&quot; :&gt; Get '[JSON] [User]</code>, equivalent to <code>/users/list-all</code>, is obviously not the same as <code>&quot;list-all&quot; :&gt; &quot;users&quot; :&gt; Get '[JSON] [User]</code>, which is equivalent to <code>/list-all/users</code>. This means that sometimes <code>:&gt;</code> is somehow equivalent to <code>/</code>, but sometimes it just lets you chain another combinator.</li>
 </ul>
 <p>We can also describe APIs with multiple endpoints, of course, using the <code>:&lt;|&gt;</code> combinators. Here’s an example:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;list-all&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
-          <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;list-all&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;list-all&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
+          <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;list-all&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
 <p><em>servant</em> provides a fair amount of combinators out-of-the-box, but you can always write your own when you need it. Here’s a quick overview of all the combinators that servant comes with.</p>
 <section id="combinators" class="level2">
 <h2>Combinators</h2>
 <section id="static-strings" class="level3">
 <h3>Static strings</h3>
 <p>As you’ve already seen, you can use type-level strings (enabled with the <code>DataKinds</code> language extension) for static path fragments. Chaining them amounts to <code>/</code>-separating them in an URL.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;list-all&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;now&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;list-all&quot;</span> <span class="fu">:&gt;</span> <span class="st">&quot;now&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
              <span class="co">-- describes an endpoint reachable at:</span>
-             <span class="co">-- /users/list-all/now</span></code></pre>
+             <span class="co">-- /users/list-all/now</span></code></pre></div>
 </section>
 <section id="delete-get-patch-post-and-put" class="level3">
 <h3><code>Delete</code>, <code>Get</code>, <code>Patch</code>, <code>Post</code> and <code>Put</code></h3>
 <p>These 5 combinators are very similar except that they obviously each describe a different HTTP method. This is how they’re declared</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Delete</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Delete</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a
 <span class="kw">data</span> <span class="dt">Get</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a
 <span class="kw">data</span> <span class="dt">Patch</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a
 <span class="kw">data</span> <span class="dt">Post</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a
-<span class="kw">data</span> <span class="dt">Put</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a</code></pre>
+<span class="kw">data</span> <span class="dt">Put</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a</code></pre></div>
 <p>An endpoint ends with one of the 5 combinators above (unless you write your own). Examples:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
-          <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;admins&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
+          <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;admins&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
 </section>
 <section id="capture" class="level3">
 <h3><code>Capture</code></h3>
 <p>URL captures are parts of the URL that are variable and whose actual value is captured and passed to the request handlers. In many web frameworks, you’ll see it written as in <code>/users/:userid</code>, with that leading <code>:</code> denoting that <code>userid</code> is just some kind of variable name or placeholder. For instance, if <code>userid</code> is supposed to range over all integers greater or equal to 1, our endpoint will match requests made to <code>/users/1</code>, <code>/users/143</code> and so on.</p>
 <p>The <code>Capture</code> combinator in servant takes a (type-level) string representing the “name of the variable” and a type, which indicates the type we want to decode the “captured value” to.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Capture</span> (<span class="ot">s ::</span> <span class="dt">Symbol</span>) a
-<span class="co">-- s :: Symbol just says that 's' must be a type-level string.</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Capture</span> (<span class="ot">s ::</span> <span class="dt">Symbol</span>) a
+<span class="co">-- s :: Symbol just says that 's' must be a type-level string.</span></code></pre></div>
 <p>In some web frameworks, you use regexes for captures. We use a <code>FromText</code> class which the captured value must be an instance of.</p>
 <p>Examples:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Integer</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Integer</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
                <span class="co">-- equivalent to 'GET /user/:userid'</span>
                <span class="co">-- except that we explicitly say that &quot;userid&quot;</span>
                <span class="co">-- must be an integer</span>
 
           <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Integer</span> <span class="fu">:&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] ()</span>
-               <span class="co">-- equivalent to 'DELETE /user/:userid'</span></code></pre>
+               <span class="co">-- equivalent to 'DELETE /user/:userid'</span></code></pre></div>
 </section>
 <section id="queryparam-queryparams-queryflag-matrixparam-matrixparams-and-matrixflag" class="level3">
 <h3><code>QueryParam</code>, <code>QueryParams</code>, <code>QueryFlag</code>, <code>MatrixParam</code>, <code>MatrixParams</code> and <code>MatrixFlag</code></h3>
 <p><code>QueryParam</code>, <code>QueryParams</code> and <code>QueryFlag</code> are about query string parameters, i.e those parameters that come after the question mark (<code>?</code>) in URLs, like <code>sortby</code> in <code>/users?sortby=age</code>, whose value is here set to <code>age</code>. The difference is that <code>QueryParams</code> lets you specify that the query parameter is actually a list of values, which can be specified using <code>?param[]=value1&amp;param[]=value2</code>. This represents a list of values composed of <code>value1</code> and <code>value2</code>. <code>QueryFlag</code> lets you specify a boolean-like query parameter where a client isn’t forced to specify a value. The absence or presence of the parameter’s name in the query string determines whether the parameter is considered to have value <code>True</code> or <code>False</code>. <code>/users?active</code> would list only active users whereas <code>/users</code> would list them all.</p>
 <p>Here are the corresponding data type declarations.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">QueryParam</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">QueryParam</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a
 <span class="kw">data</span> <span class="dt">QueryParams</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a
-<span class="kw">data</span> <span class="dt">QueryFlag</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>)</code></pre>
+<span class="kw">data</span> <span class="dt">QueryFlag</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>)</code></pre></div>
 <p><a href="http://www.w3.org/DesignIssues/MatrixURIs.html">Matrix parameters</a>, on the other hand, are like query string parameters that can appear anywhere in the paths (click the link for more details). An URL with matrix parameters in it looks like <code>/users;sortby=age</code>, as opposed to <code>/users?sortby=age</code> with query string parameters. The big advantage is that they are not necessarily at the end of the URL. You could have <code>/users;active=true;registered_after=2005-01-01/locations</code> to get geolocation data about your users that are still active and who registered after <em>January 1st, 2005</em>.</p>
 <p>Corresponding data type declarations below.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MatrixParam</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MatrixParam</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a
 <span class="kw">data</span> <span class="dt">MatrixParams</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a
-<span class="kw">data</span> <span class="dt">MatrixFlag</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>)</code></pre>
+<span class="kw">data</span> <span class="dt">MatrixFlag</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>)</code></pre></div>
 <p>Examples:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;sortby&quot;</span> <span class="dt">SortBy</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;sortby&quot;</span> <span class="dt">SortBy</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
                <span class="co">-- equivalent to 'GET /users?sortby={age, name}'</span>
 
           <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">MatrixParam</span> <span class="st">&quot;sortby&quot;</span> <span class="dt">SortBy</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
-               <span class="co">-- equivalent to 'GET /users;sortby={age, name}'</span></code></pre>
+               <span class="co">-- equivalent to 'GET /users;sortby={age, name}'</span></code></pre></div>
 <p>Again, your handlers don’t have to deserialize these things (into, for example, a <code>SortBy</code>). <em>servant</em> takes care of it.</p>
 </section>
 <section id="reqbody" class="level3">
@@ -117,9 +117,9 @@
 <p>Each HTTP request can carry some additional data that the server can use in its <em>body</em> and the said data can be encoded in any format – as long as the server understands it. This can be used for example for an endpoint for creating new users: instead of passing each field of the user as a separate query string parameter or anything dirty like that, we can group all the data into a JSON object. This has the advantage of supporting nested objects.</p>
 <p><em>servant</em>’s <code>ReqBody</code> combinator takes a list of content types in which the data encoded in the request body can be represented and the type of that data. And, as you might have guessed, you don’t have to check the content-type header, and do the deserialization yourself. We do it for you. And return <code>Bad Request</code> or <code>Unsupported Content Type</code> as appropriate.</p>
 <p>Here’s the data type declaration for it.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ReqBody</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a</code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ReqBody</span> (<span class="ot">contentTypes ::</span> [<span class="fu">*</span>]) a</code></pre></div>
 <p>Examples:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Post '</span>[<span class="dt">JSON</span>] <span class="dt">User</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Post '</span>[<span class="dt">JSON</span>] <span class="dt">User</span>
                <span class="co">-- - equivalent to 'POST /users' with a JSON object</span>
                <span class="co">--   describing an User in the request body</span>
                <span class="co">-- - returns an User encoded in JSON</span>
@@ -129,44 +129,44 @@
                        <span class="fu">:&gt;</span> <span class="dt">Put</span> <span class="ch">'[JSON] User</span>
                <span class="co">-- - equivalent to 'PUT /users/:userid' with a JSON</span>
                <span class="co">--   object describing an User in the request body</span>
-               <span class="co">-- - returns an User encoded in JSON</span></code></pre>
+               <span class="co">-- - returns an User encoded in JSON</span></code></pre></div>
 </section>
 <section id="request-headers" class="level3">
 <h3>Request <code>Header</code>s</h3>
 <p>Request headers are used for various purposes, from caching to carrying auth-related data. They consist of a header name and an associated value. An example would be <code>Accept: application/json</code>.</p>
 <p>The <code>Header</code> combinator in servant takes a type-level string for the header name and the type to which we want to decode the header’s value (from some textual representation), as illustrated below.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Header</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a</code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Header</span> (<span class="ot">sym ::</span> <span class="dt">Symbol</span>) a</code></pre></div>
 <p>Here’s an example where we declare that an endpoint makes use of the <code>User-Agent</code> header which specifies the name of the software/library used by the client to send the request.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Header</span> <span class="st">&quot;User-Agent&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Header</span> <span class="st">&quot;User-Agent&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
 </section>
 <section id="content-types" class="level3">
 <h3>Content types</h3>
 <p>So far, whenever we have used a combinator that carries a list of content types, we’ve always specified <code>'[JSON]</code>. <em>servant</em> however lets you use several content types and define your owns.</p>
 <p>Four content-types are provided out-of-the-box by the core <em>servant</em> package: <code>JSON</code>, <code>PlainText</code>, <code>FormUrlEncoded</code> and <code>OctetStream</code>. If for some obscure reason you wanted one of your endpoints to make your user data available under those 4 formats, you would write the API type as below.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON, PlainText, FormUrlEncoded, OctetStream] [User]</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON, PlainText, FormUrlEncoded, OctetStream] [User]</span></code></pre></div>
 <p>We obviously provide an HTML content-type, but since there’s no single library that everyone uses, we decided to release 2 packages, <em>servant-lucid</em> and <em>servant-blaze</em>, to provide HTML encoding of your data.</p>
 <p>We will further explain how these content types and your data types can play together in the section about serving an API.</p>
 </section>
 <section id="response-headers" class="level3">
 <h3>Response <code>Headers</code></h3>
 <p>Just like an HTTP request, the response generated by a webserver can carry headers too. <em>servant</em> provides a <code>Headers</code> combinator that carries a list of <code>Header</code> and can be used by simply wrapping the “return type” of an endpoint with it.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Headers</span> (<span class="ot">ls ::</span> [<span class="fu">*</span>]) a</code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Headers</span> (<span class="ot">ls ::</span> [<span class="fu">*</span>]) a</code></pre></div>
 <p>If you want to describe an endpoint that returns a “User-Count” header in each response, you could write it as below.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers [Header &quot;User-Count&quot; Integer] [User])</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers [Header &quot;User-Count&quot; Integer] [User])</span></code></pre></div>
 </section>
 <section id="interoperability-with-other-wai-applications-raw" class="level3">
 <h3>Interoperability with other WAI <code>Application</code>s: <code>Raw</code></h3>
 <p>Finally, we also include a combinator named <code>Raw</code> that can be used for two reasons:</p>
 <ul>
 <li><p>You want to serve static files from a given directory. In that case you can just say:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
                <span class="co">-- a /users endpoint</span>
 
           <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw</span>
                <span class="co">-- requests to anything else than /users</span>
                <span class="co">-- go here, where the server will try to</span>
                <span class="co">-- find a file with the right name</span>
-               <span class="co">-- at the right path</span></code></pre></li>
+               <span class="co">-- at the right path</span></code></pre></div></li>
 <li><p>You more generally want to plug a <a href="http://hackage.haskell.org/package/wai">WAI <code>Application</code></a> into your webservice. Static file serving is a specific example of that. The API type would look the same as above though. (You can even combine <em>servant</em> with other web frameworks this way!)</p></li>
 </ul>
 <div style="text-align: center;">

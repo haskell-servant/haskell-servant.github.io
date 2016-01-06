@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>servant 0.4 released - haskell-servant</title>
+        <title>2015-05-05-servant-0.4-released - haskell-servant</title>
         <link rel="stylesheet" type="text/css" href="../css/default.css" />
     </head>
     <body>
@@ -14,17 +14,33 @@
             <div id="navigation">
                 <a href="../">Home</a>
                 <a href="../blog.html">Blog</a>
-                <a href="../tutorial">Tutorial</a>
-                <a href="../tips.html">Tips and tricks</a>
-                <a href="../talks.html">Talks</a>
-                <a href="https://github.com/haskell-servant/servant">Github</a>
+                <a href="../getting-started/">Getting started</a>
+                <a href="../extending.html">Extending servant</a>
+                <a href="../versioning.html">Versioning your API</a>
             </div>
         </div>
 
         <div id="content">
-            <h1>servant 0.4 released</h1>
+            <h1>2015-05-05-servant-0.4-released</h1>
 
-            <div id="toc"><h3>Table of contents</h3><ul>
+            <div class="info">
+    Posted on May  5, 2015
+    
+</div>
+
+<div id="header">
+<div id="logo">
+<a href="../">servant</a>
+</div>
+<div id="navigation">
+<a href="../">Home</a> <a href="../blog.html">Blog</a> <a href="../tutorial">Tutorial</a> <a href="../tips.html">Tips and tricks</a> <a href="../talks.html">Talks</a> <a href="https://github.com/haskell-servant/servant">Github</a>
+</div>
+</div>
+<div id="content">
+<h1>servant 0.4 released</h1>
+<div id="toc">
+<h3>Table of contents</h3>
+<ul>
 <li><a href="#multiple-content-type-support">Multiple content-type support</a></li>
 <li><a href="#servant-blaze-and-servant-lucid">Servant-blaze and servant-lucid</a></li>
 <li><a href="#response-headers">Response headers</a></li>
@@ -35,83 +51,69 @@
 <li><a href="#complete-changelogs">Complete CHANGELOGs</a></li>
 <li><a href="#website">Website</a></li>
 <li><a href="#conclusions">Conclusions</a></li>
-</ul></div>
+</ul>
+</div>
 <p>Since <a href="http://alpmestan.com/posts/2014-12-09-rethinking-webservices-apis-haskell.html">the last major release</a>, a lot happened in and around <em>servant</em>. Definitely enough to justify a new release. This post announces new releases of all the servant packages, with many local changes but also some major ones that affect all packages. You can find the detailed changelogs at the end of this post, but here are a few major features you may want to learn about.</p>
-<section id="multiple-content-type-support" class="level1">
 <h1>Multiple content-type support</h1>
 <p><em>servant</em> combinators are not JSON-centric anymore.</p>
 <p>If you had an API type like the following with servant <em>0.2.x</em>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span>
            <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> [<span class="dt">User</span>]
            <span class="co">-- update an user</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Put</span> ()</code></pre>
+      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Put</span> ()</code></pre></div>
 <p>You now have to change it to:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span>
            <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Put '</span>[<span class="dt">JSON</span>] ()</code></pre>
+      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Put '</span>[<span class="dt">JSON</span>] ()</code></pre></div>
 <p>Wherever applicable (i.e <code>ReqBody</code> and all the combinators that correspond to an HTTP method), you can now specify all the content types in which you want to want to be able to encode/decode values. As you can see, we use the <code>DataKinds</code> GHC extension to let you specify a type-level list of content-types, which are simple dummy types:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">JSON</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">JSON</span></code></pre></div>
 <p>In <em>servant-server</em>, a list of these content-types as the first argument of a method gets translated into a set of constraints on the return type:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Get</span> <span class="ch">'[JSON, PlainText] Int</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Get</span> <span class="ch">'[JSON, PlainText] Int</span>
 <span class="fu">==&gt;</span>
-<span class="dt">MimeRender</span> <span class="dt">JSON</span> <span class="dt">Int</span>, <span class="dt">MimeRender</span> <span class="dt">PlainText</span> <span class="dt">Int</span> <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">Int</span></code></pre>
+<span class="dt">MimeRender</span> <span class="dt">JSON</span> <span class="dt">Int</span>, <span class="dt">MimeRender</span> <span class="dt">PlainText</span> <span class="dt">Int</span> <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">Int</span></code></pre></div>
 <p>Which have unsurprising instances:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">ToJSON</span> a) <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">JSON</span> a</code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">ToJSON</span> a) <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">JSON</span> a</code></pre></div>
 <p>Thus, <em>servant</em> checks at <em>compile-time</em> that it really can serialize your values as you describe. And of course, it handles picking the appropriate serialization format based on the request’s “Accept” header for you.</p>
 <p>(For <code>ReqBody</code>, <em>deserialization</em> is involved. For <em>servant-client</em>, the logic goes the other way around - serialization for <code>ReqBody</code>, deserialization for methods.)</p>
-</section>
-<section id="servant-blaze-and-servant-lucid" class="level1">
 <h1>Servant-blaze and servant-lucid</h1>
 <p>Declaring new content-types, and the associated constraints for them, is quite easy. But to make it easier still, we are also announcing two new packages: servant-blaze and servant-lucid. To use them, just import their <code>HTML</code> datatype:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Servant.HTML.Lucid</span> (<span class="dt">HTML</span>) <span class="co">-- or Servant.HTML.Blaze</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Servant.HTML.Lucid</span> (<span class="dt">HTML</span>) <span class="co">-- or Servant.HTML.Blaze</span>
 
-<span class="kw">type</span> <span class="dt">MyHTML</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[HTML] User</span></code></pre>
+<span class="kw">type</span> <span class="dt">MyHTML</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[HTML] User</span></code></pre></div>
 <p>And <code>User</code> will be checked for the appropriate (e.g. <code>ToHtml</code>) instance.</p>
-</section>
-<section id="response-headers" class="level1">
 <h1>Response headers</h1>
 <p>There was no easy way so far to have handlers add headers to a response. We’ve since come up with a solution that stays true to the <em>servant</em> spirit: <em>what</em> headers your response will include (and what their types are) is still enforced statically:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers '</span>[<span class="dt">Header</span> <span class="st">&quot;Location&quot;</span> <span class="dt">Link</span>] <span class="dt">User</span>)
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers '</span>[<span class="dt">Header</span> <span class="st">&quot;Location&quot;</span> <span class="dt">Link</span>] <span class="dt">User</span>)
 
 <span class="ot">myHandler ::</span> <span class="dt">Server</span> <span class="dt">MyHandler</span>
-myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="fu">&lt;</span>someLink<span class="fu">&gt;</span> <span class="fu">$</span> <span class="fu">&lt;</span>someuser<span class="fu">&gt;</span></code></pre>
+myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="fu">&lt;</span>someLink<span class="fu">&gt;</span> <span class="fu">$</span> <span class="fu">&lt;</span>someuser<span class="fu">&gt;</span></code></pre></div>
 <p><em>servant-docs</em> and <em>servant-client</em> are also response-header aware.</p>
 <p>Our current solution isn’t something we are entirely happy with from an internal persepctive. We use overlapping instances for all the handlers, which some might think is already a problem. But more concretely, there’s the threat of an exponential blowup in the number of instances we have to declare. And that can be a problem for end users too, if they decide to further modify behavior via a similar mechanism. But these things thankfully don’t seem to pose any <em>immediate</em> problems.</p>
-</section>
-<section id="running-handlers-in-other-monads-than-eithert" class="level1">
 <h1>Running handlers in other monads than <code>EitherT</code></h1>
 <p>An often-requested feature has been easy use of datatypes/monads besides <code>EitherT</code>. Now we believe we have a good story for that (thanks in large part to <a href="http://github.com/rschatz">rschatz</a>). To convert from one datatype to another, all you need to do is provide a natural transformation between them. For example:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ReaderAPI</span> <span class="fu">=</span> <span class="st">&quot;a&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Int</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ReaderAPI</span> <span class="fu">=</span> <span class="st">&quot;a&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Int</span>
             <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;b&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] String</span>
 
 <span class="ot">readerServerT ::</span> <span class="dt">ServerT</span> <span class="dt">ReaderAPI</span> (<span class="dt">Reader</span> <span class="dt">String</span>)
 readerServerT <span class="fu">=</span> return <span class="dv">1797</span> <span class="fu">:&lt;|&gt;</span> ask
 
 <span class="ot">readerServer ::</span> <span class="dt">Server</span> <span class="dt">ReaderAPI</span>
-readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span class="fu">$</span> return <span class="fu">.</span> (<span class="ot">`runReader`</span> <span class="st">&quot;hi&quot;</span>)) readerServerT</code></pre>
+readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span class="fu">$</span> return <span class="fu">.</span> (<span class="ot">`runReader`</span> <span class="st">&quot;hi&quot;</span>)) readerServerT</code></pre></div>
 <p>The new <code>ServerT</code> type synonym takes an extra paramer that represents what datatype/monad you are using over your handlers (instead of <code>EitherT ServantErr IO</code>).</p>
 <p>(Note that we also provide a number of pre-existing <code>Nat</code>s, which are an instance of <code>Category</code>. We could have used</p>
 <pre><code>readerServer = enter (generalizeNat . (runReaderTNat &quot;hi&quot;)) readerServerT</code></pre>
 <p>instead (with <code>.</code> being from <code>Control.Category</code>).)</p>
 <p>Note that the datatypes you can use now don’t even need to be monads!</p>
-</section>
-<section id="mklink" class="level1">
 <h1>mkLink</h1>
 <p>Somewhere between the 0.2 release and now, <code>mkLink</code> got a whole lot better (thanks Christian Marie!). <code>mkLink</code> makes urls that are statically guaranteed to belong to your API, without any Template Haskell. Combined with response headers, you can now easily create, for instance, type-safe redirect headers. Combined with the new HTML support, you can easily make links that you know will not 404.</p>
-</section>
-<section id="left" class="level1">
 <h1>Left</h1>
 <p>We also changed the default type of handlers from <code>EitherT (Int,String) IO a</code> to <code>EitherT ServantErr IO a</code>. Now it is possible to return headers and a response body in the <code>Left</code> case.</p>
 <p>We also now export function <code>errXXX</code> (where <code>XXX</code> is a 300-599 HTTP status code) with sensible reason strings.</p>
-</section>
-<section id="baseurl" class="level1">
 <h1>BaseUrl</h1>
 <p>We also changed the <code>client</code> function from <code>servant-client</code> so that, instead of returning various functions that each take a <code>BaseUrl</code> argument (often in inconvenient argument positions), the <code>client</code> function itself takes a <code>BaseUrl</code> argument, and the functions it returns don’t. So the type of <code>client</code> went from</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</code></pre></div>
 <p>To</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">BaseUrl</span> <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</code></pre>
-</section>
-<section id="complete-changelogs" class="level1">
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">BaseUrl</span> <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</code></pre></div>
 <h1>Complete CHANGELOGs</h1>
 <ul>
 <li><a href="http://hackage.haskell.org/package/servant-0.4/changelog">servant</a></li>
@@ -120,33 +122,26 @@ readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span 
 <li><a href="http://hackage.haskell.org/package/servant-docs-0.4/changelog">servant-docs</a></li>
 <li><a href="http://hackage.haskell.org/package/servant-jquery-0.4/changelog">servant-jquery</a></li>
 </ul>
-</section>
-<section id="website" class="level1">
 <h1>Website</h1>
 <p>We also decided to switch to hakyll in order to be able to have a blog as well as some static pages that collect tips and tricks that people have found. We also used this opportunity to rewrite the getting started into a more informative tutorial, now available <a href="../tutorial">here</a>.</p>
-</section>
-<section id="conclusions" class="level1">
 <h1>Conclusions</h1>
 <p>As you can see, more and more information is getting encoded statically - the types are becoming a pretty rich DSL. In order to keep the noise down, do what you normally do: abstract away common patterns! If your endpoints always return the same content-types, make aliases:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Get'</span> a <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON, HTML, PlainText] a</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Get'</span> a <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON, HTML, PlainText] a</span></code></pre></div>
 <p>There’s still an outstanding issue with the errors servant returns when a request doesn’t get handled. For example, if the path of a request, but not the method nor the request obdy, match, rather than returning a 405 (Method Not Allowed) we return a 400 (Bad Request), which is not the desired behavior. Andres Löh made some great suggestions for how to improve our routing time complexity, and hopefully we can integrate a fix for this issue when we tackle that.</p>
 <p>We also merged our repos into <a href="https://github.com/haskell-servant/servant">servant</a>. Please use that repo exclusively for PRs and issues (we’ll get rid of the others eventually).</p>
 <p>Special thanks to <a href="https://github.com/anchor">the Anchor team</a> from Australia, <a href="https://github.com/mpickering">Matthew Pickering</a>, <a href="https://github.com/dlarsson">Daniel Larsson</a>, <a href="https://github.com/paf31">Phil Freeman</a>, <a href="https://github.com/fisx">Matthias Fischmann</a>, <a href="https://github.com/rschatz">rschatz</a>, <a href="https://github.com/Fuuzetsu">Mateusz Kowalczyk</a>, <a href="https://github.com/codedmart">Brandon Martin</a> and <a href="https://github.com/spl">Sean Leather</a> who’ve contributed from little fixes to whole new features. Several companies are now running <em>servant</em>-powered web applications.</p>
-</section>
-
 <div class="info">
-    Posted on May  5, 2015
-    
-        by Alp Mestanogullari, Julian Arni
-    
+Posted on May 5, 2015 by Alp Mestanogullari, Julian Arni
+</div>
+</div>
+<div id="footer">
+Site proudly generated by <a href="http://jaspervdj.be/hakyll">Hakyll</a> - <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
 </div>
 
         </div>
         <div id="footer">
             Site proudly generated by
             <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-            -
-            <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
         </div>
     </body>
 </html>

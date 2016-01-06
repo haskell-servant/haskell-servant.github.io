@@ -44,18 +44,18 @@ GET: json -- user id info
 /packages/
 GET: json -- List of all packages</code></pre>
 <p>Let’s see what the output looks like by using <em>curl</em>:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/users/
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/users/
 [<span class="dt">{&quot;username&quot;:&quot;admin&quot;,&quot;userid&quot;:0}</span>, <span class="kw">...</span>]
 $ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/user/AlpMestanogullari
 <span class="dt">{&quot;groups&quot;:[&quot;/package/gloss-juicy/maintainers&quot;,&quot;/package/hnn/maintainers&quot;,&quot;/package/hspec-attoparsec/maintainers&quot;,&quot;/package/kmeans-vector/maintainers&quot;,&quot;/package/pastis/maintainers&quot;,&quot;/package/probable/maintainers&quot;,&quot;/package/servant-client/maintainers&quot;,&quot;/package/servant-docs/maintainers&quot;,&quot;/package/servant-jquery/maintainers&quot;,&quot;/package/servant-pool/maintainers&quot;,&quot;/package/servant-postgresql/maintainers&quot;,&quot;/package/servant-response/maintainers&quot;,&quot;/package/servant-scotty/maintainers&quot;,&quot;/package/servant-server/maintainers&quot;,&quot;/package/servant/maintainers&quot;,&quot;/package/sitemap/maintainers&quot;,&quot;/package/statistics-linreg/maintainers&quot;,&quot;/package/taggy-lens/maintainers&quot;,&quot;/package/taggy/maintainers&quot;,&quot;/packages/uploaders&quot;],&quot;username&quot;:&quot;AlpMestanogullari&quot;,&quot;userid&quot;:75}</span>
 $ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/packages/
-[<span class="dt">{&quot;packageName&quot;:&quot;3d-graphics-examples&quot;},{&quot;packageName&quot;:&quot;3dmodels&quot;}</span>, <span class="kw">...</span>]</code></pre>
+[<span class="dt">{&quot;packageName&quot;:&quot;3d-graphics-examples&quot;},{&quot;packageName&quot;:&quot;3dmodels&quot;}</span>, <span class="kw">...</span>]</code></pre></div>
 <p>This is enough to get us started.</p>
 </section>
 <section id="describing-hackages-api-as-a-type" class="level1">
 <h1>Describing Hackage’s API as a type</h1>
 <p>First, some pragmas and imports:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
 <span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
 <span class="ot">{-# LANGUAGE TypeOperators #-}</span>
 <span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
@@ -72,18 +72,18 @@ $ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/jso
 <span class="kw">import </span><span class="dt">Servant.Client</span>
 
 <span class="kw">import qualified</span> <span class="dt">Data.Text</span>    <span class="kw">as</span> <span class="dt">T</span>
-<span class="kw">import qualified</span> <span class="dt">Data.Text.IO</span> <span class="kw">as</span> <span class="dt">T</span></code></pre>
+<span class="kw">import qualified</span> <span class="dt">Data.Text.IO</span> <span class="kw">as</span> <span class="dt">T</span></code></pre></div>
 <p>Now, let’s write the API type that corresponds to those 3 endpoints we’re interested in.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">HackageAPI</span> <span class="fu">=</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">HackageAPI</span> <span class="fu">=</span>
        <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [UserSummary]</span>
   <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] UserDetailed</span>
-  <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;packages&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Package]</span></code></pre>
+  <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;packages&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Package]</span></code></pre></div>
 <p>Nothing fancy here, except that we clearly specify we are expecting the output to be in JSON (this will insert the appropriate <code>Accept</code> header).</p>
 </section>
 <section id="data-types-and-json-serialization" class="level1">
 <h1>Data types and JSON serialization</h1>
 <p>We also need some types to go with that: <code>UserSummary</code>, <code>Username</code>, <code>UserDetailed</code>, <code>Package</code>. Here they are, along with JSON deserialization instances.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Text</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Text</span>
 
 <span class="kw">data</span> <span class="dt">UserSummary</span> <span class="fu">=</span> <span class="dt">UserSummary</span>
   {<span class="ot"> summaryUsername ::</span> <span class="dt">Username</span>
@@ -110,20 +110,20 @@ $ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/jso
 <span class="kw">newtype</span> <span class="dt">Package</span> <span class="fu">=</span> <span class="dt">Package</span> {<span class="ot"> packageName ::</span> <span class="dt">Text</span> }
   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Generic</span>)
 
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Package</span></code></pre>
+<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Package</span></code></pre></div>
 </section>
 <section id="deriving-functions-to-query-hackage" class="level1">
 <h1>Deriving functions to query hackage</h1>
 <p>Finally, we can automatically derive our client functions:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hackageAPI ::</span> <span class="dt">Proxy</span> <span class="dt">HackageAPI</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hackageAPI ::</span> <span class="dt">Proxy</span> <span class="dt">HackageAPI</span>
 hackageAPI <span class="fu">=</span> <span class="dt">Proxy</span>
 
 <span class="ot">getUsers ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">UserSummary</span>]
 <span class="ot">getUser ::</span> <span class="dt">Username</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">UserDetailed</span>
 <span class="ot">getPackages ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">Package</span>]
-getUsers <span class="fu">:&lt;|&gt;</span> getUser <span class="fu">:&lt;|&gt;</span> getPackages <span class="fu">=</span> client hackageAPI (<span class="dt">BaseUrl</span> <span class="dt">Http</span> <span class="st">&quot;hackage.haskell.org&quot;</span> <span class="dv">80</span>)</code></pre>
+getUsers <span class="fu">:&lt;|&gt;</span> getUser <span class="fu">:&lt;|&gt;</span> getPackages <span class="fu">=</span> client hackageAPI (<span class="dt">BaseUrl</span> <span class="dt">Http</span> <span class="st">&quot;hackage.haskell.org&quot;</span> <span class="dv">80</span>)</code></pre></div>
 <p>And here’s some runnable code to actually check that everything works as expected:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> print <span class="fu">=&lt;&lt;</span> uselessNumbers
 
 <span class="ot">uselessNumbers ::</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">ServantError</span> ())
@@ -141,7 +141,7 @@ uselessNumbers <span class="fu">=</span> runEitherT <span class="fu">$</span> <s
   <span class="kw">let</span> monadPackages <span class="fu">=</span> filter (isMonadPackage <span class="fu">.</span> packageName) packages
   liftIO <span class="fu">.</span> putStrLn <span class="fu">$</span> show (length monadPackages) <span class="fu">++</span> <span class="st">&quot; monad packages&quot;</span>
 
-  <span class="kw">where</span> isMonadPackage <span class="fu">=</span> T.isInfixOf <span class="st">&quot;monad&quot;</span></code></pre>
+  <span class="kw">where</span> isMonadPackage <span class="fu">=</span> T.isInfixOf <span class="st">&quot;monad&quot;</span></code></pre></div>
 <p>Here’s a sample run:</p>
 <pre><code>$ cabal run hackage
 Preprocessing executable hackage for servant-examples-0.3...

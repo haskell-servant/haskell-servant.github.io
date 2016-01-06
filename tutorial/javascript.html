@@ -26,9 +26,9 @@
 
             
 <p>We will now see how <em>servant</em> lets you turn an API type into javascript functions that you can call to query a webservice. The derived code assumes you use <em>jQuery</em> but you could very easily adapt the code to generate ajax requests based on vanilla javascript or another library than <em>jQuery</em>.</p>
-<p>For this, we will consider a simple page divided in two parts. At the top, we will have a search box that lets us search in a list of Haskell books by author/title with a list of results that gets updated every time we enter or remove a character, while at the bottom we will be able to see the classical <a href="http://en.wikipedia.org/wiki/Approximations_of_%CF%80#Summing_a_circle.27s_area">probabilistic method to approximate π</a>, using a webservice to get random points. Finally, we will serve an HTML file along with a couple of Javascript files, among which one that’s automatically generated from the API type and which will provide ready-to-use functions to query your API.</p>
+<p>For this, we will consider a simple page divided in two parts. At the top, we will have a search box that lets us search in a list of Haskell books by author/title with a list of results that gets updated every time we enter or remove a character, while at the bottom we will be able to see the classical <a href="http://en.wikipedia.org/wiki/Approximations_of_%CF%80#Summing_a_circle.27s_area">probabilistic method to approximate &amp;pi;</a>, using a webservice to get random points. Finally, we will serve an HTML file along with a couple of Javascript files, among which one that’s automatically generated from the API type and which will provide ready-to-use functions to query your API.</p>
 <p>Let’s start with the API type(s) and the accompanying datatypes.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;point&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Point</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;point&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Point</span>
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;books&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;q&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Search Book)</span>
 
 <span class="kw">type</span> <span class="dt">API'</span> <span class="fu">=</span> <span class="dt">API</span> <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw</span>
@@ -59,9 +59,9 @@ mkSearch <span class="fu">=</span> <span class="dt">Search</span>
 <span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">Book</span>
 
 <span class="ot">book ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Book</span>
-book <span class="fu">=</span> <span class="dt">Book</span></code></pre>
+book <span class="fu">=</span> <span class="dt">Book</span></code></pre></div>
 <p>We need a “book database”. For the purpose of this guide, let’s restrict ourselves to the following books.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">books ::</span> [<span class="dt">Book</span>]
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">books ::</span> [<span class="dt">Book</span>]
 books <span class="fu">=</span>
   [ book <span class="st">&quot;Paul Hudak&quot;</span> <span class="st">&quot;The Haskell School of Expression: Learning Functional Programming through Multimedia&quot;</span> <span class="dv">2000</span>
   , book <span class="st">&quot;Bryan O'Sullivan, Don Stewart, and John Goerzen&quot;</span> <span class="st">&quot;Real World Haskell&quot;</span> <span class="dv">2008</span>
@@ -69,9 +69,9 @@ books <span class="fu">=</span>
   , book <span class="st">&quot;Graham Hutton&quot;</span> <span class="st">&quot;Programming in Haskell&quot;</span> <span class="dv">2007</span>
   , book <span class="st">&quot;Simon Marlow&quot;</span> <span class="st">&quot;Parallel and Concurrent Programming in Haskell&quot;</span> <span class="dv">2013</span>
   , book <span class="st">&quot;Richard Bird&quot;</span> <span class="st">&quot;Introduction to Functional Programming using Haskell&quot;</span> <span class="dv">1998</span>
-  ]</code></pre>
+  ]</code></pre></div>
 <p>Now, given an optional search string <code>q</code>, we want to perform a case insensitive search in that list of books. We’re obviously not going to try and implement the best possible algorithm, this is out of scope for this tutorial. The following simple linear scan will do, given how small our list is.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">searchBook ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Maybe</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> m (<span class="dt">Search</span> <span class="dt">Book</span>)
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">searchBook ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Maybe</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> m (<span class="dt">Search</span> <span class="dt">Book</span>)
 searchBook <span class="dt">Nothing</span>  <span class="fu">=</span> return (mkSearch <span class="st">&quot;&quot;</span> books)
 searchBook (<span class="dt">Just</span> q) <span class="fu">=</span> return (mkSearch q books')
 
@@ -79,15 +79,15 @@ searchBook (<span class="dt">Just</span> q) <span class="fu">=</span> return (mk
                             <span class="fu">||</span> q' <span class="ot">`T.isInfixOf`</span> T.toLower (title b)
                         )
                         books
-        q' <span class="fu">=</span> T.toLower q</code></pre>
+        q' <span class="fu">=</span> T.toLower q</code></pre></div>
 <p>We also need an endpoint that generates random points <code>(x, y)</code> with <code>-1 &lt;= x,y &lt;= 1</code>. The code below uses <a href="http://hackage.haskell.org/package/random">random</a>’s <code>System.Random</code>.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">randomPoint ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> m <span class="dt">Point</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">randomPoint ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> m <span class="dt">Point</span>
 randomPoint <span class="fu">=</span> liftIO <span class="fu">.</span> getStdRandom <span class="fu">$</span> \g <span class="ot">-&gt;</span>
   <span class="kw">let</span> (rx, g')  <span class="fu">=</span> randomR (<span class="fu">-</span><span class="dv">1</span>, <span class="dv">1</span>) g
       (ry, g'') <span class="fu">=</span> randomR (<span class="fu">-</span><span class="dv">1</span>, <span class="dv">1</span>) g'
-  <span class="kw">in</span> (<span class="dt">Point</span> rx ry, g'')</code></pre>
+  <span class="kw">in</span> (<span class="dt">Point</span> rx ry, g'')</code></pre></div>
 <p>If we add static file serving, our server is now complete.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
 api <span class="fu">=</span> <span class="dt">Proxy</span>
 
 <span class="ot">api' ::</span> <span class="dt">Proxy</span> <span class="dt">API'</span>
@@ -102,13 +102,13 @@ server' <span class="fu">=</span> server
      <span class="fu">:&lt;|&gt;</span> serveDirectory <span class="st">&quot;tutorial/t9&quot;</span>
 
 <span class="ot">app ::</span> <span class="dt">Application</span>
-app <span class="fu">=</span> serve api' server'</code></pre>
+app <span class="fu">=</span> serve api' server'</code></pre></div>
 <p>Why two different API types, proxies and servers though? Simply because we don’t want to generate javascript functions for the <code>Raw</code> part of our API type, so we need a <code>Proxy</code> for our API type <code>API'</code> without its <code>Raw</code> endpoint.</p>
 <p>Very similarly to how one can derive haskell functions, we can derive the javascript with just a simple function call to <code>jsForAPI</code> from <code>Servant.JQuery</code>.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">apiJS ::</span> <span class="dt">String</span>
-apiJS <span class="fu">=</span> jsForAPI api</code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">apiJS ::</span> <span class="dt">String</span>
+apiJS <span class="fu">=</span> jsForAPI api</code></pre></div>
 <p>This <code>String</code> contains 2 Javascript functions:</p>
-<pre class="sourceCode javascript"><code class="sourceCode javascript">
+<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript">
 <span class="kw">function</span> <span class="fu">getpoint</span>(onSuccess, onError)
 {
   <span class="ot">$</span>.<span class="fu">ajax</span>(
@@ -127,14 +127,14 @@ apiJS <span class="fu">=</span> jsForAPI api</code></pre>
     , <span class="dt">error</span>: onError
     , <span class="dt">method</span>: <span class="st">'GET'</span>
     });
-}</code></pre>
+}</code></pre></div>
 <p>Right before starting up our server, we will need to write this <code>String</code> to a file, say <code>api.js</code>, along with a copy of the <em>jQuery</em> library, as provided by the <a href="http://hackage.haskell.org/package/js-jquery">js-jquery</a> package.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">writeJSFiles ::</span> <span class="dt">IO</span> ()
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">writeJSFiles ::</span> <span class="dt">IO</span> ()
 writeJSFiles <span class="fu">=</span> <span class="kw">do</span>
   writeFile <span class="st">&quot;getting-started/gs9/api.js&quot;</span> apiJS
   jq <span class="ot">&lt;-</span> readFile <span class="fu">=&lt;&lt;</span> JQ.file
-  writeFile <span class="st">&quot;getting-started/gs9/jq.js&quot;</span> jq</code></pre>
-<p>And we’re good to go. Start the server with <code>dist/build/tutorial/tutorial 9</code> and go to <a href="http://localhost:8081/" class="uri">http://localhost:8081/</a>. Start typing in the name of one of the authors of our database or part of a book title and check out how long it takes to approximate π using the method mentioned above.</p>
+  writeFile <span class="st">&quot;getting-started/gs9/jq.js&quot;</span> jq</code></pre></div>
+<p>And we’re good to go. Start the server with <code>dist/build/tutorial/tutorial 9</code> and go to <code>http://localhost:8081/</code>. Start typing in the name of one of the authors of our database or part of a book title and check out how long it takes to approximate &amp;pi; using the method mentioned above.</p>
 <div style="text-align: center;">
 <p>
 <a href="../tutorial/client.html">Previous page: Deriving Haskell functions to query an API</a>

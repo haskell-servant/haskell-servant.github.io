@@ -35,10 +35,10 @@
 <h1>New combinators</h1>
 <p>Let’s suppose our objective was to add a <code>Post</code>-like combinator that returns a response with an HTTP <a href="http://en.wikipedia.org/wiki/HTTP_location">Location</a> header with the location of a newly-created resource.</p>
 <p>First we define a datatype:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PostWithLocation</span> a
-    <span class="kw">deriving</span> <span class="dt">Typeable</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PostWithLocation</span> a
+    <span class="kw">deriving</span> <span class="dt">Typeable</span></code></pre></div>
 <p>Next, we need to describe how this ought to be interpreted. Interpretations are defined via instances of classes. In particular, when we want to define how the server should behave, we instantiate the <code>HasServer</code> class:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Control.Monad.Trans.Either</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Control.Monad.Trans.Either</span>
 <span class="kw">import </span><span class="dt">Data.Aeson</span>
 <span class="kw">import </span><span class="dt">Data.Proxy</span>
 <span class="kw">import </span><span class="dt">Data.String.Conversions</span>
@@ -65,11 +65,11 @@
             responseLBS (mkStatus status (cs message)) [] (cs message)
     <span class="fu">|</span> null (pathInfo request) <span class="fu">&amp;&amp;</span> requestMethod request <span class="fu">/=</span> methodPost <span class="fu">=</span>
         respond <span class="fu">$</span> failWith <span class="dt">WrongMethod</span>
-    <span class="fu">|</span> otherwise <span class="fu">=</span> respond <span class="fu">$</span> failWith <span class="dt">NotFound</span></code></pre>
+    <span class="fu">|</span> otherwise <span class="fu">=</span> respond <span class="fu">$</span> failWith <span class="dt">NotFound</span></code></pre></div>
 <p>If you compare this with the implementation of <a href="http://haskell-servant.github.io/servant/src/Servant-API-Post.html#Post">Post</a>, you’ll see that very little changed. We’ve changed the type of the associated <code>Server</code> type to be a <code>EitherT (Int, String) IO (Link, a)</code> instead of <code>EitherT (Int, String) IO a</code>. This means that the function that ultimately implements this endpoint must return a tuple of the link and the return value, and not just the return value. In the definition of the <code>route</code> method, we also changed the code to add the link to the <code>Location</code> header. Note how in the definition of the instance, we have access to the details (e.g., headers) of the request and response, whereas the code that implements the endpoint doesn’t (or at least not directly - we could, if we so desired, pass all of the details of the request to the function, creating a new combinator).</p>
 <p>If we look at the original definition of <code>HasServer</code>, we see that the second parameter of <code>route</code> – in this case, <code>action</code> has the type of the <code>Server</code> associated type synonym instance. In this case, that is our <code>EitherT (Int, String) IO (Link, a)</code>. This is just what we wanted in this case, because <code>PostWithLocation</code> should always be the last element of any route type. But if we were defining a combinator that wasn’t at the end, we would likely need to delegate some decision-making to combinators further on down the line. Look at the <code>HasServer</code> instance for <code>(:&gt;)</code> if you’re curious how that works.</p>
 <p>We can now use our combinator:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">PostWithLocation</span> ()
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">PostWithLocation</span> ()
 
 <span class="ot">myAPI ::</span> <span class="dt">Proxy</span> <span class="dt">MyAPI</span>
 myAPI <span class="fu">=</span> <span class="dt">Proxy</span>
@@ -78,7 +78,7 @@ myAPI <span class="fu">=</span> <span class="dt">Proxy</span>
 server <span class="fu">=</span> mkNewUser
     <span class="kw">where</span>
 <span class="ot">      mkNewUser ::</span> <span class="dt">User</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> (<span class="dt">Int</span>, <span class="dt">String</span>) <span class="dt">IO</span> (<span class="dt">Link</span>, a)
-      mkNewUser <span class="fu">=</span> <span class="fu">...</span></code></pre>
+      mkNewUser <span class="fu">=</span> <span class="fu">...</span></code></pre></div>
 <p>Depending on your use case, you may also want to define <code>HasClient</code> and <code>HasDocs</code> instances for your combinator, so that you (and other people) can benefit from code and documentation generation.</p>
 </section>
 <section id="new-interpreters" class="level1">
@@ -89,14 +89,14 @@ server <span class="fu">=</span> mkNewUser
 <section id="other-directions" class="level1">
 <h1>Other Directions</h1>
 <p>In rare cases, extensions to servant may involve something that doesn’t quite belong in either of these categories. For instance, a distant dream of mine in getting <em>HATEOAS</em> for free in servant. The idea is that given an API:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> ()
-        <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">User</span></code></pre>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPI</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> ()
+        <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">User</span></code></pre></div>
 <p>And a server <code>MyServer</code> for it, we would <em>automatically</em> create a type:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPIResty</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="dt">HATEOASData</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyAPIResty</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="dt">HATEOASData</span>
             <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">HATEOASData</span>
             <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> ()
             <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">HATEOASData</span>
-            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">User</span></code></pre>
+            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;names&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="dt">User</span></code></pre></div>
 <p>And a server for it, that behaves just like <code>MyServer</code> insofar as their endpoints coincide, but would return information about the server’s layout beneath the current endpoint for all other endpoints.</p>
 <p>This involves considerable trickery at the type-level. In particular, it involves writing a class that rewrites types and servers hand-in-hand, to generate a new server.</p>
 <p>Similarly, an interesting extension to servant would be a rewrite system that makes a trie out of the API type, and correspondingly changing the data-level implementation of a server, so that route lookups can be faster than linear.</p>
