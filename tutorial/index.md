@@ -9,7 +9,7 @@ This is an introductory tutorial to the current version of *servant*, which is *
 ## Github
 
 - the servant packages: [haskell-servant/servant](https://github.com/haskell-servant/servant)
-- the website (including this tutorial): [haskell-servant/haskell-servant.github.io](https://github.com/haskell-servant/haskell-servant.github.io/tree/hakyll)
+- the website (including this tutorial): [haskell-servant/haskell-servant.github.io](https://github.com/haskell-servant/haskell-servant.github.io/)
 - Feel free to use the issue tracker (or to send PRs!) on the website's repository to give feedback and suggestions about this tutorial
 
 # Introduction
