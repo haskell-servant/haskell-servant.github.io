@@ -29,10 +29,10 @@ install:
   - cabal build
 
 script:
+  - (cd check-code ; make test)
+
   - ./dist/build/site/site build
   - ./dist/build/site/site check
-
-  - (cd check-code ; make test)
 
 cache:
   directories:

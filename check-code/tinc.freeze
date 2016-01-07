@@ -1,45 +1,191 @@
 dependencies:
 - name: aeson
   version: '0.10.0.0'
+- name: aeson-pretty
+  version: '0.7.2'
+- name: ansi-terminal
+  version: '0.6.2.3'
+- name: ansi-wl-pprint
+  version: '0.6.7.3'
+- name: appar
+  version: '0.1.4'
 - name: attoparsec
   version: '0.13.0.1'
+- name: auto-update
+  version: '0.1.3'
+- name: base-orphans
+  version: '0.4.5'
+- name: base64-bytestring
+  version: '1.0.0.1'
+- name: bifunctors
+  version: '5.1'
 - name: blaze-builder
   version: '0.4.0.1'
+- name: blaze-html
+  version: '0.8.1.1'
+- name: blaze-markup
+  version: '0.7.0.3'
+- name: byteable
+  version: '0.1.1'
+- name: byteorder
+  version: '1.0.4'
+- name: bytestring-builder
+  version: '0.10.6.0.0'
 - name: bytestring-conversion
   version: '0.3.1'
 - name: case-insensitive
   version: '1.2.0.5'
+- name: cmdargs
+  version: '0.10.13'
+- name: comonad
+  version: '4.2.7.2'
+- name: conduit
+  version: '1.2.6.1'
+- name: conduit-extra
+  version: '1.1.9.2'
+- name: contravariant
+  version: '1.3.3'
+- name: cookie
+  version: '0.4.1.6'
+- name: cryptohash
+  version: '0.11.6'
+- name: cryptohash-conduit
+  version: '0.1.1'
+- name: data-default-class
+  version: '0.0.1'
+- name: distributive
+  version: '0.4.4'
 - name: dlist
   version: '0.7.1.2'
 - name: double-conversion
   version: '2.0.1.0'
+- name: easy-file
+  version: '0.2.1'
+- name: either
+  version: '4.4.1'
+- name: exceptions
+  version: '0.8.0.2'
+- name: fast-logger
+  version: '2.4.1'
+- name: file-embed
+  version: '0.0.9'
+- name: free
+  version: '4.12.1'
 - name: hashable
   version: '1.2.3.3'
+- name: hex
+  version: '0.1.2'
+- name: http-date
+  version: '0.0.6.1'
 - name: http-media
   version: '0.6.2'
 - name: http-types
   version: '0.9'
+- name: http2
+  version: '1.4.0'
+- name: iproute
+  version: '1.7.0'
+- name: lifted-base
+  version: '0.2.3.6'
+- name: lucid
+  version: '2.9.4'
+- name: mime-types
+  version: '0.1.0.6'
+- name: mmorph
+  version: '1.0.4'
+- name: monad-control
+  version: '1.0.0.4'
+- name: MonadRandom
+  version: '0.4.1'
 - name: mtl
   version: '2.2.1'
+- name: network
+  version: '2.6.2.1'
 - name: network-uri
   version: '2.6.0.3'
+- name: old-locale
+  version: '1.0.0.7'
+- name: old-time
+  version: '1.1.0.3'
+- name: optparse-applicative
+  version: '0.12.0.0'
 - name: parsec
   version: '3.1.9'
+- name: prelude-extras
+  version: '0.4.0.2'
 - name: primitive
   version: '0.6.1.0'
+- name: profunctors
+  version: '5.1.2'
+- name: psqueues
+  version: '0.2.0.3'
+- name: random
+  version: '1.1'
+- name: resourcet
+  version: '1.1.7'
+- name: safe
+  version: '0.3.9'
 - name: scientific
   version: '0.3.4.4'
+- name: semigroupoids
+  version: '5.0.0.4'
+- name: semigroups
+  version: '0.18.0.1'
 - name: servant
   version: '0.4.4.6'
+- name: servant-server
+  version: '0.4.4.6'
+- name: simple-sendfile
+  version: '0.2.21'
+- name: split
+  version: '0.2.2'
+- name: StateVar
+  version: '1.1.0.2'
+- name: stm
+  version: '2.4.4.1'
+- name: streaming-commons
+  version: '0.1.15'
 - name: string-conversions
   version: '0.4'
+- name: stringsearch
+  version: '0.3.6.6'
 - name: syb
   version: '0.6'
+- name: system-filepath
+  version: '0.4.13.4'
+- name: tagged
+  version: '0.8.2'
 - name: text
   version: '1.2.2.0'
+- name: transformers-base
+  version: '0.4.4'
+- name: transformers-compat
+  version: '0.4.0.4'
+- name: unix-compat
+  version: '0.4.1.4'
+- name: unix-time
+  version: '0.3.6'
 - name: unordered-containers
   version: '0.2.5.1'
 - name: utf8-string
   version: '1.0.1.1'
+- name: vault
+  version: '0.3.0.5'
 - name: vector
   version: '0.11.0.0'
+- name: void
+  version: '0.7.1'
+- name: wai
+  version: '3.2.0'
+- name: wai-app-static
+  version: '3.1.4.1'
+- name: wai-extra
+  version: '3.0.13.1'
+- name: wai-logger
+  version: '2.2.4.1'
+- name: warp
+  version: '3.2.1'
+- name: word8
+  version: '0.1.2'
+- name: zlib
+  version: '0.6.1.1'
