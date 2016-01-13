@@ -934,21 +934,21 @@ the whole `Server` takes the *userid* and has handlers that are just computation
 > server8 = getUser :<|> deleteUser
 >
 >   where getUser :: Int -> EitherT ServantErr IO User
->         getUser userid = error "..."
+>         getUser _userid = error "..."
 >
 >         deleteUser :: Int -> EitherT ServantErr IO ()
->         deleteUser userid = error "..."
+>         deleteUser _userid = error "..."
 >
 > -- notice how getUser and deleteUser
 > -- have a different type! no argument anymore,
 > -- the argument directly goes to the whole Server
 > server9 :: Server UserAPI4
-> server9 userid = getUser :<|> deleteUser
+> server9 userid = getUser userid :<|> deleteUser userid
 >
->   where getUser :: EitherT ServantErr IO User
+>   where getUser :: Int -> EitherT ServantErr IO User
 >         getUser = error "..."
 >
->         deleteUser :: EitherT ServantErr IO ()
+>         deleteUser :: Int -> EitherT ServantErr IO ()
 >         deleteUser = error "..."
 
 Note that there's nothing special about `Capture` that lets you "factor it out": this can be done with any combinator. Here are a few examples of APIs with a combinator factored out for which we can write a perfectly valid `Server`.
@@ -995,16 +995,16 @@ This approach lets you define APIs modularly and assemble them all into one big 
 >         newUser = error "..."
 >
 >         userOperations userid =
->           viewUser :<|> updateUser :<|> deleteUser
+>           viewUser userid :<|> updateUser userid :<|> deleteUser userid
 >
 >           where
->             viewUser :: EitherT ServantErr IO User
+>             viewUser :: Int -> EitherT ServantErr IO User
 >             viewUser = error "..."
 >
->             updateUser :: User -> EitherT ServantErr IO ()
+>             updateUser :: Int -> User -> EitherT ServantErr IO ()
 >             updateUser = error "..."
 >
->             deleteUser :: EitherT ServantErr IO ()
+>             deleteUser :: Int -> EitherT ServantErr IO ()
 >             deleteUser = error "..."
 
 > type ProductsAPI =
@@ -1028,16 +1028,16 @@ This approach lets you define APIs modularly and assemble them all into one big 
 >         newProduct = error "..."
 >
 >         productOperations productid =
->           viewProduct :<|> updateProduct :<|> deleteProduct
+>           viewProduct productid :<|> updateProduct productid :<|> deleteProduct productid
 >
 >           where
->             viewProduct :: EitherT ServantErr IO Product
+>             viewProduct :: Int -> EitherT ServantErr IO Product
 >             viewProduct = error "..."
 >
->             updateProduct :: Product -> EitherT ServantErr IO ()
+>             updateProduct :: Int -> Product -> EitherT ServantErr IO ()
 >             updateProduct = error "..."
 >
->             deleteProduct :: EitherT ServantErr IO ()
+>             deleteProduct :: Int -> EitherT ServantErr IO ()
 >             deleteProduct = error "..."
 
 > type CombinedAPI = "users" :> UsersAPI

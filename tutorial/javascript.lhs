@@ -38,7 +38,6 @@ need to have some language extensions and imports:
 > import Language.Javascript.JQuery
 > import Network.Wai
 > import Servant
-> import Servant.API
 > import Servant.JQuery
 > import System.Random
 

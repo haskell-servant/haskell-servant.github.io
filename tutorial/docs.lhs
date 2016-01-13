@@ -12,16 +12,14 @@ need to have some language extensions and imports:
 > {-# LANGUAGE MultiParamTypeClasses #-}
 > {-# LANGUAGE OverloadedStrings #-}
 > {-# LANGUAGE TypeOperators #-}
+> {-# OPTIONS_GHC -fno-warn-orphans #-}
 >
 > module Docs where
 >
-> import Data.Aeson
 > import Data.ByteString.Lazy (ByteString)
-> import Data.List
 > import Data.Proxy
 > import Data.Text.Lazy.Encoding (encodeUtf8)
 > import Data.Text.Lazy (pack)
-> import GHC.Generics
 > import Network.HTTP.Types
 > import Network.Wai
 > import Servant.API
