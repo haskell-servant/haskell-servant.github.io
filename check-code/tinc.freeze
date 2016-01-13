@@ -159,6 +159,10 @@ dependencies:
   version: '0.4.4.6'
 - name: servant-client
   version: '0.4.4.6'
+- name: servant-docs
+  version: '0.4.4.6'
+- name: servant-jquery
+  version: '0.4.4.6'
 - name: servant-server
   version: '0.4.4.6'
 - name: simple-sendfile

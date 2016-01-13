@@ -235,6 +235,7 @@ We are going to use the following data types and functions to implement a server
 >   } deriving Generic
 >
 > instance FromJSON ClientInfo
+> instance ToJSON ClientInfo
 >
 > data Email = Email
 >   { from :: String
