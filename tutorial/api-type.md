@@ -108,7 +108,7 @@ data Capture (s :: Symbol) a
 ```
 
 In some web frameworks, you use regexes for captures. We use a
-[`FromText`](https://hackage.haskell.org/package/servant/docs/Servant-Common-Text.html#t:FromText)
+[`FromText`](http://haddock.stackage.org/lts-4.1/servant-0.4.4.6/Servant-Common-Text.html#t:FromText)
 class, which the captured value must be an instance of.
 
 Examples:
