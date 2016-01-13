@@ -1,4 +1,5 @@
 dependencies:
   - servant == 0.4.4.6
   - servant-server == 0.4.4.6
+  - servant-client == 0.4.4.6
   - lucid == 2.9.4
