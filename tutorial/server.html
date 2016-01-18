@@ -57,110 +57,117 @@
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">dist/build/tutorial/tutorial</span>
 <span class="kw">Usage</span>:   tutorial N
         <span class="kw">where</span> N is the number of the example you want to run.</code></pre></div>
-<section id="a-first-example" class="level2">
-<h2>A first example</h2>
+<section id="a-first-example" class="level1">
+<h1>A first example</h1>
 <p>Equipped with some basic knowledge about the way we represent API, let’s now write our first webservice.</p>
+<p>The source for this tutorial section is a literate haskell file, so first we need to have some language extensions and imports:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
+<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
+<span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span>
+<span class="ot">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
+<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
+
+<span class="kw">module</span> <span class="dt">Server</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Control.Monad.IO.Class</span>
+<span class="kw">import </span><span class="dt">Control.Monad.Reader</span>
+<span class="kw">import </span><span class="dt">Control.Monad.Trans.Either</span>
+<span class="kw">import </span><span class="dt">Data.Aeson</span>
+<span class="kw">import </span><span class="dt">Data.Aeson.Types</span>
+<span class="kw">import </span><span class="dt">Data.Attoparsec.ByteString</span>
+<span class="kw">import </span><span class="dt">Data.ByteString</span> (<span class="dt">ByteString</span>)
+<span class="kw">import </span><span class="dt">Data.Int</span>
+<span class="kw">import </span><span class="dt">Data.List</span>
+<span class="kw">import </span><span class="dt">Data.String.Conversions</span>
+<span class="kw">import </span><span class="dt">Data.Time.Calendar</span>
+<span class="kw">import </span><span class="dt">GHC.Generics</span>
+<span class="kw">import </span><span class="dt">Lucid</span>
+<span class="kw">import </span><span class="dt">Network.HTTP.Media</span> ((//), (/:))
+<span class="kw">import </span><span class="dt">Network.Wai</span>
+<span class="kw">import </span><span class="dt">Network.Wai.Handler.Warp</span>
+<span class="kw">import </span><span class="dt">Servant</span>
+<span class="kw">import </span><span class="dt">System.Directory</span>
+<span class="kw">import </span><span class="dt">Text.Blaze</span>
+<span class="kw">import </span><span class="dt">Text.Blaze.Html.Renderer.Utf8</span>
+<span class="kw">import qualified</span> <span class="dt">Data.Aeson.Parser</span>
+<span class="kw">import qualified</span> <span class="dt">Text.Blaze.Html</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></code></pre></div>
+<p><strong>Important</strong>: the <code>Servant</code> module comes from the <em>servant-server</em> package, the one that lets us run webservers that implement a particular API type. It reexports all the types from the <em>servant</em> package that let you declare API types as well as everything you need to turn your request handlers into a fully-fledged webserver. This means that in your applications, you can just add <em>servant-server</em> as a dependency, import <code>Servant</code> and not worry about anything else.</p>
 <p>We will write a server that will serve the following API.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI1</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
 <p>Here’s what we would like to see when making a GET request to <code>/users</code>.</p>
 <div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript">[ {<span class="st">&quot;name&quot;</span>: <span class="st">&quot;Isaac Newton&quot;</span>, <span class="st">&quot;age&quot;</span>: <span class="dv">372</span>, <span class="st">&quot;email&quot;</span>: <span class="st">&quot;isaac@newton.co.uk&quot;</span>, <span class="st">&quot;registration_date&quot;</span>: <span class="st">&quot;1683-03-01&quot;</span>}
 , {<span class="st">&quot;name&quot;</span>: <span class="st">&quot;Albert Einstein&quot;</span>, <span class="st">&quot;age&quot;</span>: <span class="dv">136</span>, <span class="st">&quot;email&quot;</span>: <span class="st">&quot;ae@mc2.org&quot;</span>, <span class="st">&quot;registration_date&quot;</span>: <span class="st">&quot;1905-12-01&quot;</span>}
 ]</code></pre></div>
-<p>Some imports and <code>LANGUAGE</code> pragmas:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
-<span class="ot">{-# LANGUAGE TypeFamilies #-}</span>
-<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
-<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
-
-<span class="kw">import </span><span class="dt">Data.Aeson</span>
-<span class="kw">import </span><span class="dt">Data.Time.Calendar</span>
-<span class="kw">import </span><span class="dt">GHC.Generics</span>
-<span class="kw">import </span><span class="dt">Network.Wai</span>
-<span class="kw">import </span><span class="dt">Network.Wai.Handler.Warp</span>
-<span class="kw">import </span><span class="dt">Servant</span></code></pre></div>
-<p><strong>Important</strong>: the <code>Servant</code> module comes from the <em>servant-server</em> package, the one that lets us run webservers that implement a particular API type. It reexports all the types from the <em>servant</em> package that let you declare API types as well as everything you need to turn your request handlers into a fully-fledged webserver. This means that in your applications, you can just add <em>servant-server</em> as a dependency, import <code>Servant</code> and not worry about anything else.</p>
 <p>Now let’s define our <code>User</code> data type and write some instances for it.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span>
   {<span class="ot"> name ::</span> <span class="dt">String</span>
   ,<span class="ot"> age ::</span> <span class="dt">Int</span>
   ,<span class="ot"> email ::</span> <span class="dt">String</span>
   ,<span class="ot"> registration_date ::</span> <span class="dt">Day</span>
   } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Generic</span>)
 
-<span class="co">-- orphan ToJSON instance for Day. necessary to derive one for User</span>
-<span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">Day</span> <span class="kw">where</span>
-  <span class="co">-- display a day in YYYY-mm-dd format</span>
-  toJSON d <span class="fu">=</span> toJSON (showGregorian d)
-
 <span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">User</span></code></pre></div>
 <p>Nothing funny going on here. But we now can define our list of two users.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">users ::</span> [<span class="dt">User</span>]
-users <span class="fu">=</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">users1 ::</span> [<span class="dt">User</span>]
+users1 <span class="fu">=</span>
   [ <span class="dt">User</span> <span class="st">&quot;Isaac Newton&quot;</span>    <span class="dv">372</span> <span class="st">&quot;isaac@newton.co.uk&quot;</span> (fromGregorian <span class="dv">1683</span>  <span class="dv">3</span> <span class="dv">1</span>)
   , <span class="dt">User</span> <span class="st">&quot;Albert Einstein&quot;</span> <span class="dv">136</span> <span class="st">&quot;ae@mc2.org&quot;</span>         (fromGregorian <span class="dv">1905</span> <span class="dv">12</span> <span class="dv">1</span>)
   ]</code></pre></div>
 <p>Let’s also write our API type.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI1</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span></code></pre></div>
 <p>We can now take care of writing the actual webservice that will handle requests to such an API. This one will be very simple, being reduced to just a single endpoint. The type of the web application is determined by the API type, through a <em>type family</em> named <code>Server</code>. (Type families are just functions that take types as input and return types.) The <code>Server</code> type family will compute the right type that a bunch of request handlers should have just from the corresponding API type.</p>
 <p>The first thing to know about the <code>Server</code> type family is that behind the scenes it will drive the routing, letting you focus only on the business logic. The second thing to know is that for each endpoint, your handlers will by default run in the <code>EitherT ServantErr IO</code> monad. This is overridable very easily, as explained near the end of this guide. Third thing, the type of the value returned in that monad must be the same as the second argument of the HTTP method combinator used for the corresponding endpoint. In our case, it means we must provide a handler of type <code>EitherT ServantErr IO [User]</code>. Well, we have a monad, let’s just <code>return</code> our list:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">UserAPI</span>
-server <span class="fu">=</span> return users</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">server1 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI1</span>
+server1 <span class="fu">=</span> return users1</code></pre></div>
 <p>That’s it. Now we can turn <code>server</code> into an actual webserver using <a href="http://hackage.haskell.org/package/wai">wai</a> and <a href="http://hackage.haskell.org/package/warp">warp</a>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">userAPI ::</span> <span class="dt">Proxy</span> <span class="dt">UserAPI</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">userAPI ::</span> <span class="dt">Proxy</span> <span class="dt">UserAPI1</span>
 userAPI <span class="fu">=</span> <span class="dt">Proxy</span>
 
 <span class="co">-- 'serve' comes from servant and hands you a WAI Application,</span>
 <span class="co">-- which you can think of as an &quot;abstract&quot; web application,</span>
 <span class="co">-- not yet a webserver.</span>
-<span class="ot">app ::</span> <span class="dt">Application</span>
-app <span class="fu">=</span> serve userAPI server</code></pre></div>
+<span class="ot">app1 ::</span> <span class="dt">Application</span>
+app1 <span class="fu">=</span> serve userAPI server1</code></pre></div>
 <p>The <code>userAPI</code> bit is, alas, boilerplate (we need it to guide type inference). But that’s about as much boilerplate as you get.</p>
 <p>And we’re done! Let’s run our webservice on the port 8081.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> run <span class="dv">8081</span> app</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> run <span class="dv">8081</span> app1</code></pre></div>
 <p>You can put this all into a file or just grab <a href="http://github.com/haskell-servant/servant">servant’s repo</a> and look at the <em>servant-examples</em> directory. The code we have just explored is in <em>tutorial/T1.hs</em>, runnable with <code>dist/build/tutorial/tutorial 1</code>.</p>
 <p>If you run it, you can go to <code>http://localhost:8081/users</code> in your browser or query it with curl and you see:</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> http://localhost:8081/users
 [{<span class="st">&quot;email&quot;</span>:<span class="st">&quot;isaac@newton.co.uk&quot;</span>,<span class="st">&quot;registration_date&quot;</span>:<span class="st">&quot;1683-03-01&quot;</span>,<span class="st">&quot;age&quot;</span>:<span class="kw">372</span>,<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Isaac Newton&quot;</span>},{<span class="st">&quot;email&quot;</span>:<span class="st">&quot;ae@mc2.org&quot;</span>,<span class="st">&quot;registration_date&quot;</span>:<span class="st">&quot;1905-12-01&quot;</span>,<span class="st">&quot;age&quot;</span>:<span class="kw">136</span>,<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Albert Einstein&quot;</span>}]</code></pre></div>
 </section>
-<section id="more-endpoints" class="level2">
-<h2>More endpoints</h2>
+<section id="more-endpoints" class="level1">
+<h1>More endpoints</h1>
 <p>What if we want more than one endpoint? Let’s add <code>/albert</code> and <code>/isaac</code> to view the corresponding users encoded in JSON.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
-          <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;albert&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
-          <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;isaac&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI2</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [User]</span>
+           <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;albert&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
+           <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;isaac&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span></code></pre></div>
 <p>And let’s adapt our code a bit.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">isaac ::</span> <span class="dt">User</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">isaac ::</span> <span class="dt">User</span>
 isaac <span class="fu">=</span> <span class="dt">User</span> <span class="st">&quot;Isaac Newton&quot;</span> <span class="dv">372</span> <span class="st">&quot;isaac@newton.co.uk&quot;</span> (fromGregorian <span class="dv">1683</span> <span class="dv">3</span> <span class="dv">1</span>)
 
 <span class="ot">albert ::</span> <span class="dt">User</span>
 albert <span class="fu">=</span> <span class="dt">User</span> <span class="st">&quot;Albert Einstein&quot;</span> <span class="dv">136</span> <span class="st">&quot;ae@mc2.org&quot;</span> (fromGregorian <span class="dv">1905</span> <span class="dv">12</span> <span class="dv">1</span>)
 
-<span class="ot">users ::</span> [<span class="dt">User</span>]
-users <span class="fu">=</span> [isaac, albert]</code></pre></div>
+<span class="ot">users2 ::</span> [<span class="dt">User</span>]
+users2 <span class="fu">=</span> [isaac, albert]</code></pre></div>
 <p>Now, just like we separate the various endpoints in <code>UserAPI</code> with <code>:&lt;|&gt;</code>, we are going to separate the handlers with <code>:&lt;|&gt;</code> too! They must be provided in the same order as the one they appear in in the API type.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">UserAPI</span>
-server <span class="fu">=</span> return users
-    <span class="fu">:&lt;|&gt;</span> return albert
-    <span class="fu">:&lt;|&gt;</span> return isaac</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">server2 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI2</span>
+server2 <span class="fu">=</span> return users2
+     <span class="fu">:&lt;|&gt;</span> return albert
+     <span class="fu">:&lt;|&gt;</span> return isaac</code></pre></div>
 <p>And that’s it! You can run this example with <code>dist/build/tutorial/tutorial 2</code> and check out the data available at <code>/users</code>, <code>/albert</code> and <code>/isaac</code>.</p>
 </section>
-<section id="from-combinators-to-handler-arguments" class="level2">
-<h2>From combinators to handler arguments</h2>
+<section id="from-combinators-to-handler-arguments" class="level1">
+<h1>From combinators to handler arguments</h1>
 <p>Fine, we can write trivial webservices easily, but none of the two above use any “fancy” combinator from servant. Let’s address this and use <code>QueryParam</code>, <code>Capture</code> and <code>ReqBody</code> right away. You’ll see how each occurence of these combinators in an endpoint makes the corresponding handler receive an argument of the appropriate type automatically. You don’t have to worry about manually looking up URL captures or query string parameters, or decoding/encoding data from/to JSON. Never.</p>
-<p>First off, again, some pragmas and imports.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
-<span class="ot">{-# LANGUAGE TypeFamilies #-}</span>
-<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
-<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
-<span class="kw">import </span><span class="dt">Control.Monad.Trans.Either</span>
-<span class="kw">import </span><span class="dt">Data.Aeson</span>
-<span class="kw">import </span><span class="dt">Data.List</span>
-<span class="kw">import </span><span class="dt">GHC.Generics</span>
-<span class="kw">import </span><span class="dt">Network.Wai</span>
-<span class="kw">import </span><span class="dt">Servant</span></code></pre></div>
 <p>We are going to use the following data types and functions to implement a server for <code>API</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;position&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;y&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Position</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;position&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;y&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Position</span>
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] HelloMessage</span>
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;marketing&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] ClientInfo :&gt; Post '</span>[<span class="dt">JSON</span>] <span class="dt">Email</span>
 
@@ -177,13 +184,14 @@ server <span class="fu">=</span> return users
 <span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">HelloMessage</span>
 
 <span class="kw">data</span> <span class="dt">ClientInfo</span> <span class="fu">=</span> <span class="dt">ClientInfo</span>
-  {<span class="ot"> name ::</span> <span class="dt">String</span>
-  ,<span class="ot"> email ::</span> <span class="dt">String</span>
-  ,<span class="ot"> age ::</span> <span class="dt">Int</span>
-  ,<span class="ot"> interested_in ::</span> [<span class="dt">String</span>]
+  {<span class="ot"> clientName ::</span> <span class="dt">String</span>
+  ,<span class="ot"> clientEmail ::</span> <span class="dt">String</span>
+  ,<span class="ot"> clientAge ::</span> <span class="dt">Int</span>
+  ,<span class="ot"> clientInterestedIn ::</span> [<span class="dt">String</span>]
   } <span class="kw">deriving</span> <span class="dt">Generic</span>
 
 <span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">ClientInfo</span>
+<span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">ClientInfo</span>
 
 <span class="kw">data</span> <span class="dt">Email</span> <span class="fu">=</span> <span class="dt">Email</span>
   {<span class="ot"> from ::</span> <span class="dt">String</span>
@@ -198,18 +206,18 @@ server <span class="fu">=</span> return users
 emailForClient c <span class="fu">=</span> <span class="dt">Email</span> from' to' subject' body'
 
   <span class="kw">where</span> from'    <span class="fu">=</span> <span class="st">&quot;great@company.com&quot;</span>
-        to'      <span class="fu">=</span> email c
-        subject' <span class="fu">=</span> <span class="st">&quot;Hey &quot;</span> <span class="fu">++</span> name c <span class="fu">++</span> <span class="st">&quot;, we miss you!&quot;</span>
-        body'    <span class="fu">=</span> <span class="st">&quot;Hi &quot;</span> <span class="fu">++</span> name c <span class="fu">++</span> <span class="st">&quot;,\n\n&quot;</span>
-                <span class="fu">++</span> <span class="st">&quot;Since you've recently turned &quot;</span> <span class="fu">++</span> show (age c)
+        to'      <span class="fu">=</span> clientEmail c
+        subject' <span class="fu">=</span> <span class="st">&quot;Hey &quot;</span> <span class="fu">++</span> clientName c <span class="fu">++</span> <span class="st">&quot;, we miss you!&quot;</span>
+        body'    <span class="fu">=</span> <span class="st">&quot;Hi &quot;</span> <span class="fu">++</span> clientName c <span class="fu">++</span> <span class="st">&quot;,\n\n&quot;</span>
+                <span class="fu">++</span> <span class="st">&quot;Since you've recently turned &quot;</span> <span class="fu">++</span> show (clientAge c)
                 <span class="fu">++</span> <span class="st">&quot;, have you checked out our latest &quot;</span>
-                <span class="fu">++</span> intercalate <span class="st">&quot;, &quot;</span> (interested_in c)
+                <span class="fu">++</span> intercalate <span class="st">&quot;, &quot;</span> (clientInterestedIn c)
                 <span class="fu">++</span> <span class="st">&quot; products? Give us a visit!&quot;</span></code></pre></div>
 <p>We can implement handlers for the three endpoints:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">API</span>
-server <span class="fu">=</span> position
-    <span class="fu">:&lt;|&gt;</span> hello
-    <span class="fu">:&lt;|&gt;</span> marketing
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">server3 ::</span> <span class="dt">Server</span> <span class="dt">API</span>
+server3 <span class="fu">=</span> position
+     <span class="fu">:&lt;|&gt;</span> hello
+     <span class="fu">:&lt;|&gt;</span> marketing
 
   <span class="kw">where</span><span class="ot"> position ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">Position</span>
         position x y <span class="fu">=</span> return (<span class="dt">Position</span> x y)
@@ -248,8 +256,8 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
 </ul>
 </blockquote>
 </section>
-<section id="the-fromtexttotext-classes" class="level2">
-<h2>The <code>FromText</code>/<code>ToText</code> classes</h2>
+<section id="the-fromtexttotext-classes" class="level1">
+<h1>The <code>FromText</code>/<code>ToText</code> classes</h1>
 <p>Wait… How does <em>servant</em> know how to decode the <code>Int</code>s from the URL? Or how to decode a <code>ClientInfo</code> value from the request body? This is what this and the following two sections address.</p>
 <p><code>Capture</code>s and <code>QueryParam</code>s are represented by some textual value in URLs. <code>Header</code>s are similarly represented by a pair of a header name and a corresponding (textual) value in the request’s “metadata”. This is why we decided to provide a pair of typeclasses, <code>FromText</code> and <code>ToText</code> which just let you say that you can respectively <em>extract</em> or <em>encode</em> values of some type <em>from</em>/<em>to</em> text. Here are the definitions:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">FromText</span> a <span class="kw">where</span>
@@ -258,7 +266,7 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
 <span class="kw">class</span> <span class="dt">ToText</span> a <span class="kw">where</span>
 <span class="ot">  toText ::</span> a <span class="ot">-&gt;</span> <span class="dt">Text</span></code></pre></div>
 <p>And as long as the type that a <code>Capture</code>/<code>QueryParam</code>/<code>Header</code>/etc will be decoded to provides a <code>FromText</code> instance, it will Just Work. <em>servant</em> provides a decent number of instances, but here are some examples of defining your own.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- A typical enumeration</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="co">-- A typical enumeration</span>
 <span class="kw">data</span> <span class="dt">Direction</span>
   <span class="fu">=</span> <span class="dt">Up</span>
   <span class="fu">|</span> <span class="dt">Down</span>
@@ -269,34 +277,32 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
   <span class="co">-- requires {-# LANGUAGE OverloadedStrings #-}</span>
   fromText <span class="st">&quot;up&quot;</span>    <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Up</span>
   fromText <span class="st">&quot;down&quot;</span>  <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Down</span>
-  fromText <span class="st">&quot;left&quot;</span>  <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Left</span>
-  fromText <span class="st">&quot;right&quot;</span> <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Right</span>
+  fromText <span class="st">&quot;left&quot;</span>  <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Server.Left</span>
+  fromText <span class="st">&quot;right&quot;</span> <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Server.Right</span>
   fromText       _ <span class="fu">=</span> <span class="dt">Nothing</span>
 
 <span class="kw">instance</span> <span class="dt">ToText</span> <span class="dt">Direction</span> <span class="kw">where</span>
-  toText <span class="dt">Up</span>    <span class="fu">=</span> <span class="st">&quot;up&quot;</span>
-  toText <span class="dt">Down</span>  <span class="fu">=</span> <span class="st">&quot;down&quot;</span>
-  toText <span class="dt">Left</span>  <span class="fu">=</span> <span class="st">&quot;left&quot;</span>
-  toText <span class="dt">Right</span> <span class="fu">=</span> <span class="st">&quot;right&quot;</span>
+  toText <span class="dt">Up</span>           <span class="fu">=</span> <span class="st">&quot;up&quot;</span>
+  toText <span class="dt">Down</span>         <span class="fu">=</span> <span class="st">&quot;down&quot;</span>
+  toText <span class="dt">Server.Left</span>  <span class="fu">=</span> <span class="st">&quot;left&quot;</span>
+  toText <span class="dt">Server.Right</span> <span class="fu">=</span> <span class="st">&quot;right&quot;</span>
 
 <span class="kw">newtype</span> <span class="dt">UserId</span> <span class="fu">=</span> <span class="dt">UserId</span> <span class="dt">Int64</span>
-  <span class="kw">deriving</span> (<span class="dt">FromText</span>, <span class="dt">ToText</span>)
-  <span class="co">-- requires GeneralizedNewtypeDeriving</span>
-
-<span class="co">-- or writing the instances by hand:</span>
-<span class="kw">instance</span> <span class="dt">FromText</span> <span class="dt">UserId</span> <span class="kw">where</span>
+  <span class="kw">deriving</span> (<span class="dt">FromText</span>, <span class="dt">ToText</span>)</code></pre></div>
+<p>or writing the instances by hand:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">FromText</span> <span class="dt">UserId</span> <span class="kw">where</span>
   fromText <span class="fu">=</span> fmap <span class="dt">UserId</span> fromText
 
 <span class="kw">instance</span> <span class="dt">ToText</span> <span class="dt">UserId</span> <span class="kw">where</span>
   toText (<span class="dt">UserId</span> i) <span class="fu">=</span> toText i</code></pre></div>
 <p>There’s not much else to say about these classes. You will need instances for them when using <code>Capture</code>, <code>QueryParam</code>, <code>QueryParams</code>, <code>MatrixParam</code>, <code>MatrixParams</code> and <code>Header</code> with your types. You will need <code>FromText</code> instances for server-side request handlers and <code>ToText</code> instances only when using <em>servant-client</em>, as described in the <a href="../tutorial/client.html">section about deriving haskell functions to query an API</a>.</p>
 </section>
-<section id="using-content-types-with-your-data-types" class="level2">
-<h2>Using content-types with your data types</h2>
+<section id="using-content-types-with-your-data-types" class="level1">
+<h1>Using content-types with your data types</h1>
 <p>The same principle was operating when decoding request bodies from JSON, and responses <em>into</em> JSON. (JSON is just the running example - you can do this with any content-type.)</p>
 <p>This section introduces a couple of typeclasses provided by <em>servant</em> that make all of this work.</p>
-<section id="the-truth-behind-json" class="level3">
-<h3>The truth behind <code>JSON</code></h3>
+<section id="the-truth-behind-json" class="level2">
+<h2>The truth behind <code>JSON</code></h2>
 <p>What exactly is <code>JSON</code>? Like the 3 other content types provided out of the box by <em>servant</em>, it’s a really dumb data type.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">JSON</span>
 <span class="kw">data</span> <span class="dt">PlainText</span>
@@ -325,7 +331,7 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
     <span class="co">-- alternatively:</span>
 <span class="ot">    mimeUnrender ::</span> <span class="dt">Proxy</span> ctype <span class="ot">-&gt;</span> (<span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> a)</code></pre></div>
 <p>We don’t have much work to do there either, <code>Data.Aeson.eitherDecode</code> is precisely what we need. However, it only allows arrays and objects as toplevel JSON values and this has proven to get in our way more than help us so we wrote our own little function around <em>aeson</em> and <em>attoparsec</em> that allows any type of JSON value at the toplevel of a “JSON document”. Here’s the definition in case you are curious.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">eitherDecodeLenient ::</span> <span class="dt">FromJSON</span> a <span class="ot">=&gt;</span> <span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> a
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">eitherDecodeLenient ::</span> <span class="dt">FromJSON</span> a <span class="ot">=&gt;</span> <span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> a
 eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">    v ::</span> <span class="dt">Value</span> <span class="ot">&lt;-</span> parseOnly (Data.Aeson.Parser.value <span class="fu">&lt;*</span> endOfInput) (cs input)
     parseEither parseJSON v</code></pre></div>
@@ -334,66 +340,58 @@ eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
     mimeUnrender _ <span class="fu">=</span> eitherDecodeLenient</code></pre></div>
 <p>And this is all the code that lets you use <code>JSON</code> for with <code>ReqBody</code>, <code>Get</code>, <code>Post</code> and friends. We can check our understanding by implementing support for an <code>HTML</code> content type, so that users of your webservice can access an HTML representation of the data they want, ready to be included in any HTML document, e.g. using <a href="https://api.jquery.com/load/">jQuery’s <code>load</code> function</a>, simply by adding <code>Accept: text/html</code> to their request headers.</p>
 </section>
-<section id="case-studies-servant-blaze-and-servant-lucid" class="level3">
-<h3>Case-studies: <em>servant-blaze</em> and <em>servant-lucid</em></h3>
+<section id="case-studies-servant-blaze-and-servant-lucid" class="level2">
+<h2>Case-studies: <em>servant-blaze</em> and <em>servant-lucid</em></h2>
 <p>These days, most of the haskellers who write their HTML UIs directly from Haskell use either <a href="http://hackage.haskell.org/package/blaze-html">blaze-html</a> or <a href="http://hackage.haskell.org/package/lucid">lucid</a>. The best option for <em>servant</em> is obviously to support both (and hopefully other templating solutions!).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">HTML</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">HTMLLucid</span></code></pre></div>
 <p>Once again, the data type is just there as a symbol for the encoding/decoding functions, except that this time we will only worry about encoding since <em>blaze-html</em> and <em>lucid</em> don’t provide a way to extract data from HTML.</p>
-<p>Both packages also have the same <code>Accept</code> instance for their <code>HTML</code> type.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Accept</span> <span class="dt">HTML</span> <span class="kw">where</span>
+<p>Both packages also have the same <code>Accept</code> instance for their <code>HTMLLucid</code> type.</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Accept</span> <span class="dt">HTMLLucid</span> <span class="kw">where</span>
     contentType _ <span class="fu">=</span> <span class="st">&quot;text&quot;</span> <span class="fu">//</span> <span class="st">&quot;html&quot;</span> <span class="fu">/:</span> (<span class="st">&quot;charset&quot;</span>, <span class="st">&quot;utf-8&quot;</span>)</code></pre></div>
 <p>Note that this instance uses the <code>(/:)</code> operator from <em>http-media</em> which lets us specify additional information about a content-type, like the charset here.</p>
 <p>The rendering instances for both packages both call similar functions that take types with an appropriate instance to an “abstract” HTML representation and then write that to a <code>ByteString</code>.</p>
 <p>For <em>lucid</em>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">ToHtml</span> a <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">HTML</span> a <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">ToHtml</span> a <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">HTMLLucid</span> a <span class="kw">where</span>
     mimeRender _ <span class="fu">=</span> renderBS <span class="fu">.</span> toHtml
 
 <span class="co">-- let's also provide an instance for lucid's</span>
 <span class="co">-- 'Html' wrapper.</span>
-<span class="kw">instance</span> <span class="dt">MimeRender</span> <span class="dt">HTML</span> (<span class="dt">Html</span> a) <span class="kw">where</span>
+<span class="kw">instance</span> <span class="dt">MimeRender</span> <span class="dt">HTMLLucid</span> (<span class="dt">Html</span> a) <span class="kw">where</span>
     mimeRender _ <span class="fu">=</span> renderBS</code></pre></div>
 <p>For <em>blaze-html</em>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">ToMarkup</span> a <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">HTML</span> a <span class="kw">where</span>
-    mimeRender _ <span class="fu">=</span> renderHtml <span class="fu">.</span> toHtml
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="co">-- For this tutorial to compile 'HTMLLucid' and 'HTMLBlaze' have to be</span>
+<span class="co">-- distinct. Usually you would stick to one html rendering library and then</span>
+<span class="co">-- you can go with one 'HTML' type.</span>
+<span class="kw">data</span> <span class="dt">HTMLBlaze</span>
+
+<span class="kw">instance</span> <span class="dt">Accept</span> <span class="dt">HTMLBlaze</span> <span class="kw">where</span>
+    contentType _ <span class="fu">=</span> <span class="st">&quot;text&quot;</span> <span class="fu">//</span> <span class="st">&quot;html&quot;</span> <span class="fu">/:</span> (<span class="st">&quot;charset&quot;</span>, <span class="st">&quot;utf-8&quot;</span>)
+
+<span class="kw">instance</span> <span class="dt">ToMarkup</span> a <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">HTMLBlaze</span> a <span class="kw">where</span>
+    mimeRender _ <span class="fu">=</span> renderHtml <span class="fu">.</span> Text.Blaze.Html.toHtml
 
 <span class="co">-- while we're at it, just like for lucid we can</span>
 <span class="co">-- provide an instance for rendering blaze's 'Html' type</span>
-<span class="kw">instance</span> <span class="dt">MimeRender</span> <span class="dt">HTML</span> <span class="dt">Html</span> <span class="kw">where</span>
+<span class="kw">instance</span> <span class="dt">MimeRender</span> <span class="dt">HTMLBlaze</span> <span class="dt">Text.Blaze.Html.Html</span> <span class="kw">where</span>
     mimeRender _ <span class="fu">=</span> renderHtml</code></pre></div>
-<p>Both <a href="http://hackage.haskell.org/package/servant-blaze">servant-blaze</a> and <a href="http://hackage.haskell.org/package/servant-lucid">servant-lucid</a> let you use <code>HTML</code> in any content type list as long as you provide an instance of the appropriate class (<code>ToMarkup</code> for <em>blaze-html</em>, <code>ToHtml</code> for <em>lucid</em>).</p>
-<p>We can now write webservice that uses <em>servant-lucid</em> to show the <code>HTML</code> content type in action. First off, imports and pragmas as usual.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
-<span class="ot">{-# LANGUAGE TypeFamilies #-}</span>
-<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
-<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
-<span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
-<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
-
-<span class="kw">import </span><span class="dt">Data.Aeson</span>
-<span class="kw">import </span><span class="dt">Data.Foldable</span> (foldMap)
-<span class="kw">import </span><span class="dt">GHC.Generics</span>
-<span class="kw">import </span><span class="dt">Lucid</span>
-<span class="kw">import </span><span class="dt">Network.Wai</span>
-<span class="kw">import </span><span class="dt">Servant</span>
-<span class="kw">import </span><span class="dt">Servant.HTML.Lucid</span></code></pre></div>
+<p>Both <a href="http://hackage.haskell.org/package/servant-blaze">servant-blaze</a> and <a href="http://hackage.haskell.org/package/servant-lucid">servant-lucid</a> let you use <code>HTMLLucid</code> in any content type list as long as you provide an instance of the appropriate class (<code>ToMarkup</code> for <em>blaze-html</em>, <code>ToHtml</code> for <em>lucid</em>).</p>
+<p>We can now write webservice that uses <em>servant-lucid</em> to show the <code>HTMLLucid</code> content type in action. First off, imports and pragmas as usual.</p>
 <p>We will be serving the following API:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">PersonAPI</span> <span class="fu">=</span> <span class="st">&quot;persons&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON, HTML] [Person]</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">PersonAPI</span> <span class="fu">=</span> <span class="st">&quot;persons&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON, HTMLLucid] [Person]</span></code></pre></div>
 <p>where <code>Person</code> is defined as follows:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">Person</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">Person</span>
   {<span class="ot"> firstName ::</span> <span class="dt">String</span>
   ,<span class="ot"> lastName  ::</span> <span class="dt">String</span>
-  ,<span class="ot"> age       ::</span> <span class="dt">Int</span>
   } <span class="kw">deriving</span> <span class="dt">Generic</span> <span class="co">-- for the JSON instance</span>
 
 <span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">Person</span></code></pre></div>
 <p>Now, let’s teach <em>lucid</em> how to render a <code>Person</code> as a row in a table, and then a list of <code>Person</code>s as a table with a row per person.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- HTML serialization of a single person</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="co">-- HTML serialization of a single person</span>
 <span class="kw">instance</span> <span class="dt">ToHtml</span> <span class="dt">Person</span> <span class="kw">where</span>
   toHtml person <span class="fu">=</span>
     tr_ <span class="fu">$</span> <span class="kw">do</span>
       td_ (toHtml <span class="fu">$</span> firstName person)
       td_ (toHtml <span class="fu">$</span> lastName person)
-      td_ (toHtml <span class="fu">.</span> show <span class="fu">$</span> age person)
 
   <span class="co">-- do not worry too much about this</span>
   toHtmlRaw <span class="fu">=</span> toHtml
@@ -404,7 +402,6 @@ eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
     tr_ <span class="fu">$</span> <span class="kw">do</span>
       th_ <span class="st">&quot;first name&quot;</span>
       th_ <span class="st">&quot;last name&quot;</span>
-      th_ <span class="st">&quot;age&quot;</span>
 
     <span class="co">-- this just calls toHtml on each person of the list</span>
     <span class="co">-- and concatenates the resulting pieces of HTML together</span>
@@ -412,30 +409,30 @@ eitherDecodeLenient input <span class="fu">=</span> <span class="kw">do</span>
 
   toHtmlRaw <span class="fu">=</span> toHtml</code></pre></div>
 <p>We create some <code>Person</code> values and serve them as a list:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">persons ::</span> [<span class="dt">Person</span>]
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">persons ::</span> [<span class="dt">Person</span>]
 persons <span class="fu">=</span>
-  [ <span class="dt">Person</span> <span class="st">&quot;Isaac&quot;</span>  <span class="st">&quot;Newton&quot;</span>   <span class="dv">372</span>
-  , <span class="dt">Person</span> <span class="st">&quot;Albert&quot;</span> <span class="st">&quot;Einstein&quot;</span> <span class="dv">136</span>
+  [ <span class="dt">Person</span> <span class="st">&quot;Isaac&quot;</span>  <span class="st">&quot;Newton&quot;</span>
+  , <span class="dt">Person</span> <span class="st">&quot;Albert&quot;</span> <span class="st">&quot;Einstein&quot;</span>
   ]
 
 <span class="ot">personAPI ::</span> <span class="dt">Proxy</span> <span class="dt">PersonAPI</span>
 personAPI <span class="fu">=</span> <span class="dt">Proxy</span>
 
-<span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">PersonAPI</span>
-server <span class="fu">=</span> return persons
+<span class="ot">server4 ::</span> <span class="dt">Server</span> <span class="dt">PersonAPI</span>
+server4 <span class="fu">=</span> return persons
 
-<span class="ot">app ::</span> <span class="dt">Application</span>
-app <span class="fu">=</span> serve personAPI server</code></pre></div>
+<span class="ot">app2 ::</span> <span class="dt">Application</span>
+app2 <span class="fu">=</span> serve personAPI server4</code></pre></div>
 <p>And we’re good to go. You can run this example with <code>dist/build/tutorial/tutorial 4</code>.</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> http://localhost:8081/persons
-[<span class="dt">{&quot;lastName&quot;:&quot;Newton&quot;,&quot;age&quot;:372,&quot;firstName&quot;:&quot;Isaac&quot;},{&quot;lastName&quot;:&quot;Einstein&quot;,&quot;age&quot;:136,&quot;firstName&quot;:&quot;Albert&quot;}</span>]
-$ <span class="kw">curl</span> -H <span class="st">'Accept: text/html'</span> http://localhost:8081/persons
-<span class="kw">&lt;table&gt;&lt;</span>tr<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>first name<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>last name<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>age<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>/tr<span class="kw">&gt;&lt;</span>tr<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Isaac<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Newton<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;372&lt;</span>/td<span class="kw">&gt;&lt;</span>/tr<span class="kw">&gt;&lt;</span>tr<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Albert<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Einstein<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;136&lt;</span>/td<span class="kw">&gt;&lt;</span>/tr<span class="kw">&gt;&lt;</span>/table<span class="kw">&gt;</span>
-<span class="co"># or just point your browser to http://localhost:8081/persons</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"> $ <span class="kw">curl</span> http://localhost:8081/persons
+ [<span class="dt">{&quot;lastName&quot;:&quot;Newton&quot;,&quot;firstName&quot;:&quot;Isaac&quot;},{&quot;lastName&quot;:&quot;Einstein&quot;,&quot;firstName&quot;:&quot;Albert&quot;}</span>]
+ $ <span class="kw">curl</span> -H <span class="st">'Accept: text/html'</span> http://localhost:8081/persons
+ <span class="kw">&lt;table&gt;&lt;</span>tr<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>first name<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>last name<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>/tr<span class="kw">&gt;&lt;</span>tr<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Isaac<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Newton<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>/tr<span class="kw">&gt;&lt;</span>tr<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Albert<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>td<span class="kw">&gt;</span>Einstein<span class="kw">&lt;</span>/td<span class="kw">&gt;&lt;</span>/tr<span class="kw">&gt;&lt;</span>/table<span class="kw">&gt;</span>
+ <span class="co"># or just point your browser to http://localhost:8081/persons</span></code></pre></div>
 </section>
 </section>
-<section id="the-eithert-servanterr-io-monad" class="level2">
-<h2>The <code>EitherT ServantErr IO</code> monad</h2>
+<section id="the-eithert-servanterr-io-monad" class="level1">
+<h1>The <code>EitherT ServantErr IO</code> monad</h1>
 <p>At the heart of the handlers is the monad they run in, namely <code>EitherT ServantErr IO</code>. One might wonder: why this monad? The answer is that it is the simplest monad with the following properties:</p>
 <ul>
 <li>it lets us both return a successful result (with the <code>Right</code> branch of <code>Either</code>) or “fail” with a descriptive error (with the <code>Left</code> branch of <code>Either</code>);</li>
@@ -454,13 +451,13 @@ $ <span class="kw">curl</span> -H <span class="st">'Accept: text/html'</span> ht
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">left ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> e <span class="ot">-&gt;</span> <span class="dt">EitherT</span> e m a</code></pre></div>
 <p>Allows you to return an error from your handler (whereas <code>return</code> is enough to return a success).</p>
 <p>Most of what you’ll be doing in your handlers is running some IO and, depending on the result, you might sometimes want to throw an error of some kind and abort early. The next two sections cover how to do just that.</p>
-<section id="performing-io" class="level3">
-<h3>Performing IO</h3>
+<section id="performing-io" class="level2">
+<h2>Performing IO</h2>
 <p>Another important instance from the list above is <code>MonadIO m =&gt; MonadIO (EitherT e m)</code>. <a href="http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html"><code>MonadIO</code></a> is a class from the <em>transformers</em> package defined as:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadIO</span> m <span class="kw">where</span>
 <span class="ot">  liftIO ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> m a</code></pre></div>
 <p>Obviously, the <code>IO</code> monad provides a <code>MonadIO</code> instance. Hence for any type <code>e</code>, <code>EitherT e IO</code> has a <code>MonadIO</code> instance. So if you want to run any kind of IO computation in your handlers, just use <code>liftIO</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">IOAPI</span> <span class="fu">=</span> <span class="st">&quot;myfile.txt&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] FileContent</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">IOAPI1</span> <span class="fu">=</span> <span class="st">&quot;myfile.txt&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] FileContent</span>
 
 <span class="kw">newtype</span> <span class="dt">FileContent</span> <span class="fu">=</span> <span class="dt">FileContent</span>
   {<span class="ot"> content ::</span> <span class="dt">String</span> }
@@ -468,13 +465,13 @@ $ <span class="kw">curl</span> -H <span class="st">'Accept: text/html'</span> ht
 
 <span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">FileContent</span>
 
-<span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">IOAPI</span>
-server <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">server5 ::</span> <span class="dt">Server</span> <span class="dt">IOAPI1</span>
+server5 <span class="fu">=</span> <span class="kw">do</span>
   filecontent <span class="ot">&lt;-</span> liftIO (readFile <span class="st">&quot;myfile.txt&quot;</span>)
   return (<span class="dt">FileContent</span> filecontent)</code></pre></div>
 </section>
-<section id="failing-through-servanterr" class="level3">
-<h3>Failing, through <code>ServantErr</code></h3>
+<section id="failing-through-servanterr" class="level2">
+<h2>Failing, through <code>ServantErr</code></h2>
 <p>If you want to explicitly fail at providing the result promised by an endpoint using the appropriate HTTP status code (not found, unauthorized, etc) and some error message, all you have to do is use the <code>left</code> function mentioned above and provide it with the appropriate value of type <code>ServantErr</code>, which is defined as:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ServantErr</span> <span class="fu">=</span> <span class="dt">ServantErr</span>
     {<span class="ot"> errHTTPCode     ::</span> <span class="dt">Int</span>
@@ -483,21 +480,14 @@ server <span class="fu">=</span> <span class="kw">do</span>
     ,<span class="ot"> errHeaders      ::</span> [<span class="dt">Header</span>]
     }</code></pre></div>
 <p>Many standard values are provided out of the box by the <code>Servant.Server</code> module. If you want to use these values but add a body or some headers, just use record update syntax:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">failingHandler <span class="fu">=</span> left myerr
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">failingHandler ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+failingHandler <span class="fu">=</span> left myerr
 
   <span class="kw">where</span><span class="ot"> myerr ::</span> <span class="dt">ServantErr</span>
         myerr <span class="fu">=</span> err503 { errBody <span class="fu">=</span> <span class="st">&quot;Sorry dear user.&quot;</span> }</code></pre></div>
 <p>Here’s an example where we return a customised 404-Not-Found error message in the response body if “myfile.txt” isn’t there:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">IOAPI</span> <span class="fu">=</span> <span class="st">&quot;myfile.txt&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] FileContent</span>
-
-<span class="kw">newtype</span> <span class="dt">FileContent</span> <span class="fu">=</span> <span class="dt">FileContent</span>
-  {<span class="ot"> content ::</span> <span class="dt">String</span> }
-  <span class="kw">deriving</span> <span class="dt">Generic</span>
-
-<span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">FileContent</span>
-
-<span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">IOAPI</span>
-server <span class="fu">=</span> <span class="kw">do</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">server6 ::</span> <span class="dt">Server</span> <span class="dt">IOAPI1</span>
+server6 <span class="fu">=</span> <span class="kw">do</span>
   exists <span class="ot">&lt;-</span> liftIO (doesFileExist <span class="st">&quot;myfile.txt&quot;</span>)
   <span class="kw">if</span> exists
     <span class="kw">then</span> liftIO (readFile <span class="st">&quot;myfile.txt&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> <span class="dt">FileContent</span>
@@ -505,60 +495,59 @@ server <span class="fu">=</span> <span class="kw">do</span>
 
   <span class="kw">where</span> custom404Err <span class="fu">=</span> err404 { errBody <span class="fu">=</span> <span class="st">&quot;myfile.txt just isn't there, please leave this server alone.&quot;</span> }</code></pre></div>
 <p>Let’s run this server (<code>dist/build/tutorial/tutorial 5</code>) and query it, first without the file and then with the file.</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> --verbose http://localhost:8081/myfile.txt
-[<span class="kw">snip</span>]
-<span class="kw">*</span> Connected to localhost (127.0.0.1) <span class="kw">port</span> 8081 (#0)
-<span class="kw">&gt;</span> <span class="kw">GET</span> /myfile.txt HTTP/1.1
-<span class="kw">&gt;</span> <span class="kw">User-Agent</span>: curl/7.30.0
-<span class="kw">&gt;</span> <span class="kw">Host</span>: localhost:8081
-<span class="kw">&gt;</span> <span class="kw">Accept</span>: */*
-<span class="kw">&gt;</span>
-<span class="kw">&lt;</span> <span class="kw">HTTP/1.1</span> 404 Not Found
-[<span class="kw">snip</span>]
-<span class="kw">myfile.txt</span> just isnt there, please leave this server alone.
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"> $ <span class="kw">curl</span> --verbose http://localhost:8081/myfile.txt
+ [<span class="kw">snip</span>]
+ <span class="kw">*</span> Connected to localhost (127.0.0.1) <span class="kw">port</span> 8081 (#0)
+ <span class="kw">&gt;</span> <span class="kw">GET</span> /myfile.txt HTTP/1.1
+ <span class="kw">&gt;</span> <span class="kw">User-Agent</span>: curl/7.30.0
+ <span class="kw">&gt;</span> <span class="kw">Host</span>: localhost:8081
+ <span class="kw">&gt;</span> <span class="kw">Accept</span>: */*
+ <span class="kw">&gt;</span>
+ <span class="kw">&lt;</span> <span class="kw">HTTP/1.1</span> 404 Not Found
+ [<span class="kw">snip</span>]
+ <span class="kw">myfile.txt</span> just isnt there, please leave this server alone.
 
-$ <span class="kw">echo</span> Hello <span class="kw">&gt;</span> myfile.txt
+ $ <span class="kw">echo</span> Hello <span class="kw">&gt;</span> myfile.txt
 
-$ <span class="kw">curl</span> --verbose http://localhost:8081/myfile.txt
-[<span class="kw">snip</span>]
-<span class="kw">*</span> Connected to localhost (127.0.0.1) <span class="kw">port</span> 8081 (#0)
-<span class="kw">&gt;</span> <span class="kw">GET</span> /myfile.txt HTTP/1.1
-<span class="kw">&gt;</span> <span class="kw">User-Agent</span>: curl/7.30.0
-<span class="kw">&gt;</span> <span class="kw">Host</span>: localhost:8081
-<span class="kw">&gt;</span> <span class="kw">Accept</span>: */*
-<span class="kw">&gt;</span>
-<span class="kw">&lt;</span> <span class="kw">HTTP/1.1</span> 200 OK
-[<span class="kw">snip</span>]
-<span class="kw">&lt;</span> <span class="kw">Content-Type</span>: application/json
-[<span class="kw">snip</span>]
-<span class="dt">{&quot;content&quot;:&quot;Hello\n&quot;}</span></code></pre></div>
+ $ <span class="kw">curl</span> --verbose http://localhost:8081/myfile.txt
+ [<span class="kw">snip</span>]
+ <span class="kw">*</span> Connected to localhost (127.0.0.1) <span class="kw">port</span> 8081 (#0)
+ <span class="kw">&gt;</span> <span class="kw">GET</span> /myfile.txt HTTP/1.1
+ <span class="kw">&gt;</span> <span class="kw">User-Agent</span>: curl/7.30.0
+ <span class="kw">&gt;</span> <span class="kw">Host</span>: localhost:8081
+ <span class="kw">&gt;</span> <span class="kw">Accept</span>: */*
+ <span class="kw">&gt;</span>
+ <span class="kw">&lt;</span> <span class="kw">HTTP/1.1</span> 200 OK
+ [<span class="kw">snip</span>]
+ <span class="kw">&lt;</span> <span class="kw">Content-Type</span>: application/json
+ [<span class="kw">snip</span>]
+ <span class="dt">{&quot;content&quot;:&quot;Hello\n&quot;}</span></code></pre></div>
 </section>
 </section>
-<section id="response-headers" class="level2">
-<h2>Response headers</h2>
+<section id="response-headers" class="level1">
+<h1>Response headers</h1>
 <p>To add headers to your response, use <a href="http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html">addHeader</a>. Note that this changes the type of your API, as we can see in the following example:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers '</span>[<span class="dt">Header</span> <span class="st">&quot;X-An-Int&quot;</span> <span class="dt">Int</span>] <span class="dt">User</span>)
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] (Headers '</span>[<span class="dt">Header</span> <span class="st">&quot;X-An-Int&quot;</span> <span class="dt">Int</span>] <span class="dt">User</span>)
 
 <span class="ot">myHandler ::</span> <span class="dt">Server</span> <span class="dt">MyHandler</span>
-myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="dv">1797</span> someUser</code></pre></div>
+myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="dv">1797</span> albert</code></pre></div>
 </section>
-<section id="serving-static-files" class="level2">
-<h2>Serving static files</h2>
+<section id="serving-static-files" class="level1">
+<h1>Serving static files</h1>
 <p><em>servant-server</em> also provides a way to just serve the content of a directory under some path in your web API. As mentioned earlier in this document, the <code>Raw</code> combinator can be used in your APIs to mean “plug here any WAI application”. Well, servant-server provides a function to get a file and directory serving WAI application, namely:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- exported by Servant and Servant.Server</span>
 <span class="ot">serveDirectory ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Server</span> <span class="dt">Raw</span></code></pre></div>
 <p><code>serveDirectory</code>’s argument must be a path to a valid directory. You can see an example below, runnable with <code>dist/build/tutorial/tutorial 6</code> (you <strong>must</strong> run it from within the <em>servant-examples/</em> directory!), which is a webserver that serves the various bits of code covered in this getting-started.</p>
 <p>The API type will be the following.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;code&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Raw</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">CodeAPI</span> <span class="fu">=</span> <span class="st">&quot;code&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Raw</span></code></pre></div>
 <p>And the server:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
-api <span class="fu">=</span> <span class="dt">Proxy</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">codeAPI ::</span> <span class="dt">Proxy</span> <span class="dt">CodeAPI</span>
+codeAPI <span class="fu">=</span> <span class="dt">Proxy</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">server7 ::</span> <span class="dt">Server</span> <span class="dt">CodeAPI</span>
+server7 <span class="fu">=</span> serveDirectory <span class="st">&quot;tutorial&quot;</span>
 
-<span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">API</span>
-server <span class="fu">=</span> serveDirectory <span class="st">&quot;tutorial&quot;</span>
-
-<span class="ot">app ::</span> <span class="dt">Application</span>
-app <span class="fu">=</span> serve api server</code></pre></div>
+<span class="ot">app3 ::</span> <span class="dt">Application</span>
+app3 <span class="fu">=</span> serve codeAPI server7</code></pre></div>
 <p>This server will match any request whose path starts with <code>/code</code> and will look for a file at the path described by the rest of the request path, inside the <em>tutorial/</em> directory of the path you run the program from.</p>
 <p>In other words:</p>
 <ul>
@@ -654,49 +643,49 @@ usage <span class="fu">=</span> <span class="kw">do</span>
 <span class="fu">$</span> curl http<span class="fu">://</span>localhost<span class="fu">:</span><span class="dv">8081</span><span class="fu">/</span>foo
 not found</code></pre></div>
 </section>
-<section id="nested-apis" class="level2">
-<h2>Nested APIs</h2>
+<section id="nested-apis" class="level1">
+<h1>Nested APIs</h1>
 <p>Let’s see how you can define APIs in a modular way, while avoiding repetition. Consider this simple example:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI1</span> <span class="fu">=</span> <span class="co">-- view the user with given userid, in JSON</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI3</span> <span class="fu">=</span> <span class="co">-- view the user with given userid, in JSON</span>
                 <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
-          
+
            <span class="fu">:&lt;|&gt;</span> <span class="co">-- delete the user with given userid. empty response</span>
                 <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] ()</span></code></pre></div>
 <p>We can instead factor out the <code>userid</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI2</span> <span class="fu">=</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI4</span> <span class="fu">=</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
   (    <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] ()</span>
   )</code></pre></div>
 <p>However, you have to be aware that this has an effect on the type of the corresponding <code>Server</code>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Server</span> <span class="dt">UserAPI1</span> <span class="fu">=</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>)
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Server</span> <span class="dt">UserAPI3</span> <span class="fu">=</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>)
              <span class="fu">:&lt;|&gt;</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ())
 
-<span class="dt">Server</span> <span class="dt">UserAPI2</span> <span class="fu">=</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (    <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
+<span class="dt">Server</span> <span class="dt">UserAPI4</span> <span class="fu">=</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (    <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
                          <span class="fu">:&lt;|&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
                          )</code></pre></div>
 <p>In the first case, each handler receives the <em>userid</em> argument. In the latter, the whole <code>Server</code> takes the <em>userid</em> and has handlers that are just computations in <code>EitherT</code>, with no arguments. In other words:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">server1 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI1</span>
-server1 <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</span> deleteUser
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">server8 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI3</span>
+server8 <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</span> deleteUser
 
   <span class="kw">where</span><span class="ot"> getUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
-        getUser userid <span class="fu">=</span> <span class="fu">...</span>
+        getUser _userid <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
 <span class="ot">        deleteUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
-        deleteUser userid <span class="fu">=</span> <span class="fu">...</span>
+        deleteUser _userid <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
 <span class="co">-- notice how getUser and deleteUser</span>
 <span class="co">-- have a different type! no argument anymore,</span>
 <span class="co">-- the argument directly goes to the whole Server</span>
-<span class="ot">server2 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI2</span>
-server2 userid <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</span> deleteUser
+<span class="ot">server9 ::</span> <span class="dt">Server</span> <span class="dt">UserAPI4</span>
+server9 userid <span class="fu">=</span> getUser userid <span class="fu">:&lt;|&gt;</span> deleteUser userid
 
-  <span class="kw">where</span><span class="ot"> getUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
-        getUser <span class="fu">=</span> <span class="fu">...</span>
+  <span class="kw">where</span><span class="ot"> getUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
+        getUser <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
-<span class="ot">        deleteUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
-        deleteUser <span class="fu">=</span> <span class="fu">...</span></code></pre></div>
+<span class="ot">        deleteUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+        deleteUser <span class="fu">=</span> error <span class="st">&quot;...&quot;</span></code></pre></div>
 <p>Note that there’s nothing special about <code>Capture</code> that lets you “factor it out”: this can be done with any combinator. Here are a few examples of APIs with a combinator factored out for which we can write a perfectly valid <code>Server</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- we just factor out the &quot;users&quot; path fragment</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="co">-- we just factor out the &quot;users&quot; path fragment</span>
 <span class="kw">type</span> <span class="dt">API1</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span>
   (    <span class="dt">Get</span> <span class="ch">'[JSON] [User] -- user listing</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User -- view a particular user</span>
@@ -711,17 +700,17 @@ server2 userid <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</sp
 <span class="co">-- we factor out a Header</span>
 <span class="kw">type</span> <span class="dt">API3</span> <span class="fu">=</span> <span class="dt">Header</span> <span class="st">&quot;Authorization&quot;</span> <span class="dt">Token</span> <span class="fu">:&gt;</span>
   (    <span class="dt">Get</span> <span class="ch">'[JSON] SecretData -- get some secret data, if authorized</span>
-  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] MoreSecretData :&gt; Post '</span>[] () <span class="co">-- add some secret data, if authorized</span>
-  )</code></pre></div>
-<p>This approach lets you define APIs modularly and assemble them all into one big API type only at the end.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Users.hs</span>
-<span class="kw">module</span> <span class="dt">Users</span> <span class="kw">where</span>
+  <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] SecretData :&gt; Post '</span>[] () <span class="co">-- add some secret data, if authorized</span>
+  )
 
-<span class="kw">type</span> <span class="dt">UsersAPI</span> <span class="fu">=</span>
+<span class="kw">newtype</span> <span class="dt">Token</span> <span class="fu">=</span> <span class="dt">Token</span> <span class="dt">ByteString</span>
+<span class="kw">newtype</span> <span class="dt">SecretData</span> <span class="fu">=</span> <span class="dt">SecretData</span> <span class="dt">ByteString</span></code></pre></div>
+<p>This approach lets you define APIs modularly and assemble them all into one big API type only at the end.</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UsersAPI</span> <span class="fu">=</span>
        <span class="dt">Get</span> <span class="ch">'[JSON] [User] -- list users</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Post '</span>[] () <span class="co">-- add a user</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;userid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
-         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> <span class="dt">User</span> <span class="co">-- view a user</span>
+         ( <span class="dt">Get</span> <span class="ch">'[JSON] User -- view a user</span>
       <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] User :&gt; Put '</span>[] () <span class="co">-- update a user</span>
       <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete a user</span>
          )
@@ -730,59 +719,68 @@ server2 userid <span class="fu">=</span> getUser <span class="fu">:&lt;|&gt;</sp
 usersServer <span class="fu">=</span> getUsers <span class="fu">:&lt;|&gt;</span> newUser <span class="fu">:&lt;|&gt;</span> userOperations
 
   <span class="kw">where</span><span class="ot"> getUsers ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> [<span class="dt">User</span>]
-        getUsers <span class="fu">=</span> <span class="fu">...</span>
+        getUsers <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
-<span class="ot">        newUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
-        newUser <span class="fu">=</span> <span class="fu">...</span>
+<span class="ot">        newUser ::</span> <span class="dt">User</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+        newUser <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
         userOperations userid <span class="fu">=</span>
-          viewUser <span class="fu">:&lt;|&gt;</span> updateUser <span class="fu">:&lt;|&gt;</span> deleteUser
+          viewUser userid <span class="fu">:&lt;|&gt;</span> updateUser userid <span class="fu">:&lt;|&gt;</span> deleteUser userid
 
-          <span class="kw">where</span> <span class="fu">...</span>  </code></pre></div>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Products.hs</span>
-<span class="kw">module</span> <span class="dt">Products</span> <span class="kw">where</span>
+          <span class="kw">where</span>
+<span class="ot">            viewUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span>
+            viewUser <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
-<span class="kw">type</span> <span class="dt">ProductsAPI</span> <span class="fu">=</span>
+<span class="ot">            updateUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">User</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+            updateUser <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
+
+<span class="ot">            deleteUser ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+            deleteUser <span class="fu">=</span> error <span class="st">&quot;...&quot;</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ProductsAPI</span> <span class="fu">=</span>
        <span class="dt">Get</span> <span class="ch">'[JSON] [Product] -- list products</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] Product :&gt; Post '</span>[] () <span class="co">-- add a product</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;productid&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span>
-         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> <span class="dt">Product</span> <span class="co">-- view a product</span>
+         ( <span class="dt">Get</span> <span class="ch">'[JSON] Product -- view a product</span>
       <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] Product :&gt; Put '</span>[] () <span class="co">-- update a product</span>
       <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete a product</span>
          )
+
+<span class="kw">data</span> <span class="dt">Product</span> <span class="fu">=</span> <span class="dt">Product</span> {<span class="ot"> productId ::</span> <span class="dt">Int</span> }
 
 <span class="ot">productsServer ::</span> <span class="dt">Server</span> <span class="dt">ProductsAPI</span>
 productsServer <span class="fu">=</span> getProducts <span class="fu">:&lt;|&gt;</span> newProduct <span class="fu">:&lt;|&gt;</span> productOperations
 
   <span class="kw">where</span><span class="ot"> getProducts ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> [<span class="dt">Product</span>]
-        getProducts <span class="fu">=</span> <span class="fu">...</span>
+        getProducts <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
-<span class="ot">        newProduct ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
-        newProduct <span class="fu">=</span> <span class="fu">...</span>
+<span class="ot">        newProduct ::</span> <span class="dt">Product</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+        newProduct <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
         productOperations productid <span class="fu">=</span>
-          viewProduct <span class="fu">:&lt;|&gt;</span> updateProduct <span class="fu">:&lt;|&gt;</span> deleteProduct
+          viewProduct productid <span class="fu">:&lt;|&gt;</span> updateProduct productid <span class="fu">:&lt;|&gt;</span> deleteProduct productid
 
-          <span class="kw">where</span> <span class="fu">...</span>    </code></pre></div>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- API.hs</span>
-<span class="kw">module</span> <span class="dt">API</span> <span class="kw">where</span>
+          <span class="kw">where</span>
+<span class="ot">            viewProduct ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">Product</span>
+            viewProduct <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
-<span class="kw">import </span><span class="dt">Products</span>
-<span class="kw">import </span><span class="dt">Users</span>
+<span class="ot">            updateProduct ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Product</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+            updateProduct <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 
-<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">UsersAPI</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;products&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ProductsAPI</span>
+<span class="ot">            deleteProduct ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()
+            deleteProduct <span class="fu">=</span> error <span class="st">&quot;...&quot;</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">CombinedAPI</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">UsersAPI</span>
+              <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;products&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ProductsAPI</span>
 
-<span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">API</span>
-server <span class="fu">=</span> usersServer <span class="fu">:&lt;|&gt;</span> productsServer</code></pre></div>
+<span class="ot">server10 ::</span> <span class="dt">Server</span> <span class="dt">CombinedAPI</span>
+server10 <span class="fu">=</span> usersServer <span class="fu">:&lt;|&gt;</span> productsServer</code></pre></div>
 <p>Finally, we can realize the user and product APIs are quite similar and abstract that away:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- API for values of type 'a'</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="co">-- API for values of type 'a'</span>
 <span class="co">-- indexed by values of type 'i'</span>
 <span class="kw">type</span> <span class="dt">APIFor</span> a i <span class="fu">=</span>
        <span class="dt">Get</span> <span class="ch">'[JSON] [a] -- list '</span>a's
   <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] a :&gt; Post '</span>[] () <span class="co">-- add an 'a'</span>
   <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> i <span class="fu">:&gt;</span>
-         ( <span class="dt">Get</span> <span class="ch">'[JSON]'</span> a <span class="co">-- view an 'a' given its &quot;identifier&quot; of type 'i'</span>
+         ( <span class="dt">Get</span> <span class="ch">'[JSON] a -- view an '</span>a' given its <span class="st">&quot;identifier&quot;</span> <span class="kw">of</span> <span class="kw">type</span> <span class="ch">'i'</span>
       <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] a :&gt; Put '</span>[] () <span class="co">-- update an 'a'</span>
       <span class="fu">:&lt;|&gt;</span> <span class="dt">Delete</span> <span class="ch">'[] () -- delete an '</span>a'
          )
@@ -795,18 +793,18 @@ server <span class="fu">=</span> usersServer <span class="fu">:&lt;|&gt;</span> 
           <span class="ot">-&gt;</span> (i <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()) <span class="co">-- updating an 'a' with given id</span>
           <span class="ot">-&gt;</span> (i <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> ()) <span class="co">-- deleting an 'a' given its id</span>
           <span class="ot">-&gt;</span> <span class="dt">Server</span> (<span class="dt">APIFor</span> a i)
-serverFor <span class="fu">=</span> undefined
+serverFor <span class="fu">=</span> error <span class="st">&quot;...&quot;</span>
 <span class="co">-- implementation left as an exercise. contact us on IRC</span>
 <span class="co">-- or the mailing list if you get stuck!</span></code></pre></div>
 </section>
-<section id="using-another-monad-for-your-handlers" class="level2">
-<h2>Using another monad for your handlers</h2>
+<section id="using-another-monad-for-your-handlers" class="level1">
+<h1>Using another monad for your handlers</h1>
 <p>Remember how <code>Server</code> turns combinators for HTTP methods into <code>EitherT ServantErr IO</code>? Well, actually, there’s more to that. <code>Server</code> is actually a simple type synonym.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Server</span> api <span class="fu">=</span> <span class="dt">ServerT</span> api (<span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span>)</code></pre></div>
 <p><code>ServerT</code> is the actual type family that computes the required types for the handlers that’s part of the <code>HasServer</code> class. It’s like <code>Server</code> except that it takes a third parameter which is the monad you want your handlers to run in, or more generally the return types of your handlers. This third parameter is used for specifying the return type of the handler for an endpoint, e.g when computing <code>ServerT (Get '[JSON] Person) SomeMonad</code>. The result would be <code>SomeMonad Person</code>.</p>
 <p>The first and main question one might have then is: how do we write handlers that run in another monad? How can we “bring back” the value from a given monad into something <em>servant</em> can understand?</p>
-<section id="natural-transformations" class="level3">
-<h3>Natural transformations</h3>
+<section id="natural-transformations" class="level2">
+<h2>Natural transformations</h2>
 <p>If we have a function that gets us from an <code>m a</code> to an <code>n a</code>, for any <code>a</code>, what do we have?</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> m <span class="fu">:~&gt;</span> n <span class="fu">=</span> <span class="dt">Nat</span> {<span class="ot"> unNat ::</span> forall a<span class="fu">.</span> m a <span class="ot">-&gt;</span> n a}
 
@@ -817,13 +815,13 @@ serverFor <span class="fu">=</span> undefined
 <p>So if you want to write handlers using another monad/type than <code>EitherT ServantErr IO</code>, say the <code>Reader String</code> monad, the first thing you have to prepare is a function:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">readerToEither ::</span> <span class="dt">Reader</span> <span class="dt">String</span> <span class="fu">:~&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span></code></pre></div>
 <p>Let’s start with <code>readerToEither'</code>. We obviously have to run the <code>Reader</code> computation by supplying it with a <code>String</code>, like <code>&quot;hi&quot;</code>. We get an <code>a</code> out from that and can then just <code>return</code> it into <code>EitherT</code>. We can then just wrap that function with the <code>Nat</code> constructor to make it have the fancier type.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">readerToEither' ::</span> forall a<span class="fu">.</span> <span class="dt">Reader</span> <span class="dt">String</span> a <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> a
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">readerToEither' ::</span> forall a<span class="fu">.</span> <span class="dt">Reader</span> <span class="dt">String</span> a <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> a
 readerToEither' r <span class="fu">=</span> return (runReader r <span class="st">&quot;hi&quot;</span>)
 
 <span class="ot">readerToEither ::</span> <span class="dt">Reader</span> <span class="dt">String</span> <span class="fu">:~&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span>
 readerToEither <span class="fu">=</span> <span class="dt">Nat</span> readerToEither'</code></pre></div>
 <p>We can write some simple webservice with the handlers running in <code>Reader String</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ReaderAPI</span> <span class="fu">=</span> <span class="st">&quot;a&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Int</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ReaderAPI</span> <span class="fu">=</span> <span class="st">&quot;a&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Int</span>
             <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;b&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] String</span>
 
 <span class="ot">readerAPI ::</span> <span class="dt">Proxy</span> <span class="dt">ReaderAPI</span>
@@ -837,17 +835,17 @@ readerServerT <span class="fu">=</span> a <span class="fu">:&lt;|&gt;</span> b
 
 <span class="ot">        b ::</span> <span class="dt">Reader</span> <span class="dt">String</span> <span class="dt">String</span>
         b <span class="fu">=</span> ask</code></pre></div>
-<p>we unfortunately can’t use <code>readerServerT</code> as an argument of <code>serve</code>, because <code>serve</code> wants a <code>Server ReaderAPI</code>, i.e., with handlers running in <code>EitherT ServantErr IO</code>. But there’s a simple solution to this.</p>
+<p>We unfortunately can’t use <code>readerServerT</code> as an argument of <code>serve</code>, because <code>serve</code> wants a <code>Server ReaderAPI</code>, i.e., with handlers running in <code>EitherT ServantErr IO</code>. But there’s a simple solution to this.</p>
 </section>
-<section id="enter-enter" class="level3">
-<h3>Enter <code>enter</code></h3>
+<section id="enter-enter" class="level2">
+<h2>Enter <code>enter</code></h2>
 <p>That’s right. We have just written <code>readerToEither</code>, which is exactly what we would need to apply to the results of all handlers to make the handlers have the right type for <code>serve</code>. Being cumbersome to do by hand, we provide a function <code>enter</code> which takes a natural transformation between two parametrized types <code>m</code> and <code>n</code> and a <code>ServerT someapi m</code>, and returns a <code>ServerT someapi n</code>.</p>
 <p>In our case, we can wrap up our little webservice by using <code>enter readerToEither</code> on our handlers.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">readerServer ::</span> <span class="dt">Server</span> <span class="dt">ReaderAPI</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">readerServer ::</span> <span class="dt">Server</span> <span class="dt">ReaderAPI</span>
 readerServer <span class="fu">=</span> enter readerToEither readerServerT
 
-<span class="ot">app ::</span> <span class="dt">Application</span>
-app <span class="fu">=</span> serve readerAPI readerServer</code></pre></div>
+<span class="ot">app4 ::</span> <span class="dt">Application</span>
+app4 <span class="fu">=</span> serve readerAPI readerServer</code></pre></div>
 <p>And we can indeed see this webservice in action by running <code>dist/build/tutorial/tutorial 7</code>.</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> http://localhost:8081/a
 <span class="kw">1797</span>
@@ -855,8 +853,8 @@ $ <span class="kw">curl</span> http://localhost:8081/b
 <span class="st">&quot;hi&quot;</span></code></pre></div>
 </section>
 </section>
-<section id="conclusion" class="level2">
-<h2>Conclusion</h2>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
 <p>You’re now equipped to write any kind of webservice/web-application using <em>servant</em>. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on <em>servant-client</em>, <em>servant-jquery</em> and <em>servant-docs</em>.</p>
 <div style="text-align: center;">
 <p>

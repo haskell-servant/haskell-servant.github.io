@@ -25,14 +25,40 @@
             <h1>Generating documentation from API types</h1>
 
             
+<p>The source for this tutorial section is a literate haskell file, so first we need to have some language extensions and imports:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
+<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
+<span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="ot">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
+<span class="ot">{-# OPTIONS_GHC -fno-warn-orphans #-}</span>
+
+<span class="kw">module</span> <span class="dt">Docs</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Data.ByteString.Lazy</span> (<span class="dt">ByteString</span>)
+<span class="kw">import </span><span class="dt">Data.Proxy</span>
+<span class="kw">import </span><span class="dt">Data.Text.Lazy.Encoding</span> (encodeUtf8)
+<span class="kw">import </span><span class="dt">Data.Text.Lazy</span> (pack)
+<span class="kw">import </span><span class="dt">Network.HTTP.Types</span>
+<span class="kw">import </span><span class="dt">Network.Wai</span>
+<span class="kw">import </span><span class="dt">Servant.API</span>
+<span class="kw">import </span><span class="dt">Servant.Docs</span>
+<span class="kw">import </span><span class="dt">Servant.Server</span></code></pre></div>
+<p>And we’ll import some things from one of our earlier modules (<a href="../tutorial/server.html">Serving an API</a>):</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Server</span> (<span class="dt">Email</span>(..), <span class="dt">ClientInfo</span>(..), <span class="dt">Position</span>(..), <span class="dt">HelloMessage</span>(..),
+  server3, emailForClient)</code></pre></div>
 <p>Like client function generation, documentation generation amounts to inspecting the API type and extracting all the data we need to then present it in some format to users of your API.</p>
-<p>This time however, we have to assist <em>servant</em>. While it is able to deduce a lot of things about our API, it can’t magically come up with descriptions of the various pieces of our APIs that are human-friendly and explain what’s going on “at the business-logic level”. A good example to study for documentation generation is our webservice with the <code>/position</code>, <code>/hello</code> and <code>/marketing</code> endpoints from earlier.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;position&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;y&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Position</span>
+<p>This time however, we have to assist <em>servant</em>. While it is able to deduce a lot of things about our API, it can’t magically come up with descriptions of the various pieces of our APIs that are human-friendly and explain what’s going on “at the business-logic level”. A good example to study for documentation generation is our webservice with the <code>/position</code>, <code>/hello</code> and <code>/marketing</code> endpoints from earlier:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ExampleAPI</span> <span class="fu">=</span> <span class="st">&quot;position&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;y&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Position</span>
       <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] HelloMessage</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;marketing&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] ClientInfo :&gt; Post '</span>[<span class="dt">JSON</span>] <span class="dt">Email</span></code></pre></div>
+      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;marketing&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] ClientInfo :&gt; Post '</span>[<span class="dt">JSON</span>] <span class="dt">Email</span>
+
+<span class="ot">exampleAPI ::</span> <span class="dt">Proxy</span> <span class="dt">ExampleAPI</span>
+exampleAPI <span class="fu">=</span> <span class="dt">Proxy</span></code></pre></div>
 <p>While <em>servant</em> can see e.g. that there are 3 endpoints and that the response bodies will be in JSON, it doesn’t know what influence the captures, parameters, request bodies and other combinators have on the webservice. This is where some manual work is required.</p>
 <p>For every capture, request body, response body, query param, we have to give some explanations about how it influences the response, what values are possible and the likes. Here’s how it looks like for the parameters we have above.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">ToCapture</span> (<span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span>) <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">ToCapture</span> (<span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span>) <span class="kw">where</span>
   toCapture _ <span class="fu">=</span>
     <span class="dt">DocCapture</span> <span class="st">&quot;x&quot;</span>                                <span class="co">-- name</span>
                <span class="st">&quot;(integer) position on the x axis&quot;</span> <span class="co">-- description</span>
@@ -42,8 +68,8 @@
     <span class="dt">DocCapture</span> <span class="st">&quot;y&quot;</span>                                <span class="co">-- name</span>
                <span class="st">&quot;(integer) position on the y axis&quot;</span> <span class="co">-- description</span>
 
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">T3.Position</span> <span class="dt">T3.Position</span> <span class="kw">where</span>
-  toSample _ <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">T3.Position</span> <span class="dv">3</span> <span class="dv">14</span>) <span class="co">-- example of output</span>
+<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">Position</span> <span class="dt">Position</span> <span class="kw">where</span>
+  toSample _ <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Position</span> <span class="dv">3</span> <span class="dv">14</span>) <span class="co">-- example of output</span>
 
 <span class="kw">instance</span> <span class="dt">ToParam</span> (<span class="dt">QueryParam</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span>) <span class="kw">where</span>
   toParam _ <span class="fu">=</span>
@@ -52,133 +78,133 @@
                   <span class="st">&quot;Name of the person to say hello to.&quot;</span> <span class="co">-- description</span>
                   <span class="dt">Normal</span> <span class="co">-- Normal, List or Flag</span>
 
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">T3.HelloMessage</span> <span class="dt">T3.HelloMessage</span> <span class="kw">where</span>
+<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">HelloMessage</span> <span class="dt">HelloMessage</span> <span class="kw">where</span>
   toSamples _ <span class="fu">=</span>
-    [ (<span class="st">&quot;When a value is provided for 'name'&quot;</span>, <span class="dt">T3.HelloMessage</span> <span class="st">&quot;Hello, Alp&quot;</span>)
-    , (<span class="st">&quot;When 'name' is not specified&quot;</span>, <span class="dt">T3.HelloMessage</span> <span class="st">&quot;Hello, anonymous coward&quot;</span>)
+    [ (<span class="st">&quot;When a value is provided for 'name'&quot;</span>, <span class="dt">HelloMessage</span> <span class="st">&quot;Hello, Alp&quot;</span>)
+    , (<span class="st">&quot;When 'name' is not specified&quot;</span>, <span class="dt">HelloMessage</span> <span class="st">&quot;Hello, anonymous coward&quot;</span>)
     ]
     <span class="co">-- mutliple examples to display this time</span>
 
-<span class="ot">ci ::</span> <span class="dt">T3.ClientInfo</span>
-ci <span class="fu">=</span> <span class="dt">T3.ClientInfo</span> <span class="st">&quot;Alp&quot;</span> <span class="st">&quot;alp@foo.com&quot;</span> <span class="dv">26</span> [<span class="st">&quot;haskell&quot;</span>, <span class="st">&quot;mathematics&quot;</span>]
+<span class="ot">ci ::</span> <span class="dt">ClientInfo</span>
+ci <span class="fu">=</span> <span class="dt">ClientInfo</span> <span class="st">&quot;Alp&quot;</span> <span class="st">&quot;alp@foo.com&quot;</span> <span class="dv">26</span> [<span class="st">&quot;haskell&quot;</span>, <span class="st">&quot;mathematics&quot;</span>]
 
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">T3.ClientInfo</span> <span class="dt">T3.ClientInfo</span> <span class="kw">where</span>
+<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">ClientInfo</span> <span class="dt">ClientInfo</span> <span class="kw">where</span>
   toSample _ <span class="fu">=</span> <span class="dt">Just</span> ci
 
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">T3.Email</span> <span class="dt">T3.Email</span> <span class="kw">where</span>
-  toSample _ <span class="fu">=</span> <span class="dt">Just</span> (T3.emailForClient ci)</code></pre></div>
+<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">Email</span> <span class="dt">Email</span> <span class="kw">where</span>
+  toSample _ <span class="fu">=</span> <span class="dt">Just</span> (emailForClient ci)</code></pre></div>
 <p>Types that are used as request or response bodies have to instantiate the <code>ToSample</code> typeclass which lets you specify one or more examples of values. <code>Capture</code>s and <code>QueryParam</code>s have to instantiate their respective <code>ToCapture</code> and <code>ToParam</code> classes and provide a name and some information about the concrete meaning of that argument, as illustrated in the code above.</p>
 <p>With all of this, we can derive docs for our API.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">apiDocs ::</span> <span class="dt">API</span>
-apiDocs <span class="fu">=</span> docs T3.api <span class="co">-- T3.api is a Proxy from earlier</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">apiDocs ::</span> <span class="dt">API</span>
+apiDocs <span class="fu">=</span> docs exampleAPI</code></pre></div>
 <p><code>API</code> is a type provided by <em>servant-docs</em> that stores all the information one needs about a web API in order to generate documentation in some format. Out of the box, <em>servant-docs</em> only provides a pretty documentation printer that outputs <a href="http://en.wikipedia.org/wiki/Markdown">Markdown</a>, but the <a href="http://hackage.haskell.org/package/servant-pandoc">servant-pandoc</a> package can be used to target many useful formats.</p>
 <p><em>servant</em>’s markdown pretty printer is a function named <code>markdown</code>.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">markdown ::</span> <span class="dt">API</span> <span class="ot">-&gt;</span> <span class="dt">String</span></code></pre></div>
 <p>That lets us see what our API docs look down in markdown, by looking at <code>markdown apiDocs</code>.</p>
-<pre class="text"><code>## Welcome
+<pre class="text"><code> ## Welcome
 
-This is our super webservice's API.
+ This is our super webservice's API.
 
-Enjoy!
+ Enjoy!
 
-## GET /hello
+ ## GET /hello
 
-#### GET Parameters:
+ #### GET Parameters:
 
-- name
-     - **Values**: *Alp, John Doe, ...*
-     - **Description**: Name of the person to say hello to.
+ - name
+      - **Values**: *Alp, John Doe, ...*
+      - **Description**: Name of the person to say hello to.
 
 
-#### Response:
+ #### Response:
 
-- Status code 200
-- Headers: []
+ - Status code 200
+ - Headers: []
 
-- Supported content types are:
+ - Supported content types are:
 
-    - `application/json`
+     - `application/json`
 
-- When a value is provided for 'name'
+ - When a value is provided for 'name'
 
-  ```javascript
-  {&quot;msg&quot;:&quot;Hello, Alp&quot;}
-  ```
+   ```javascript
+   {&quot;msg&quot;:&quot;Hello, Alp&quot;}
+   ```
 
-- When 'name' is not specified
+ - When 'name' is not specified
 
-  ```javascript
-  {&quot;msg&quot;:&quot;Hello, anonymous coward&quot;}
-  ```
+   ```javascript
+   {&quot;msg&quot;:&quot;Hello, anonymous coward&quot;}
+   ```
 
-## POST /marketing
+ ## POST /marketing
 
-#### Request:
+ #### Request:
 
-- Supported content types are:
+ - Supported content types are:
 
-    - `application/json`
+     - `application/json`
 
-- Example: `application/json`
+ - Example: `application/json`
 
-  ```javascript
-  {&quot;email&quot;:&quot;alp@foo.com&quot;,&quot;interested_in&quot;:[&quot;haskell&quot;,&quot;mathematics&quot;],&quot;age&quot;:26,&quot;name&quot;:&quot;Alp&quot;}
-  ```
+   ```javascript
+   {&quot;email&quot;:&quot;alp@foo.com&quot;,&quot;interested_in&quot;:[&quot;haskell&quot;,&quot;mathematics&quot;],&quot;age&quot;:26,&quot;name&quot;:&quot;Alp&quot;}
+   ```
 
-#### Response:
+ #### Response:
 
-- Status code 201
-- Headers: []
+ - Status code 201
+ - Headers: []
 
-- Supported content types are:
+ - Supported content types are:
 
-    - `application/json`
+     - `application/json`
 
-- Response body as below.
+ - Response body as below.
 
-  ```javascript
-  {&quot;subject&quot;:&quot;Hey Alp, we miss you!&quot;,&quot;body&quot;:&quot;Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!&quot;,&quot;to&quot;:&quot;alp@foo.com&quot;,&quot;from&quot;:&quot;great@company.com&quot;}
-  ```
+   ```javascript
+   {&quot;subject&quot;:&quot;Hey Alp, we miss you!&quot;,&quot;body&quot;:&quot;Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!&quot;,&quot;to&quot;:&quot;alp@foo.com&quot;,&quot;from&quot;:&quot;great@company.com&quot;}
+   ```
 
-## GET /position/:x/:y
+ ## GET /position/:x/:y
 
-#### Captures:
+ #### Captures:
 
-- *x*: (integer) position on the x axis
-- *y*: (integer) position on the y axis
+ - *x*: (integer) position on the x axis
+ - *y*: (integer) position on the y axis
 
-#### Response:
+ #### Response:
 
-- Status code 200
-- Headers: []
+ - Status code 200
+ - Headers: []
 
-- Supported content types are:
+ - Supported content types are:
 
-    - `application/json`
+     - `application/json`
 
-- Response body as below.
+ - Response body as below.
 
-  ```javascript
-  {&quot;x&quot;:3,&quot;y&quot;:14}
-  ```
+   ```javascript
+   {&quot;x&quot;:3,&quot;y&quot;:14}
+   ```
 </code></pre>
 <p>However, we can also add one or more introduction sections to the document. We just need to tweak the way we generate <code>apiDocs</code>. We will also convert the content to a lazy <code>ByteString</code> since this is what <em>wai</em> expects for <code>Raw</code> endpoints.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">docsBS ::</span> <span class="dt">ByteString</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">docsBS ::</span> <span class="dt">ByteString</span>
 docsBS <span class="fu">=</span> encodeUtf8
        <span class="fu">.</span> pack
        <span class="fu">.</span> markdown
-       <span class="fu">$</span> docsWithIntros [intro] T3.api
+       <span class="fu">$</span> docsWithIntros [intro] exampleAPI
 
   <span class="kw">where</span> intro <span class="fu">=</span> <span class="dt">DocIntro</span> <span class="st">&quot;Welcome&quot;</span> [<span class="st">&quot;This is our super webservice's API.&quot;</span>, <span class="st">&quot;Enjoy!&quot;</span>]</code></pre></div>
 <p><code>docsWithIntros</code> just takes an additional parameter, a list of <code>DocIntro</code>s that must be displayed before any endpoint docs.</p>
 <p>We can now serve the API <em>and</em> the API docs with a simple server.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">DocsAPI</span> <span class="fu">=</span> <span class="dt">T3.API</span> <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw</span>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">DocsAPI</span> <span class="fu">=</span> <span class="dt">ExampleAPI</span> <span class="fu">:&lt;|&gt;</span> <span class="dt">Raw</span>
 
 <span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">DocsAPI</span>
 api <span class="fu">=</span> <span class="dt">Proxy</span>
 
 <span class="ot">server ::</span> <span class="dt">Server</span> <span class="dt">DocsAPI</span>
-server <span class="fu">=</span> T3.server <span class="fu">:&lt;|&gt;</span> serveDocs
+server <span class="fu">=</span> Server.server3 <span class="fu">:&lt;|&gt;</span> serveDocs
 
   <span class="kw">where</span> serveDocs _ respond <span class="fu">=</span>
           respond <span class="fu">$</span> responseLBS ok200 [plain] docsBS
