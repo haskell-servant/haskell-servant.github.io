@@ -2,6 +2,8 @@
 
 set -o errexit
 
+tinc
+
 cabal exec -- ghc -Wall -Werror -outputdir build-output ../tutorial/api-type.lhs -O0 -c
 cabal exec -- ghc -Wall -Werror -outputdir build-output ../tutorial/server.lhs -O0 -c -fno-warn-missing-methods -fno-warn-name-shadowing
 cabal exec -- ghc -Wall -Werror -outputdir build-output ../tutorial/client.lhs -O0 -c -fno-warn-missing-methods -fno-warn-name-shadowing

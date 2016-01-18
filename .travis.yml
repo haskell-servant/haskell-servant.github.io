@@ -29,7 +29,7 @@ install:
   - cabal build
 
 script:
-  - (cd check-code ; make test)
+  - (cd check-code ; ./check-code.sh)
 
   - ./dist/build/site/site build
   - ./dist/build/site/site check
