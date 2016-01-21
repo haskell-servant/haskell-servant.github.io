@@ -1,5 +1,5 @@
 ---
-title: servant paper submitted to WGP 2015
+title: Announcing servant-swagger and swagger2
 author: David Johnson, Nickolay Kudasov, Julian Arni
 date: 2015-05-25 12:00
 ---
@@ -29,7 +29,13 @@ specification, that you are sure matches your service, isn't fun.
 
 # Swagger-servant
 
-Thankfully David Johnson and Nickolay Kudasanov have written two wonderful Haskell
+Thankfully David Johnson and Nickolay Kudasov have written two wonderful Haskell
 libraries, [swagger2](https://hackage.haskell.org/package/swagger2) and
 [servant-swagger](https://hackage.haskell.org/package/servant-swagger), that
-automate nearly all of that process for `servant` APIs.
+automate nearly all of that process for `servant` APIs. They use the mechanism
+that guides most of the `servant` ecosystem - interpreters for the type-level
+DSL for APIs that is `servant` - to generate a swagger spec for that API.
+Here's an example:
+
+>
+gg
