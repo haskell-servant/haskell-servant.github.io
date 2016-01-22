@@ -61,6 +61,9 @@ Here's an example - the `user` part of the
 >
 > data Admin = Admin { adminUser :: User, otherDeets :: String }
 >  deriving (Eq, Show, Read, Generic, FromJSON, ToJSON, ToSchema)
+>
+> api :: Proxy API
+> api = Proxy
 
 (Note that this is almost certainly not a faithful representation, since I've
  had to do some guesswork with respect to requests and response bodies.)
@@ -68,4 +71,18 @@ Here's an example - the `user` part of the
 So far this is what you would usually have when working with `servant`. The
 only new thing you might notice is the `ToSchema` class in the `deriving`
 clauses. This will give us a generically-derived `swagger` schema (which is
-quite similar to, but not entirely the same as, JSON Schema).
+quite similar to, but not entirely the same as, JSON Schema). Part of the
+`swagger2` package, it can be quite useful in its own right if you want to e.g.
+respond with a schema in case of bad request bodies, or OPTIONS requests.
+
+The next step will traverse the `API`, gathering information about it and
+`swagger2` schemas to generate a `Swagger` object:
+
+> swaggerDoc :: Swagger
+> swaggerDoc = toSwagger api
+
+(If you're keeping tabs, so far the amount of extra work we've done compared to
+ what we would have to do anyway for a `servant` server or client is these two
+ lines, plus two "ToSchema" strings.)
+
+
