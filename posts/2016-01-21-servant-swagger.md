@@ -76,13 +76,27 @@ quite similar to, but not entirely the same as, JSON Schema). Part of the
 respond with a schema in case of bad request bodies, or OPTIONS requests.
 
 The next step will traverse the `API`, gathering information about it and
-`swagger2` schemas to generate a `Swagger` object:
+`swagger2` schemas to generate a `Swagger` value:
 
-> swaggerDoc :: Swagger
-> swaggerDoc = toSwagger api
+> swaggerDoc1 :: Swagger
+> swaggerDoc1 = toSwagger api
 
 (If you're keeping tabs, so far the amount of extra work we've done compared to
  what we would have to do anyway for a `servant` server or client is these two
  lines, plus two "ToSchema" strings.)
 
+Now we can generate the swagger documentation:
 
+> main = BL8.writeFile "swagger1.json" $ encode swaggerDoc1
+
+You can see the result [here](TODO).
+
+You can attach more information to your `Swagger` doc quite easily, using the
+lenses provided by `swagger2`:
+
+> swaggerDoc2 :: Swagger
+> swaggerDoc2 = swaggerDoc1
+>   & info.infoTitle .~ "Hackage Users API"
+>   & info.infoDescription .~ "A demo of servant-swagger"
+
+Whi results in [this](TODO).
