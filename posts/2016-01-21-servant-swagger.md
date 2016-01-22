@@ -35,7 +35,37 @@ libraries, [swagger2](https://hackage.haskell.org/package/swagger2) and
 automate nearly all of that process for `servant` APIs. They use the mechanism
 that guides most of the `servant` ecosystem - interpreters for the type-level
 DSL for APIs that is `servant` - to generate a swagger spec for that API.
-Here's an example:
+Here's an example - the `user` part of the
+[hackage API](https://hackage.haskell.org/api):
 
+> type UserNameAPI
+>        =    Get '[JSON] User
+>       :<|>  ReqBody '[JSON] User :> Put '[JSON] ()
+>       :<|>  Delete '[JSON] ()
+>       :<|> "enabled" :> (Get '[JSON] Bool :<|> Put '[JSON] Bool)
 >
-gg
+> type UserNameAdminsAPI
+>        =    Get '[JSON] [Admin]
+>       :<|>  "user" :> Capture "username" String :>
+>               ( ReqBody '[JSON] String :> Put '[JSON] ()
+>            :<|> Delete '[JSON] ()
+>               )
+>
+> type API = "users" :> Get '[JSON] [User]
+>       :<|> "user" :> ( Capture "username" String :> UserNameAPI
+>                   :<|> "admins" :> UserNameAdminsAPI
+>                      )
+>
+> data User = User { username :: String, userpwd :: String, userenabled :: Bool }
+>  deriving (Eq, Show, Read, Generic, FromJSON, ToJSON, ToSchema)
+>
+> data Admin = Admin { adminUser :: User, otherDeets :: String }
+>  deriving (Eq, Show, Read, Generic, FromJSON, ToJSON, ToSchema)
+
+(Note that this is almost certainly not a faithful representation, since I've
+ had to do some guesswork with respect to requests and response bodies.)
+
+So far this is what you would usually have when working with `servant`. The
+only new thing you might notice is the `ToSchema` class in the `deriving`
+clauses. This will give us a generically-derived `swagger` schema (which is
+quite similar to, but not entirely the same as, JSON Schema).
