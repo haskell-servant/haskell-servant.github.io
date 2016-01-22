@@ -99,4 +99,4 @@ lenses provided by `swagger2`:
 >   & info.infoTitle .~ "Hackage Users API"
 >   & info.infoDescription .~ "A demo of servant-swagger"
 
-Whi results in [this](TODO).
+Which results in [this](TODO).
