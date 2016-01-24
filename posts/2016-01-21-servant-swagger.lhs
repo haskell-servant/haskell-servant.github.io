@@ -4,19 +4,23 @@ author: David Johnson, Nickolay Kudasov, Julian Arni
 date: 2015-05-25 12:00
 ---
 
-# Swagger
+Swagger
+~~~~~~~
 
 `Servant` is not the first project to provide a unified way of documenting APIs.
 There is `API Blueprint`, `RAML`, `Apiary`, and finally `swagger`. While these
 Web API Description languages don't do much in the way of helping you build web
 services in a type-safe way, they are generally very mature, and have some
 amazing tooling. For example, take a look at what `swagger-ui`, a client-side
-HTML, CSS, and JS bundle, does with your `swagger` API description:
+HTML, CSS, and JS bundle, does with your `swagger` API description
+[here](http://petstore.swagger.io/?url=https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/16258a2a9f1784ecde541845ea88c7661f30a588/swagger1.json#/default).
 
-...
+As you can see, it's a very convenient and approachable way of exploring your
+API. In addition to an easily-navigable structure, you can easily build up
+requests and send them to your server, and see its responses.
 
-This is a pretty nifty way of documenting your API! But it doesn't end there.
-If you have a `swagger` specification of you API, you can also take advantage
+But it doesn't end there.
+If you have a `swagger` specification of your API, you can also take advantage
 of the large variety of [languages](https://github.com/swagger-api/swagger-codegen/blob/master/README.md#customizing-the-generator) for which you can generate a client
 library automatically. You don't even need to build the Java code - you can
 just use the "Generate Client" button in the beautiful
@@ -27,7 +31,8 @@ that support `swagger`. Obviously, having access to them would be a great boon.
 The problem so far has been that writing and maintaining a `swagger`
 specification, that you are sure matches your service, isn't fun.
 
-# Swagger-servant
+Swagger2 and Servant-swagger
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Thankfully David Johnson and Nickolay Kudasov have written two wonderful Haskell
 libraries, [swagger2](https://hackage.haskell.org/package/swagger2) and
@@ -37,6 +42,20 @@ that guides most of the `servant` ecosystem - interpreters for the type-level
 DSL for APIs that is `servant` - to generate a swagger spec for that API.
 Here's an example - the `user` part of the
 [hackage API](https://hackage.haskell.org/api):
+
+> {-# LANGUAGE TypeOperators #-}
+> {-# LANGUAGE DataKinds #-}
+> {-# LANGUAGE DeriveGeneric #-}
+> {-# LANGUAGE DeriveAnyClass #-}
+> {-# LANGUAGE OverloadedStrings #-}
+> import Control.Lens ((.~), (?~), (&))
+> import Servant.API
+> import Data.Swagger
+> import qualified Data.ByteString.Lazy.Char8 as BL8
+> import Data.Proxy (Proxy(Proxy))
+> import Data.Aeson (encode, ToJSON(..), FromJSON(..))
+> import Servant.Swagger
+> import GHC.Generics (Generic)
 
 > type UserNameAPI
 >        =    Get '[JSON] User
@@ -87,9 +106,8 @@ The next step will traverse the `API`, gathering information about it and
 
 Now we can generate the swagger documentation:
 
-> main = BL8.writeFile "swagger1.json" $ encode swaggerDoc1
-
-You can see the result [here](TODO).
+> genSwaggerDoc1 :: IO ()
+> genSwaggerDoc1 = BL8.putStr $ encode swaggerDoc1
 
 You can attach more information to your `Swagger` doc quite easily, using the
 lenses provided by `swagger2`:
@@ -97,6 +115,10 @@ lenses provided by `swagger2`:
 > swaggerDoc2 :: Swagger
 > swaggerDoc2 = swaggerDoc1
 >   & info.infoTitle .~ "Hackage Users API"
->   & info.infoDescription .~ "A demo of servant-swagger"
+>   & info.infoDescription ?~ "A demo of servant-swagger"
 
-Which results in [this](TODO).
+> main :: IO ()
+> main = BL8.putStr $ encode swaggerDoc2
+
+Which results in [this](https://gist.github.com/jkarni/a33dd150ac998e586f87).
+https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/16258a2a9f1784ecde541845ea88c7661f30a588/swagger1.json
