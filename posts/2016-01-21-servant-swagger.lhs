@@ -13,7 +13,8 @@ Web API Description languages don't do much in the way of helping you build web
 services in a type-safe way, they are generally very mature, and have some
 amazing tooling. For example, take a look at what `swagger-ui`, a client-side
 HTML, CSS, and JS bundle, does with your `swagger` API description
-[here](http://petstore.swagger.io/?url=https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/16258a2a9f1784ecde541845ea88c7661f30a588/swagger1.json#/default).
+[here](http://petstore.swagger.io/?url=https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/f419c59ed4e2b842820d7b2a6e0d2b5e902d986a/swagger.json#/default).
+
 
 
 As you can see, it's a very convenient and approachable way of exploring your
@@ -121,11 +122,13 @@ lenses provided by `swagger2`:
 > swaggerDoc2 = swaggerDoc1
 >   & info.infoTitle .~ "Hackage Users API"
 >   & info.infoDescription ?~ "A demo of servant-swagger"
+>   & host ?~ Host "hackage.haskell.org" Nothing
 
 > main :: IO ()
 > main = BL8.putStr $ encode swaggerDoc2
 
-Which results in [this](https://gist.github.com/jkarni/a33dd150ac998e586f87).
+Which results in
+[this](https://gist.githubusercontent.com/jkarni/a33dd150ac998e586f87/raw/f419c59ed4e2b842820d7b2a6e0d2b5e902d986a/swagger.json).
 
 There's a lot more you can do with both `servant-swagger` and `swagger2` - write
 manual `ToSchema` instances for more detailed information, conveniently add
