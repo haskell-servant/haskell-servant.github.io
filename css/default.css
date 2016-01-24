@@ -43,6 +43,15 @@ div#header {
     text-align: justify;
 }
 
+#content h1,
+#content h2,
+#content h3,
+#content h4,
+#content h5,
+#content h6 {
+    text-align: left;
+}
+
 div#logo a {
     color: black;
     float: left;
@@ -57,6 +66,7 @@ div#header #navigation {
 
 div#header #navigation a {
     color: black;
+    display: inline-block;
     font-size: 18px;
     font-weight: bold;
     margin-left: 12px;
