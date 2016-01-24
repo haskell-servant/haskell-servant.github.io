@@ -5,7 +5,7 @@ date: 2015-05-25 12:00
 ---
 
 Swagger
-~~~~~~~
+--------
 
 `Servant` is not the first project to provide a unified way of documenting APIs.
 There is `API Blueprint`, `RAML`, `Apiary`, and finally `swagger`. While these
@@ -31,8 +31,8 @@ that support `swagger`. Obviously, having access to them would be a great boon.
 The problem so far has been that writing and maintaining a `swagger`
 specification, that you are sure matches your service, isn't fun.
 
-Swagger2 and Servant-swagger
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+swagger2 and servant-swagger
+------------------------------
 
 Thankfully David Johnson and Nickolay Kudasov have written two wonderful Haskell
 libraries, [swagger2](https://hackage.haskell.org/package/swagger2) and
@@ -41,7 +41,9 @@ automate nearly all of that process for `servant` APIs. They use the mechanism
 that guides most of the `servant` ecosystem - interpreters for the type-level
 DSL for APIs that is `servant` - to generate a swagger spec for that API.
 Here's an example - the `user` part of the
-[hackage API](https://hackage.haskell.org/api):
+[hackage API](https://hackage.haskell.org/api).
+
+First the imports and pragmas (this is a [literate haskell file](https://github.com/haskell-servant/haskell-servant.github.io/blob/jkarni/announce-servant-swagger/posts/2016-01-21-servant-swagger.lhs)):
 
 > {-# LANGUAGE TypeOperators #-}
 > {-# LANGUAGE DataKinds #-}
@@ -56,6 +58,8 @@ Here's an example - the `user` part of the
 > import Data.Aeson (encode, ToJSON(..), FromJSON(..))
 > import Servant.Swagger
 > import GHC.Generics (Generic)
+
+The API itself:
 
 > type UserNameAPI
 >        =    Get '[JSON] User
@@ -121,14 +125,13 @@ lenses provided by `swagger2`:
 > main = BL8.putStr $ encode swaggerDoc2
 
 Which results in [this](https://gist.github.com/jkarni/a33dd150ac998e586f87).
-https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/16258a2a9f1784ecde541845ea88c7661f30a588/swagger1.json
 
-There's a lot more you can do with both `servant-swagger` and `swagger2 - write
+There's a lot more you can do with both `servant-swagger` and `swagger2` - write
 manual `ToSchema` instances for more detailed information, conveniently add
 tags or change responses of parts of your API, use convenient lenses to modify
-any part of your schema. Check of the
-(`servant-swagger`)[https://hackage.haskell.org/package/servant-swagger] and
-(`swagger2`)[https://hackage.haskell.org/package/swagger2] docs for more.
+any part of your schema. Check out the
+[`servant-swagger`](https://hackage.haskell.org/package/servant-swagger) and
+[`swagger2`](https://hackage.haskell.org/package/swagger2) docs for more.
 
 These two new packages vastly expand the landscape of tools within easy reach
 of application developers using `servant`. Time to explore that landscape!
