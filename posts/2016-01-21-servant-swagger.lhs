@@ -15,6 +15,7 @@ amazing tooling. For example, take a look at what `swagger-ui`, a client-side
 HTML, CSS, and JS bundle, does with your `swagger` API description
 [here](http://petstore.swagger.io/?url=https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/16258a2a9f1784ecde541845ea88c7661f30a588/swagger1.json#/default).
 
+
 As you can see, it's a very convenient and approachable way of exploring your
 API. In addition to an easily-navigable structure, you can easily build up
 requests and send them to your server, and see its responses.
@@ -40,7 +41,7 @@ libraries, [swagger2](https://hackage.haskell.org/package/swagger2) and
 automate nearly all of that process for `servant` APIs. They use the mechanism
 that guides most of the `servant` ecosystem - interpreters for the type-level
 DSL for APIs that is `servant` - to generate a swagger spec for that API.
-Here's an example - the `user` part of the
+Let's see it's used by; as an example, we're going to take the `user` part of the
 [hackage API](https://hackage.haskell.org/api).
 
 First the imports and pragmas (this is a [literate haskell file](https://github.com/haskell-servant/haskell-servant.github.io/blob/jkarni/announce-servant-swagger/posts/2016-01-21-servant-swagger.lhs)):
