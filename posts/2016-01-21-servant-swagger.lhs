@@ -122,3 +122,13 @@ lenses provided by `swagger2`:
 
 Which results in [this](https://gist.github.com/jkarni/a33dd150ac998e586f87).
 https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/16258a2a9f1784ecde541845ea88c7661f30a588/swagger1.json
+
+There's a lot more you can do with both `servant-swagger` and `swagger2 - write
+manual `ToSchema` instances for more detailed information, conveniently add
+tags or change responses of parts of your API, use convenient lenses to modify
+any part of your schema. Check of the
+(`servant-swagger`)[https://hackage.haskell.org/package/servant-swagger] and
+(`swagger2`)[https://hackage.haskell.org/package/swagger2] docs for more.
+
+These two new packages vastly expand the landscape of tools within easy reach
+of application developers using `servant`. Time to explore that landscape!
