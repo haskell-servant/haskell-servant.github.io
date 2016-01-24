@@ -4,7 +4,8 @@ body {
     font-family: 'Helvetica', 'Arial', sans-serif;
     margin: 0px auto 0px auto;
     line-height: 1.5;
-    width: 900px;
+    max-width: 900px;
+    padding: 0 20px;
 }
 
 h1 {
