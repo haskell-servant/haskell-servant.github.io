@@ -1,0 +1,24 @@
+resolver: lts-4.2
+packages:
+- '.'
+extra-deps:
+- aeson-0.8.1.1
+- fsnotify-0.1.0.3
+- hakyll-4.6.9.0
+- highlighting-kate-0.5.15
+- hslua-0.3.13
+- http-types-0.8.6
+- pandoc-1.13.2.1
+- pandoc-citeproc-0.7.4
+- syb-0.4.4
+- text-1.2.2.0
+- time-locale-compat-0.1.0.1
+- vector-0.10.12.3
+- yaml-0.8.15.2
+- zlib-0.5.4.2
+flags:
+  pandoc:
+    old-locale: false
+  time-locale-compat:
+    old-locale: false
+extra-package-dbs: []
