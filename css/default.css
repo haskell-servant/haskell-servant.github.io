@@ -108,6 +108,9 @@ pre.sourceCode {
 }
 
 p > code, li > code {
+    display: inline-block;
+    word-wrap: break-word;
+    max-width: 100%;
     background-color: #FFFCF6;
     padding: 2px;
     border: 1px solid grey;
