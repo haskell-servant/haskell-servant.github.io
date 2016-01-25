@@ -48,7 +48,8 @@ div#header {
 #content h3,
 #content h4,
 #content h5,
-#content h6 {
+#content h6,
+#content li {
     text-align: left;
 }
 
@@ -97,6 +98,12 @@ div.info {
 blockquote {
     border-left: 8px solid grey;
     padding-left: 32px;
+}
+
+@media (max-width: 900px) {
+    blockquote {
+        margin-left: 0;
+    }
 }
 
 /* Syntax highlighting */
