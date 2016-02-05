@@ -58,7 +58,7 @@ First the imports and pragmas (this is a [literate haskell file](https://github.
 >
 > import Control.Lens
 > import Data.Aeson
-> import Data.Aeson.Types (camelTo)
+> import Data.Aeson.Types (camelTo2)
 > import qualified Data.Aeson.Types as JSON
 > import qualified Data.ByteString.Lazy.Char8 as BL8
 > import Data.HashMap.Strict (HashMap)
@@ -127,7 +127,7 @@ Data types:
 `FromJSON` instances:
 
 > modifier :: String -> String
-> modifier = drop 1 . dropWhile (/= '_') . camelTo '_'
+> modifier = drop 1 . dropWhile (/= '_') . camelTo2 '_'
 >
 > prefixOptions :: JSON.Options
 > prefixOptions = JSON.defaultOptions { JSON.fieldLabelModifier = modifier }
