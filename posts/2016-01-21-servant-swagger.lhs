@@ -1,7 +1,7 @@
 ---
 title: Announcing servant-swagger and swagger2
 author: David Johnson, Nickolay Kudasov, Julian Arni
-date: 2015-05-25 12:00
+date: 2016-02-05 03:00
 ---
 
 Swagger
@@ -13,9 +13,7 @@ Web API Description languages don't do much in the way of helping you build web
 services in a type-safe way, they are generally very mature, and have some
 amazing tooling. For example, take a look at what `swagger-ui`, a client-side
 HTML, CSS, and JS bundle, does with your `swagger` API description
-[here](http://petstore.swagger.io/?url=https://cdn.rawgit.com/jkarni/a33dd150ac998e586f87/raw/f419c59ed4e2b842820d7b2a6e0d2b5e902d986a/swagger.json#/default).
-
-
+[here](http://petstore.swagger.io/?url=https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json#/default).
 
 As you can see, it's a very convenient and approachable way of exploring your
 API. In addition to an easily-navigable structure, you can easily build up
@@ -40,75 +38,135 @@ Thankfully David Johnson and Nickolay Kudasov have written two wonderful Haskell
 libraries, [swagger2](https://hackage.haskell.org/package/swagger2) and
 [servant-swagger](https://hackage.haskell.org/package/servant-swagger), that
 automate nearly all of that process for `servant` APIs. They use the mechanism
-that guides most of the `servant` ecosystem - interpreters for the type-level
-DSL for APIs that is `servant` - to generate a swagger spec for that API.
-Let's see it's used by; as an example, we're going to take the `user` part of the
-[hackage API](https://hackage.haskell.org/api).
+that guides most of the `servant` ecosystem — interpreters for the type-level
+DSL for APIs that is `servant` — to generate a swagger spec for that API.
 
-First the imports and pragmas (this is a [literate haskell file](https://github.com/haskell-servant/haskell-servant.github.io/blob/jkarni/announce-servant-swagger/posts/2016-01-21-servant-swagger.lhs)):
+Let's see it's used by; as an example, we're going to take the Gists part of the
+[GitHub API v3](https://developer.github.com/v3/gists/). For the purpose of this
+post we will ignore authentication and consider only `GET` requests which do not
+require one. Furthermore, we'll use simplified representation for the responses
+(i.e. we are also ignoring some fields of the response objects).
 
-> {-# LANGUAGE TypeOperators #-}
+First the imports and pragmas (this is a [literate haskell file](https://github.com/haskell-servant/haskell-servant.github.io/blob/fizruk/announce-servant-swagger/posts/2016-01-21-servant-swagger.lhs)):
+
 > {-# LANGUAGE DataKinds #-}
 > {-# LANGUAGE DeriveGeneric #-}
-> {-# LANGUAGE DeriveAnyClass #-}
+> {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 > {-# LANGUAGE OverloadedStrings #-}
-> import Control.Lens ((.~), (?~), (&))
-> import Servant.API
-> import Data.Swagger
+> {-# LANGUAGE TypeOperators #-}
+> module Gists where
+>
+> import Control.Lens
+> import Data.Aeson
+> import Data.Aeson.Types (camelTo)
+> import qualified Data.Aeson.Types as JSON
 > import qualified Data.ByteString.Lazy.Char8 as BL8
-> import Data.Proxy (Proxy(Proxy))
-> import Data.Aeson (encode, ToJSON(..), FromJSON(..))
-> import Servant.Swagger
+> import Data.HashMap.Strict (HashMap)
+> import Data.Proxy
+> import Data.Swagger
+> import Data.Text (Text)
+> import Data.Time (UTCTime)
 > import GHC.Generics (Generic)
+> import Servant
+> import Servant.Swagger
 
-The API itself:
+The API:
 
-> type UserNameAPI
->        =    Get '[JSON] User
->       :<|>  ReqBody '[JSON] User :> Put '[JSON] ()
->       :<|>  Delete '[JSON] ()
->       :<|> "enabled" :> (Get '[JSON] Bool :<|> Put '[JSON] Bool)
+> type GitHubGistAPI
+>     = "users" :> Capture "username" Username :> "gists" :> QueryParam "since" UTCTime :> Get '[JSON] [Gist]
+>  :<|> "gists" :> GistsAPI
 >
-> type UserNameAdminsAPI
->        =    Get '[JSON] [Admin]
->       :<|>  "user" :> Capture "username" String :>
->               ( ReqBody '[JSON] String :> Put '[JSON] ()
->            :<|> Delete '[JSON] ()
->               )
+> type GistsAPI
+>     = "public"  :> QueryParam "since" UTCTime :> Get '[JSON] [Gist]
+>  :<|> "starred" :> QueryParam "since" UTCTime :> Get '[JSON] [Gist]
+>  :<|> Capture "id" GistId :> GistAPI
 >
-> type API = "users" :> Get '[JSON] [User]
->       :<|> "user" :> ( Capture "username" String :> UserNameAPI
->                   :<|> "admins" :> UserNameAdminsAPI
->                      )
+> type GistAPI
+>     = Get '[JSON] Gist
+>  :<|> Capture "sha" Revision :> Get '[JSON] Gist
 >
-> data User = User { username :: String, userpwd :: String, userenabled :: Bool }
->  deriving (Eq, Show, Read, Generic, FromJSON, ToJSON, ToSchema)
->
-> data Admin = Admin { adminUser :: User, otherDeets :: String }
->  deriving (Eq, Show, Read, Generic, FromJSON, ToJSON, ToSchema)
->
-> api :: Proxy API
+> api :: Proxy GitHubGistAPI
 > api = Proxy
 
-(Note that this is almost certainly not a faithful representation, since I've
- had to do some guesswork with respect to requests and response bodies.)
+Data types:
 
-So far this is what you would usually have when working with `servant`. The
-only new thing you might notice is the `ToSchema` class in the `deriving`
-clauses. This will give us a generically-derived `swagger` schema (which is
-quite similar to, but not entirely the same as, JSON Schema). Part of the
-`swagger2` package, it can be quite useful in its own right if you want to e.g.
-respond with a schema in case of bad request bodies, or OPTIONS requests.
+> newtype Username = Username Text deriving (Generic, ToText, FromJSON)
+>
+> newtype GistId = GistId Text deriving (Generic, ToText, FromJSON)
+>
+> newtype SHA = SHA Text deriving (Generic, ToText)
+>
+> type Revision = SHA
+>
+> data Gist = Gist
+>   { gistId          :: GistId
+>   , gistDescription :: Text
+>   , gistOwner       :: Owner
+>   , gistFiles       :: HashMap FilePath GistFile
+>   , gistTruncated   :: Bool
+>   , gistComments    :: Integer
+>   , gistCreatedAt   :: UTCTime
+>   , gistUpdatedAt   :: UTCTime
+>   } deriving (Generic)
+>
+> data OwnerType = User | Organization
+>   deriving (Generic)
+>
+> data Owner = Owner
+>   { ownerLogin      :: Username
+>   , ownerType       :: OwnerType
+>   , ownerSiteAdmin  :: Bool
+>   } deriving (Generic)
+>
+> data GistFile = GistFile
+>   { gistfileSize      :: Integer
+>   , gistfileLanguage  :: Text
+>   , gistfileRawUrl    :: Text
+>   } deriving (Generic)
 
-The next step will traverse the `API`, gathering information about it and
-`swagger2` schemas to generate a `Swagger` value:
+`FromJSON` instances:
+
+> modifier :: String -> String
+> modifier = drop 1 . dropWhile (/= '_') . camelTo '_'
+>
+> prefixOptions :: JSON.Options
+> prefixOptions = JSON.defaultOptions { JSON.fieldLabelModifier = modifier }
+>
+> instance FromJSON OwnerType
+> instance FromJSON Owner    where parseJSON = genericParseJSON prefixOptions
+> instance FromJSON GistFile where parseJSON = genericParseJSON prefixOptions
+> instance FromJSON Gist     where parseJSON = genericParseJSON prefixOptions
+
+So far this is what you would usually have when working with `servant`.
+Now in to generate Swagger specification we need to define schemas for our types.
+This is done with `ToParamSchema` and `ToSchema` instances:
+
+> prefixSchemaOptions :: SchemaOptions
+> prefixSchemaOptions = defaultSchemaOptions { fieldLabelModifier = modifier }
+>
+> instance ToParamSchema SHA
+> instance ToParamSchema Username
+> instance ToParamSchema GistId
+>
+> instance ToSchema Username
+> instance ToSchema GistId
+> instance ToSchema OwnerType
+> instance ToSchema Owner    where declareNamedSchema = genericDeclareNamedSchema prefixSchemaOptions
+> instance ToSchema GistFile where declareNamedSchema = genericDeclareNamedSchema prefixSchemaOptions
+> instance ToSchema Gist     where declareNamedSchema = genericDeclareNamedSchema prefixSchemaOptions
+
+These will give us a generically-derived Swagger schema (which is sort of
+a deterministic version of JSON Schema).
+
+Part of the `swagger2` package, `Schema` and `ParamSchema` can be quite useful
+in their own right if you want to e.g. respond with a schema in case of bad request
+bodies, or `OPTIONS` requests.
+
+The next step will traverse the `GitHubGistAPI`, gathering information about it
+and `swagger2` schemas to generate a `Swagger` value:
 
 > swaggerDoc1 :: Swagger
 > swaggerDoc1 = toSwagger api
-
-(If you're keeping tabs, so far the amount of extra work we've done compared to
- what we would have to do anyway for a `servant` server or client is these two
- lines, plus two "ToSchema" strings.)
 
 Now we can generate the swagger documentation:
 
@@ -120,20 +178,22 @@ lenses provided by `swagger2`:
 
 > swaggerDoc2 :: Swagger
 > swaggerDoc2 = swaggerDoc1
->   & info.infoTitle .~ "Hackage Users API"
->   & info.infoDescription ?~ "A demo of servant-swagger"
->   & host ?~ Host "hackage.haskell.org" Nothing
+>   & host ?~ "api.github.com"
+>   & info.title .~ "GitHub Gists API"
+>   & info.version .~ "v3"
 
 > main :: IO ()
 > main = BL8.putStr $ encode swaggerDoc2
 
 Which results in
-[this](https://gist.githubusercontent.com/jkarni/a33dd150ac998e586f87/raw/f419c59ed4e2b842820d7b2a6e0d2b5e902d986a/swagger.json).
+[this](https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json).
 
-There's a lot more you can do with both `servant-swagger` and `swagger2` - write
+There's a lot more you can do with both `servant-swagger` and `swagger2` — write
 manual `ToSchema` instances for more detailed information, conveniently add
 tags or change responses of parts of your API, use convenient lenses to modify
-any part of your schema. Check out the
+any part of your schema, generate automatic tests, etc.
+
+Check out the
 [`servant-swagger`](https://hackage.haskell.org/package/servant-swagger) and
 [`swagger2`](https://hackage.haskell.org/package/swagger2) docs for more.
 
