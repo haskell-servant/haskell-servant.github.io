@@ -104,7 +104,7 @@ prefixOptions <span class="fu">=</span> JSON.defaultOptions { JSON.fieldLabelMod
 <span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Owner</span>    <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
 <span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">GistFile</span> <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
 <span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Gist</span>     <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</code></pre></div>
-<p>So far this is what you would usually have when working with <code>servant</code>. Now in to generate Swagger specification we need to define schemas for our types. This is done with <code>ToParamSchema</code> and <code>ToSchema</code> instances:</p>
+<p>So far this is what you would usually have when working with <code>servant</code>. Now to generate Swagger specification we need to define schemas for our types. This is done with <code>ToParamSchema</code> and <code>ToSchema</code> instances:</p>
 <div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">prefixSchemaOptions ::</span> <span class="dt">SchemaOptions</span>
 prefixSchemaOptions <span class="fu">=</span> defaultSchemaOptions { fieldLabelModifier <span class="fu">=</span> modifier }
 
