@@ -198,3 +198,8 @@ Check out the
 
 These two new packages vastly expand the landscape of tools within easy reach
 of application developers using `servant`. Time to explore that landscape!
+
+On a related note, Masahiro Yamauchi has recently [added Servant codegen for
+Swagger](https://github.com/swagger-api/swagger-codegen/pull/2009). So not only
+can you generate a swagger description for your servant server, but you can also
+generate the servant description from a swagger one too!
