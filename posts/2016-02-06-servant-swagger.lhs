@@ -15,7 +15,7 @@ very mature, and have some amazing tooling. For example, take a look at what
 [here](http://petstore.swagger.io/?url=https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json#/default).
 
 As you can see, it's a very convenient and approachable way of exploring your
-API. In addition to an easily-navigable structure, you can easily build up
+API. In addition to an easily-navigable structure, you can build up
 requests and send them to your server, and see its responses.
 
 But it doesn't end there.
@@ -46,7 +46,7 @@ post we will ignore authentication and consider only `GET` requests which do not
 require one. Furthermore, we'll use simplified representation for the responses
 (i.e. we are also ignoring some fields of the response objects).
 
-First the imports and pragmas (this is a [literate haskell file](https://github.com/haskell-servant/haskell-servant.github.io/blob/fizruk/announce-servant-swagger/posts/2016-01-21-servant-swagger.lhs)):
+First the imports and pragmas (this is a [literate haskell file](https://github.com/haskell-servant/haskell-servant.github.io/blob/hakyll/posts/2016-02-06-servant-swagger.lhs)):
 
 > {-# LANGUAGE DataKinds #-}
 > {-# LANGUAGE DeriveGeneric #-}
