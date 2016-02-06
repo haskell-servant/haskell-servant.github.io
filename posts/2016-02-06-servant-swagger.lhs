@@ -137,7 +137,7 @@ Data types:
 > instance FromJSON Gist     where parseJSON = genericParseJSON prefixOptions
 
 So far this is what you would usually have when working with `servant`.
-Now in to generate Swagger specification we need to define schemas for our types.
+Now to generate Swagger specification we need to define schemas for our types.
 This is done with `ToParamSchema` and `ToSchema` instances:
 
 > prefixSchemaOptions :: SchemaOptions
