@@ -9,10 +9,9 @@ Swagger
 
 `Servant` is not the first project to provide a unified way of documenting APIs.
 There is `API Blueprint`, `RAML`, `Apiary`, and finally `swagger`. While these
-Web API Description languages don't do much in the way of helping you build web
-services in a type-safe way, they are generally very mature, and have some
-amazing tooling. For example, take a look at what `swagger-ui`, a client-side
-HTML, CSS, and JS bundle, does with your `swagger` API description
+Web API description languages are not also web frameworks , they are generally
+very mature, and have some amazing tooling. For example, take a look at what
+`swagger-ui`, a client-side HTML, CSS, and JS bundle, does with your `swagger` API description
 [here](http://petstore.swagger.io/?url=https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json#/default).
 
 As you can see, it's a very convenient and approachable way of exploring your
@@ -29,19 +28,19 @@ just use the "Generate Client" button in the beautiful
 There are a wide array of other [tools](http://swagger.io/open-source-integrations/)
 that support `swagger`. Obviously, having access to them would be a great boon.
 The problem so far has been that writing and maintaining a `swagger`
-specification, that you are sure matches your service, isn't fun.
+specification, that you can be sure matches your service, is hard work.
 
 swagger2 and servant-swagger
 ------------------------------
 
-Thankfully David Johnson and Nickolay Kudasov have written two wonderful Haskell
+Thankfully David Johnson and Nickolay Kudasov have written two Haskell
 libraries, [swagger2](https://hackage.haskell.org/package/swagger2) and
 [servant-swagger](https://hackage.haskell.org/package/servant-swagger), that
 automate nearly all of that process for `servant` APIs. They use the mechanism
 that guides most of the `servant` ecosystem — interpreters for the type-level
 DSL for APIs that is `servant` — to generate a swagger spec for that API.
 
-Let's see it's used by; as an example, we're going to take the Gists part of the
+Let's see how it is used; as an example, we're going to take the Gists part of the
 [GitHub API v3](https://developer.github.com/v3/gists/). For the purpose of this
 post we will ignore authentication and consider only `GET` requests which do not
 require one. Furthermore, we'll use simplified representation for the responses
