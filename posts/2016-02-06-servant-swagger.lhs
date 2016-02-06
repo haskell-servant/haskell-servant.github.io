@@ -1,7 +1,7 @@
 ---
 title: Announcing servant-swagger and swagger2
 author: David Johnson, Nickolay Kudasov, Julian Arni
-date: 2016-02-05 03:00
+date: 2016-02-06 03:00
 ---
 
 Swagger
