@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Announcing servant-swagger and swagger2 - haskell-servant</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="../">servant</a>
+            </div>
+            <div id="navigation">
+                <a href="../">Home</a>
+                <a href="../blog.html">Blog</a>
+                <a href="../tutorial">Tutorial</a>
+                <a href="../tips.html">Tips and tricks</a>
+                <a href="../talks.html">Talks</a>
+                <a href="https://github.com/haskell-servant/servant">Github</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>Announcing servant-swagger and swagger2</h1>
+
+            <section id="swagger" class="level2">
+<h2>Swagger</h2>
+<p><code>Servant</code> is not the first project to provide a unified way of documenting APIs. There is <code>API Blueprint</code>, <code>RAML</code>, <code>Apiary</code>, and finally <code>swagger</code>. While these Web API description languages are not also web frameworks , they are generally very mature, and have some amazing tooling. For example, take a look at what <code>swagger-ui</code>, a client-side HTML, CSS, and JS bundle, does with your <code>swagger</code> API description <a href="http://petstore.swagger.io/?url=https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json#/default">here</a>.</p>
+<p>As you can see, it’s a very convenient and approachable way of exploring your API. In addition to an easily-navigable structure, you can easily build up requests and send them to your server, and see its responses.</p>
+<p>But it doesn’t end there. If you have a <code>swagger</code> specification of your API, you can also take advantage of the large variety of <a href="https://github.com/swagger-api/swagger-codegen/blob/master/README.md#customizing-the-generator">languages</a> for which you can generate a client library automatically. You don’t even need to build the Java code - you can just use the “Generate Client” button in the beautiful <a href="http://editor.swagger.io/#/">swagger editor</a>.</p>
+<p>There are a wide array of other <a href="http://swagger.io/open-source-integrations/">tools</a> that support <code>swagger</code>. Obviously, having access to them would be a great boon. The problem so far has been that writing and maintaining a <code>swagger</code> specification, that you can be sure matches your service, is hard work.</p>
+</section>
+<section id="swagger2-and-servant-swagger" class="level2">
+<h2>swagger2 and servant-swagger</h2>
+<p>Thankfully David Johnson and Nickolay Kudasov have written two Haskell libraries, <a href="https://hackage.haskell.org/package/swagger2">swagger2</a> and <a href="https://hackage.haskell.org/package/servant-swagger">servant-swagger</a>, that automate nearly all of that process for <code>servant</code> APIs. They use the mechanism that guides most of the <code>servant</code> ecosystem — interpreters for the type-level DSL for APIs that is <code>servant</code> — to generate a swagger spec for that API.</p>
+<p>Let’s see how it is used; as an example, we’re going to take the Gists part of the <a href="https://developer.github.com/v3/gists/">GitHub API v3</a>. For the purpose of this post we will ignore authentication and consider only <code>GET</code> requests which do not require one. Furthermore, we’ll use simplified representation for the responses (i.e. we are also ignoring some fields of the response objects).</p>
+<p>First the imports and pragmas (this is a <a href="https://github.com/haskell-servant/haskell-servant.github.io/blob/fizruk/announce-servant-swagger/posts/2016-01-21-servant-swagger.lhs">literate haskell file</a>):</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
+<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
+<span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span>
+<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
+<span class="kw">module</span> <span class="dt">Gists</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Control.Lens</span>
+<span class="kw">import </span><span class="dt">Data.Aeson</span>
+<span class="kw">import </span><span class="dt">Data.Aeson.Types</span> (camelTo2)
+<span class="kw">import qualified</span> <span class="dt">Data.Aeson.Types</span> <span class="kw">as</span> <span class="dt">JSON</span>
+<span class="kw">import qualified</span> <span class="dt">Data.ByteString.Lazy.Char8</span> <span class="kw">as</span> <span class="dt">BL8</span>
+<span class="kw">import </span><span class="dt">Data.HashMap.Strict</span> (<span class="dt">HashMap</span>)
+<span class="kw">import </span><span class="dt">Data.Proxy</span>
+<span class="kw">import </span><span class="dt">Data.Swagger</span>
+<span class="kw">import </span><span class="dt">Data.Text</span> (<span class="dt">Text</span>)
+<span class="kw">import </span><span class="dt">Data.Time</span> (<span class="dt">UTCTime</span>)
+<span class="kw">import </span><span class="dt">GHC.Generics</span> (<span class="dt">Generic</span>)
+<span class="kw">import </span><span class="dt">Servant</span>
+<span class="kw">import </span><span class="dt">Servant.Swagger</span></code></pre></div>
+<p>The API:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">GitHubGistAPI</span>
+    <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Gist]</span>
+ <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">GistsAPI</span>
+
+<span class="kw">type</span> <span class="dt">GistsAPI</span>
+    <span class="fu">=</span> <span class="st">&quot;public&quot;</span>  <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Gist]</span>
+ <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;starred&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Gist]</span>
+ <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> <span class="dt">GistId</span> <span class="fu">:&gt;</span> <span class="dt">GistAPI</span>
+
+<span class="kw">type</span> <span class="dt">GistAPI</span>
+    <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] Gist</span>
+ <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;sha&quot;</span> <span class="dt">Revision</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Gist</span>
+
+<span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">GitHubGistAPI</span>
+api <span class="fu">=</span> <span class="dt">Proxy</span></code></pre></div>
+<p>Data types:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Username</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)
+
+<span class="kw">newtype</span> <span class="dt">GistId</span> <span class="fu">=</span> <span class="dt">GistId</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)
+
+<span class="kw">newtype</span> <span class="dt">SHA</span> <span class="fu">=</span> <span class="dt">SHA</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>)
+
+<span class="kw">type</span> <span class="dt">Revision</span> <span class="fu">=</span> <span class="dt">SHA</span>
+
+<span class="kw">data</span> <span class="dt">Gist</span> <span class="fu">=</span> <span class="dt">Gist</span>
+  {<span class="ot"> gistId          ::</span> <span class="dt">GistId</span>
+  ,<span class="ot"> gistDescription ::</span> <span class="dt">Text</span>
+  ,<span class="ot"> gistOwner       ::</span> <span class="dt">Owner</span>
+  ,<span class="ot"> gistFiles       ::</span> <span class="dt">HashMap</span> FilePath <span class="dt">GistFile</span>
+  ,<span class="ot"> gistTruncated   ::</span> <span class="dt">Bool</span>
+  ,<span class="ot"> gistComments    ::</span> <span class="dt">Integer</span>
+  ,<span class="ot"> gistCreatedAt   ::</span> <span class="dt">UTCTime</span>
+  ,<span class="ot"> gistUpdatedAt   ::</span> <span class="dt">UTCTime</span>
+  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)
+
+<span class="kw">data</span> <span class="dt">OwnerType</span> <span class="fu">=</span> <span class="dt">User</span> <span class="fu">|</span> <span class="dt">Organization</span>
+  <span class="kw">deriving</span> (<span class="dt">Generic</span>)
+
+<span class="kw">data</span> <span class="dt">Owner</span> <span class="fu">=</span> <span class="dt">Owner</span>
+  {<span class="ot"> ownerLogin      ::</span> <span class="dt">Username</span>
+  ,<span class="ot"> ownerType       ::</span> <span class="dt">OwnerType</span>
+  ,<span class="ot"> ownerSiteAdmin  ::</span> <span class="dt">Bool</span>
+  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)
+
+<span class="kw">data</span> <span class="dt">GistFile</span> <span class="fu">=</span> <span class="dt">GistFile</span>
+  {<span class="ot"> gistfileSize      ::</span> <span class="dt">Integer</span>
+  ,<span class="ot"> gistfileLanguage  ::</span> <span class="dt">Text</span>
+  ,<span class="ot"> gistfileRawUrl    ::</span> <span class="dt">Text</span>
+  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</code></pre></div>
+<p><code>FromJSON</code> instances:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">modifier ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+modifier <span class="fu">=</span> drop <span class="dv">1</span> <span class="fu">.</span> dropWhile (<span class="fu">/=</span> <span class="ch">'_'</span>) <span class="fu">.</span> camelTo2 <span class="ch">'_'</span>
+
+<span class="ot">prefixOptions ::</span> <span class="dt">JSON.Options</span>
+prefixOptions <span class="fu">=</span> JSON.defaultOptions { JSON.fieldLabelModifier <span class="fu">=</span> modifier }
+
+<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">OwnerType</span>
+<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Owner</span>    <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
+<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">GistFile</span> <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
+<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Gist</span>     <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</code></pre></div>
+<p>So far this is what you would usually have when working with <code>servant</code>. Now in to generate Swagger specification we need to define schemas for our types. This is done with <code>ToParamSchema</code> and <code>ToSchema</code> instances:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">prefixSchemaOptions ::</span> <span class="dt">SchemaOptions</span>
+prefixSchemaOptions <span class="fu">=</span> defaultSchemaOptions { fieldLabelModifier <span class="fu">=</span> modifier }
+
+<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">SHA</span>
+<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">Username</span>
+<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">GistId</span>
+
+<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Username</span>
+<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistId</span>
+<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">OwnerType</span>
+<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Owner</span>    <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions
+<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistFile</span> <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions
+<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Gist</span>     <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</code></pre></div>
+<p>These will give us a generically-derived Swagger schema (which is sort of a deterministic version of JSON Schema).</p>
+<p>Part of the <code>swagger2</code> package, <code>Schema</code> and <code>ParamSchema</code> can be quite useful in their own right if you want to e.g. respond with a schema in case of bad request bodies, or <code>OPTIONS</code> requests.</p>
+<p>The next step will traverse the <code>GitHubGistAPI</code>, gathering information about it and <code>swagger2</code> schemas to generate a <code>Swagger</code> value:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">swaggerDoc1 ::</span> <span class="dt">Swagger</span>
+swaggerDoc1 <span class="fu">=</span> toSwagger api</code></pre></div>
+<p>Now we can generate the swagger documentation:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">genSwaggerDoc1 ::</span> <span class="dt">IO</span> ()
+genSwaggerDoc1 <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc1</code></pre></div>
+<p>You can attach more information to your <code>Swagger</code> doc quite easily, using the lenses provided by <code>swagger2</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">swaggerDoc2 ::</span> <span class="dt">Swagger</span>
+swaggerDoc2 <span class="fu">=</span> swaggerDoc1
+  <span class="fu">&amp;</span> host <span class="fu">?~</span> <span class="st">&quot;api.github.com&quot;</span>
+  <span class="fu">&amp;</span> info<span class="fu">.</span>title <span class="fu">.~</span> <span class="st">&quot;GitHub Gists API&quot;</span>
+  <span class="fu">&amp;</span> info<span class="fu">.</span>version <span class="fu">.~</span> <span class="st">&quot;v3&quot;</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc2</code></pre></div>
+<p>Which results in <a href="https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json">this</a>.</p>
+<p>There’s a lot more you can do with both <code>servant-swagger</code> and <code>swagger2</code> — write manual <code>ToSchema</code> instances for more detailed information, conveniently add tags or change responses of parts of your API, use convenient lenses to modify any part of your schema, generate automatic tests, etc.</p>
+<p>Check out the <a href="https://hackage.haskell.org/package/servant-swagger"><code>servant-swagger</code></a> and <a href="https://hackage.haskell.org/package/swagger2"><code>swagger2</code></a> docs for more.</p>
+<p>These two new packages vastly expand the landscape of tools within easy reach of application developers using <code>servant</code>. Time to explore that landscape!</p>
+<p>On a related note, Masahiro Yamauchi has recently <a href="https://github.com/swagger-api/swagger-codegen/pull/2009">added Servant codegen for Swagger</a>. So not only can you generate a swagger description for your servant server, but you can also generate the servant description from a swagger one too!</p>
+</section>
+
+<div class="info">
+    Posted on February  6, 2016
+    
+        by David Johnson, Nickolay Kudasov, Julian Arni
+    
+</div>
+
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            -
+            <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
+        </div>
+    </body>
+</html>
