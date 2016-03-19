@@ -4,6 +4,8 @@ author: Alp Mestanogullari
 toc: true
 ---
 
+**WARNING: This tutorial is for `servant-0.4`. The tutorial for the current version can be found here: [haskell-servant.readthedocs.org](http://haskell-servant.readthedocs.org/).**
+
 This is an introductory tutorial to the current version of *servant*, which is **0.4**. Any comment or issue can be directed to [this website's issue tracker](http://github.com/haskell-servant/haskell-servant.github.io/issues).
 
 ## Github
