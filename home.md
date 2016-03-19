@@ -59,10 +59,6 @@ To find out more, please check our [tutorial](/tutorial).
 - [Combining Servant With Persistent](http://www.parsonsmatt.org/2015/06/07/servant-persistent.html)
 - See [the talks](/talks.html)
 
-## Examples
-
-*servant* comes with quite a few examples, among which the ones studied in the [tutorial](/tutorial). You can find them [here](https://github.com/haskell-servant/servant/tree/master/servant-examples).
-
 ## Haddocks
 
 - [servant](http://hackage.haskell.org/package/servant), API types and combinators
