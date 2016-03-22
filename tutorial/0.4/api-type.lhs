@@ -264,7 +264,7 @@ that everyone uses, we decided to release 2 packages, *servant-lucid* and
 *servant-blaze*, to provide HTML encoding of your data.
 
 We will further explain how these content types and your data types can play
-together in the [section about serving an API](/tutorial/server.html).
+together in the [section about serving an API](/tutorial/0.4/server.html).
 
 Response `Headers`
 ------------------
