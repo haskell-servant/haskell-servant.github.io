@@ -1,4 +1,4 @@
-REPO_URL="https://github.com/haskell-servant/haskell-servant.github.io"
+REPO_URL="git@github.com:haskell-servant/haskell-servant.github.io"
 SERVANT_WWW="$HOME/.servant-www"
 SITE="$PWD/_site"
 CURRDIR="$PWD"
@@ -6,12 +6,15 @@ BIN="dist/build/site/site"
 COMMIT=`git rev-parse HEAD`
 MSG="Built from $COMMIT"
 
+set -o errexit
+
 if [ ! -d $SERVANT_WWW ]; then
 	git clone $REPO_URL $HOME/.servant-www
 	echo "Created directory $SERVANT_WWW"
 fi
 
 cd $SERVANT_WWW
+git checkout master
 git rm -r ./*
 cp -R $SITE/* ./ 
 git add ./**
