@@ -170,6 +170,6 @@ Right before starting up our server, we will need to write this `String` to a fi
 And we're good to go. Start the server with `dist/build/tutorial/tutorial 9` and go to `http://localhost:8081/`. Start typing in the name of one of the authors in our database or part of a book title, and check out how long it takes to approximate &pi; using the method mentioned above.
 
 <div style="text-align: center;">
-  <p><a href="/tutorial/client.html">Previous page: Deriving Haskell functions to query an API</a></p>
-  <p><a href="/tutorial/docs.html">Next page: Generating documentation for APIs</a></p>
+  <p><a href="/tutorial/0.4/client.html">Previous page: Deriving Haskell functions to query an API</a></p>
+  <p><a href="/tutorial/0.4/docs.html">Next page: Generating documentation for APIs</a></p>
 </div>

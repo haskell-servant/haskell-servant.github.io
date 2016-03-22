@@ -27,7 +27,7 @@ need to have some language extensions and imports:
 > import Servant.Server
 
 And we'll import some things from one of our earlier modules
-([Serving an API](/tutorial/server.html)):
+([Serving an API](/tutorial/0.4/server.html)):
 
 > import Server (Email(..), ClientInfo(..), Position(..), HelloMessage(..),
 >   server3, emailForClient)
@@ -223,5 +223,5 @@ We can now serve the API *and* the API docs with a simple server.
 And if you spin up this server with `dist/build/tutorial/tutorial 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
 
 <div style="text-align: center;">
-  <a href="/tutorial/javascript.html">Previous page: Generating javascript functions to query an API</a>
+  <a href="/tutorial/0.4/javascript.html">Previous page: Generating javascript functions to query an API</a>
 </div>

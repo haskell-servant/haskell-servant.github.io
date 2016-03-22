@@ -133,6 +133,6 @@ You can now run `dist/build/tutorial/tutorial 8` (the server) and
 The types of the arguments for the functions are the same as for (server-side) request handlers. You now know how to use *servant-client*!
 
 <div style="text-align: center;">
-  <p><a href="/tutorial/server.html">Previous page: Serving an API</a></p>
-  <p><a href="/tutorial/javascript.html">Next page: Generating javascript functions to query an API</a></p>
+  <p><a href="/tutorial/0.4/server.html">Previous page: Serving an API</a></p>
+  <p><a href="/tutorial/0.4/javascript.html">Next page: Generating javascript functions to query an API</a></p>
 </div>

@@ -376,7 +376,7 @@ them when using `Capture`, `QueryParam`, `QueryParams`, `MatrixParam`,
 `MatrixParams` and `Header` with your types. You will need `FromText` instances
 for server-side request handlers and `ToText` instances only when using
 *servant-client*, as described in the [section about deriving haskell
-functions to query an API](/tutorial/client.html).
+functions to query an API](/tutorial/0.4/client.html).
 
 Using content-types with your data types
 ========================================
@@ -1171,6 +1171,6 @@ Conclusion
 You're now equipped to write any kind of webservice/web-application using *servant*. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on *servant-client*, *servant-jquery* and *servant-docs*.
 
 <div style="text-align: center;">
-  <p><a href="/tutorial/api-type.html">Previous page: A web API as a type</a></p>
-  <p><a href="/tutorial/client.html">Next page: Deriving Haskell functions to query an API</a></p>
+  <p><a href="/tutorial/0.4/api-type.html">Previous page: A web API as a type</a></p>
+  <p><a href="/tutorial/0.4/client.html">Next page: Deriving Haskell functions to query an API</a></p>
 </div>

@@ -305,5 +305,5 @@ same as above though. (You can even combine *servant* with other web frameworks
 this way!)
 
 <div style="text-align: center;">
-  <a href="/tutorial/server.html">Next page: Serving an API</a>
+  <a href="/tutorial/0.4/server.html">Next page: Serving an API</a>
 </div>
