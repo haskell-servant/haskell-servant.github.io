@@ -2,9 +2,9 @@
 title: Home
 ---
 
-The main documentation for *servant* can now be found here:
-
+<p class="notice">The main documentation for *servant* can now be found here:
 [haskell-servant.readthedocs.org](http://haskell-servant.readthedocs.org/)
+</p>
 
 # Tutorials and Blog Posts
 

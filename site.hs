@@ -36,7 +36,7 @@ main = hakyllWith config $ do
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
-    match "tutorial/*" $ do
+    match "tutorial/**" $ do
         route (setExtension "html")
         compile $ myPandocCompiler
             >>= loadAndApplyTemplate "templates/page.html"    defaultContext
@@ -110,27 +110,27 @@ myFeedConfiguration = FeedConfiguration
 
 --------------------------------------------------------------------------------
 myPandocCompiler' :: Maybe String -> Compiler (Item String)
-myPandocCompiler' withToc = 
+myPandocCompiler' withToc =
     pandocCompilerWith defaultHakyllReaderOptions $
         case withToc of
             Just x | map toLower x `elem` ["true", "yes"] -> writerWithToc
                    | otherwise                            -> writerOpts
             Nothing                                       -> writerOpts
 
-    where writerOpts = defaultHakyllWriterOptions 
+    where writerOpts = defaultHakyllWriterOptions
                            { writerReferenceLinks = True
-                           , writerSectionDivs = True 
+                           , writerSectionDivs = True
                            , writerHtml5 = True
                            , writerHTMLMathMethod = MathJax "http://cdn.mathjax.org/mathjax/latest/MathJax.js"
-                           , writerColumns = 100 
+                           , writerColumns = 100
                            , writerExtensions =
                               delete Ext_literate_haskell
                                 (writerExtensions defaultHakyllWriterOptions)
                            }
-          writerWithToc = 
-            writerOpts { writerTableOfContents = True 
-                       , writerTemplate = "$if(toc)$<div id=\"toc\"><h3>Table of contents</h3>$toc$</div>$endif$\n$body$" 
-                       , writerStandalone = True 
+          writerWithToc =
+            writerOpts { writerTableOfContents = True
+                       , writerTemplate = "$if(toc)$<div id=\"toc\"><h3>Table of contents</h3>$toc$</div>$endif$\n$body$"
+                       , writerStandalone = True
                        }
 
 myPandocCompiler :: Compiler (Item String)

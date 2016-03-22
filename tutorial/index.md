@@ -4,9 +4,10 @@ author: Alp Mestanogullari
 toc: true
 ---
 
-**WARNING: This tutorial is for `servant-0.4`. The tutorial for the current version can be found here: [haskell-servant.readthedocs.org](http://haskell-servant.readthedocs.org/).**
+<p class="notice">**WARNING: This tutorial is for `servant-0.4`. The tutorial for the current version can be found here: [haskell-servant.readthedocs.org](http://haskell-servant.readthedocs.org/).**
+</p>
 
-This is an introductory tutorial to the current version of *servant*, which is **0.4**. Any comment or issue can be directed to [this website's issue tracker](http://github.com/haskell-servant/haskell-servant.github.io/issues).
+Any comment or issue can be directed to [this website's issue tracker](http://github.com/haskell-servant/haskell-servant.github.io/issues).
 
 ## Github
 
@@ -60,8 +61,8 @@ cover the couple of ways you can extend servant for a great good.
 
 # Tutorial
 
-1. [A web API as a type](/tutorial/api-type.html)
-2. [Serving an API](/tutorial/server.html)
-3. [Deriving Haskell functions to query an API](/tutorial/client.html)
-4. [Generating javascript functions to query an API](/tutorial/javascript.html)
-5. [Generating documentation for APIs](/tutorial/docs.html)
+1. [A web API as a type](/tutorial/0.4/api-type.html)
+2. [Serving an API](/tutorial/0.4/server.html)
+3. [Deriving Haskell functions to query an API](/tutorial/0.4/client.html)
+4. [Generating javascript functions to query an API](/tutorial/0.4/javascript.html)
+5. [Generating documentation for APIs](/tutorial/0.4/docs.html)
