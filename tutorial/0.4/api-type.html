@@ -5,19 +5,19 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>A web API as a type - haskell-servant</title>
-        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../../css/default.css" />
     </head>
     <body>
         <div id="header">
             <div id="logo">
-                <a href="../">servant</a>
+                <a href="../../">servant</a>
             </div>
             <div id="navigation">
-                <a href="../">Home</a>
-                <a href="../blog.html">Blog</a>
-                <a href="../tutorial">Tutorial</a>
-                <a href="../tips.html">Tips and tricks</a>
-                <a href="../talks.html">Talks</a>
+                <a href="../../">Home</a>
+                <a href="../../blog.html">Blog</a>
+                <a href="../../tutorial">Tutorial</a>
+                <a href="../../tips.html">Tips and tricks</a>
+                <a href="../../talks.html">Talks</a>
                 <a href="https://github.com/haskell-servant/servant">Github</a>
             </div>
         </div>
@@ -161,7 +161,7 @@
 <p>Four content-types are provided out-of-the-box by the core <em>servant</em> package: <code>JSON</code>, <code>PlainText</code>, <code>FormUrlEncoded</code> and <code>OctetStream</code>. If for some obscure reason you wanted one of your endpoints to make your user data available under those 4 formats, you would write the API type as below:</p>
 <div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">UserAPI9</span> <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON, PlainText, FormUrlEncoded, OctetStream] [User]</span></code></pre></div>
 <p>We also provide an HTML content-type, but since there’s no single library that everyone uses, we decided to release 2 packages, <em>servant-lucid</em> and <em>servant-blaze</em>, to provide HTML encoding of your data.</p>
-<p>We will further explain how these content types and your data types can play together in the <a href="../tutorial/server.html">section about serving an API</a>.</p>
+<p>We will further explain how these content types and your data types can play together in the <a href="../../tutorial/0.4/server.html">section about serving an API</a>.</p>
 </section>
 <section id="response-headers" class="level2">
 <h2>Response <code>Headers</code></h2>
@@ -188,7 +188,7 @@
 <li>You more generally want to plug a <a href="http://hackage.haskell.org/package/wai">WAI <code>Application</code></a> into your webservice. Static file serving is a specific example of that. The API type would look the same as above though. (You can even combine <em>servant</em> with other web frameworks this way!)</li>
 </ul>
 <div style="text-align: center;">
-<p><a href="../tutorial/server.html">Next page: Serving an API</a></p>
+<p><a href="../../tutorial/0.4/server.html">Next page: Serving an API</a></p>
 </div>
 </section>
 </section>

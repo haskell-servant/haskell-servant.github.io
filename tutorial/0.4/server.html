@@ -5,19 +5,19 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Serving an API - haskell-servant</title>
-        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../../css/default.css" />
     </head>
     <body>
         <div id="header">
             <div id="logo">
-                <a href="../">servant</a>
+                <a href="../../">servant</a>
             </div>
             <div id="navigation">
-                <a href="../">Home</a>
-                <a href="../blog.html">Blog</a>
-                <a href="../tutorial">Tutorial</a>
-                <a href="../tips.html">Tips and tricks</a>
-                <a href="../talks.html">Talks</a>
+                <a href="../../">Home</a>
+                <a href="../../blog.html">Blog</a>
+                <a href="../../tutorial">Tutorial</a>
+                <a href="../../tips.html">Tips and tricks</a>
+                <a href="../../talks.html">Talks</a>
                 <a href="https://github.com/haskell-servant/servant">Github</a>
             </div>
         </div>
@@ -296,7 +296,7 @@ $ <span class="kw">curl</span> -X POST -d <span class="st">'{&quot;name&quot;:&q
 
 <span class="kw">instance</span> <span class="dt">ToText</span> <span class="dt">UserId</span> <span class="kw">where</span>
   toText (<span class="dt">UserId</span> i) <span class="fu">=</span> toText i</code></pre></div>
-<p>There’s not much else to say about these classes. You will need instances for them when using <code>Capture</code>, <code>QueryParam</code>, <code>QueryParams</code>, <code>MatrixParam</code>, <code>MatrixParams</code> and <code>Header</code> with your types. You will need <code>FromText</code> instances for server-side request handlers and <code>ToText</code> instances only when using <em>servant-client</em>, as described in the <a href="../tutorial/client.html">section about deriving haskell functions to query an API</a>.</p>
+<p>There’s not much else to say about these classes. You will need instances for them when using <code>Capture</code>, <code>QueryParam</code>, <code>QueryParams</code>, <code>MatrixParam</code>, <code>MatrixParams</code> and <code>Header</code> with your types. You will need <code>FromText</code> instances for server-side request handlers and <code>ToText</code> instances only when using <em>servant-client</em>, as described in the <a href="../../tutorial/0.4/client.html">section about deriving haskell functions to query an API</a>.</p>
 </section>
 <section id="using-content-types-with-your-data-types" class="level1">
 <h1>Using content-types with your data types</h1>
@@ -859,10 +859,10 @@ $ <span class="kw">curl</span> http://localhost:8081/b
 <p>You’re now equipped to write any kind of webservice/web-application using <em>servant</em>. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on <em>servant-client</em>, <em>servant-jquery</em> and <em>servant-docs</em>.</p>
 <div style="text-align: center;">
 <p>
-<a href="../tutorial/api-type.html">Previous page: A web API as a type</a>
+<a href="../../tutorial/0.4/api-type.html">Previous page: A web API as a type</a>
 </p>
 <p>
-<a href="../tutorial/client.html">Next page: Deriving Haskell functions to query an API</a>
+<a href="../../tutorial/0.4/client.html">Next page: Deriving Haskell functions to query an API</a>
 </p>
 </div>
 </section>

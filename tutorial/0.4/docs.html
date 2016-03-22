@@ -5,19 +5,19 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Generating documentation from API types - haskell-servant</title>
-        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../../css/default.css" />
     </head>
     <body>
         <div id="header">
             <div id="logo">
-                <a href="../">servant</a>
+                <a href="../../">servant</a>
             </div>
             <div id="navigation">
-                <a href="../">Home</a>
-                <a href="../blog.html">Blog</a>
-                <a href="../tutorial">Tutorial</a>
-                <a href="../tips.html">Tips and tricks</a>
-                <a href="../talks.html">Talks</a>
+                <a href="../../">Home</a>
+                <a href="../../blog.html">Blog</a>
+                <a href="../../tutorial">Tutorial</a>
+                <a href="../../tips.html">Tips and tricks</a>
+                <a href="../../talks.html">Talks</a>
                 <a href="https://github.com/haskell-servant/servant">Github</a>
             </div>
         </div>
@@ -46,7 +46,7 @@
 <span class="kw">import </span><span class="dt">Servant.API</span>
 <span class="kw">import </span><span class="dt">Servant.Docs</span>
 <span class="kw">import </span><span class="dt">Servant.Server</span></code></pre></div>
-<p>And we’ll import some things from one of our earlier modules (<a href="../tutorial/server.html">Serving an API</a>):</p>
+<p>And we’ll import some things from one of our earlier modules (<a href="../../tutorial/0.4/server.html">Serving an API</a>):</p>
 <div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Server</span> (<span class="dt">Email</span>(..), <span class="dt">ClientInfo</span>(..), <span class="dt">Position</span>(..), <span class="dt">HelloMessage</span>(..),
   server3, emailForClient)</code></pre></div>
 <p>Like client function generation, documentation generation amounts to inspecting the API type and extracting all the data we need to then present it in some format to users of your API.</p>
@@ -216,7 +216,7 @@ server <span class="fu">=</span> Server.server3 <span class="fu">:&lt;|&gt;</spa
 app <span class="fu">=</span> serve api server</code></pre></div>
 <p>And if you spin up this server with <code>dist/build/tutorial/tutorial 10</code> and go to anywhere else than <code>/position</code>, <code>/hello</code> and <code>/marketing</code>, you will see the API docs in markdown. This is because <code>serveDocs</code> is attempted if the 3 other endpoints don’t match and systematically succeeds since its definition is to just return some fixed bytestring with the <code>text/plain</code> content type.</p>
 <div style="text-align: center;">
-<p><a href="../tutorial/javascript.html">Previous page: Generating javascript functions to query an API</a></p>
+<p><a href="../../tutorial/0.4/javascript.html">Previous page: Generating javascript functions to query an API</a></p>
 </div>
 
         </div>
