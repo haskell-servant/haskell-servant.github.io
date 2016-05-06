@@ -1,4 +1,4 @@
-REPO_URL="git@github.com:haskell-servant/haskell-servant.github.io"
+REPO_URL="git@github.com:algas/haskell-servant.github.io"
 SERVANT_WWW="$HOME/.servant-www"
 SITE="$PWD/_site"
 CURRDIR="$PWD"
@@ -14,7 +14,7 @@ if [ ! -d $SERVANT_WWW ]; then
 fi
 
 cd $SERVANT_WWW
-git checkout master
+git checkout gh-pages
 git rm -r ./*
 cp -R $SITE/* ./ 
 git add ./**
