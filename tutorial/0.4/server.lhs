@@ -3,10 +3,9 @@ title: Serving an API
 toc: true
 ---
 
-Enough chit-chat about type-level combinators and representing an API as a
-type. Can we have a webservice already?
+型レベル結合子とAPIの種類についての説明はこのくらいにして、いよいよウェブサービスに進みましょう。
 
-If you want to follow along with the code and run the examples while you read this guide:
+このガイドに書いてあることを試してみるには、下記をコマンドを入力します。
 
 ``` bash
 cabal get servant-examples
@@ -16,9 +15,8 @@ cabal install --dependencies-only
 cabal configure && cabal build
 ```
 
-This will produce a `tutorial` executable in the
-`dist/build/tutorial` directory that just runs the example corresponding
-to the number specified as a command line argument:
+上記のコマンドは `tutorial` 実行ファイルを `dist/build/tutorial` というパスに生成します。
+コマンドライン引数に対応するサンプル番号を入れて実行します。
 
 ``` bash
 $ dist/build/tutorial/tutorial
@@ -29,10 +27,10 @@ Usage:   tutorial N
 A first example
 ===============
 
-Equipped with some basic knowledge about the way we represent API, let's now write our first webservice.
+APIを作る基礎知識は身につけたので、最初のウェブサービスを書いてみましょう。
 
-The source for this tutorial section is a literate haskell file, so first we
-need to have some language extensions and imports:
+この章のソースはliterate haskell fileで書いてあります。
+いくつかの言語拡張とライブラリインポートが必要です。
 
 > {-# LANGUAGE DataKinds #-}
 > {-# LANGUAGE DeriveGeneric #-}
@@ -72,13 +70,18 @@ need to have some language extensions and imports:
 {-# LANGUAGE TypeFamilies #-}
 ```
 
-**Important**: the `Servant` module comes from the *servant-server* package, the one that lets us run webservers that implement a particular API type. It reexports all the types from the *servant* package that let you declare API types as well as everything you need to turn your request handlers into a fully-fledged webserver. This means that in your applications, you can just add *servant-server* as a dependency, import `Servant` and not worry about anything else.
+**重要**: `Servant` モジュールは *servant-server* パッケージにあります。
+ウェブサーバを実行したり幾つかのAPIを実装しています。
+`Servant` モジュールは *servant* パッケージからすべての型をエクスポートしなおしています。
+リクエストハンドラをウェブサービスにするために必要なすべてのAPIが定義されています。
+つまり、依存パッケージに *servant-server* を追加して `Servant` をインポートするだけで
+うまくいくので他の心配は要らないということです。
 
-We will write a server that will serve the following API.
+次のAPIからサーバを書きます。
 
 > type UserAPI1 = "users" :> Get '[JSON] [User]
 
-Here's what we would like to see when making a GET request to `/users`.
+これは `/users` へ GET リクエストを送ると何が見えるかを示しています。
 
 ``` javascript
 [ {"name": "Isaac Newton", "age": 372, "email": "isaac@newton.co.uk", "registration_date": "1683-03-01"}
@@ -86,7 +89,7 @@ Here's what we would like to see when making a GET request to `/users`.
 ]
 ```
 
-Now let's define our `User` data type and write some instances for it.
+`User` データ型を定義して、インスタンスを書いてみましょう。
 
 > data User = User
 >   { name :: String
@@ -97,7 +100,7 @@ Now let's define our `User` data type and write some instances for it.
 >
 > instance ToJSON User
 
-Nothing funny going on here. But we now can define our list of two users.
+何も楽しくはありませんが、2人のユーザのリストを定義しましょう。
 
 > users1 :: [User]
 > users1 =
@@ -105,60 +108,53 @@ Nothing funny going on here. But we now can define our list of two users.
 >   , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
 >   ]
 
-Let's also write our API type.
+APIの型も書きましょう。
 
 ``` haskell
 type UserAPI1 = "users" :> Get '[JSON] [User]
 ```
 
-We can now take care of writing the actual webservice that will handle requests
-to such an API. This one will be very simple, being reduced to just a single
-endpoint. The type of the web application is determined by the API type,
-through a *type family* named `Server`. (Type families are just functions that
-take types as input and return types.)  The `Server` type family will compute
-the right type that a bunch of request handlers should have just from the
-corresponding API type.
+このようなAPIに対するリクエストを処理するウェブサービスを実際に書いてみましょう。このAPIは
+非常に単純で、1つのエンドポイントに絞られています。ウェブアプリケーションの型は `Server`
+という *type family* を通して API の型から決まります。(type family は入力と戻り値の型を
+型として持つ関数です。)  `Server` type family は大量のリスエストハンドラが持つ正しい型を
+対応するAPIの型から判別してくれます。
 
-The first thing to know about the `Server` type family is that behind the
-scenes it will drive the routing, letting you focus only on the business
-logic. The second thing to know is that for each endpoint, your handlers will
-by default run in the `EitherT ServantErr IO` monad. This is overridable very
-easily, as explained near the end of this guide. Third thing, the type of the
-value returned in that monad must be the same as the second argument of the
-HTTP method combinator used for the corresponding endpoint. In our case, it
-means we must provide a handler of type `EitherT ServantErr IO [User]`. Well,
-we have a monad, let's just `return` our list:
+`Server` type family について知るべきことは、それが裏でひっそりとルーティングを制御
+しているので、ビジネスロジックに専念できるということです。また、個々のエンドポイントごと
+にハンドラがデフォルトでは `EitherT ServantErr IO` モナド内で動きます。モナド内で返る
+値の型は、対応するエンドポイント使われるHTTPメソッド結合子の二番目の引数と同じでなければ
+なりません。前述のAPIの場合、`EitherT ServantErr IO [User]` 型のハンドラを用意しなけ
+ればなりません。モナドが手に入ったので、ユーザ一覧を返してみましょう。
 
 > server1 :: Server UserAPI1
 > server1 = return users1
 
-That's it. Now we can turn `server` into an actual webserver using [wai](http://hackage.haskell.org/package/wai) and [warp](http://hackage.haskell.org/package/warp):
+よくできました。
+[wai](http://hackage.haskell.org/package/wai) と [warp](http://hackage.haskell.org/package/warp)
+を使えば、`server` を実際のウェブサーバにすることができます。
 
 > userAPI :: Proxy UserAPI1
 > userAPI = Proxy
 >
-> -- 'serve' comes from servant and hands you a WAI Application,
-> -- which you can think of as an "abstract" web application,
-> -- not yet a webserver.
+> -- 'serve' は servant から与えられたもので WAI アプリケーションと接続します。
+> -- "抽象的な" ウェブアプリケーションであってウェブサーバのことではありません。
 > app1 :: Application
 > app1 = serve userAPI server1
 
-The `userAPI` bit is, alas, boilerplate (we need it to guide type inference).
-But that's about as much boilerplate as you get.
+`userAPI` は悲しいかな、ボイラープレートです。(型推論の助けが必要です)
+しかし、これ以外にボイラープレートはありません。
 
-And we're done! Let's run our webservice on the port 8081.
+これで 8081 ポートで動くウェブサービスができました！
 
 > main :: IO ()
 > main = run 8081 app1
 
-You can put this all into a file or just grab [servant's
-repo](http://github.com/haskell-servant/servant) and look at the
-*servant-examples* directory. The code we have just explored is in
-*tutorial/T1.hs*, runnable with
-`dist/build/tutorial/tutorial 1`.
+これを1つのファイルに書くか、[servant's repo](http://github.com/haskell-servant/servant)
+を取ってきて *servant-examples* ディレクトリを見てみましょう。コードは *tutorial/T1.hs* に
+あります。`dist/build/tutorial/tutorial 1` コマンドで動作します。
 
-If you run it, you can go to `http://localhost:8081/users` in your browser or
-query it with curl and you see:
+もし動かせたら、ウェブブラウザか curl で `http://localhost:8081/users` を見てみましょう。
 
 ``` bash
 $ curl http://localhost:8081/users
@@ -168,13 +164,13 @@ $ curl http://localhost:8081/users
 More endpoints
 ==============
 
-What if we want more than one endpoint? Let's add `/albert` and `/isaac` to view the corresponding users encoded in JSON.
+1つ以上のエンドポイントが必要な時は次のようにしましょう。JSONエンコードされたユーザ情報を見るために `/albert` と `/isaac` を追加します。
 
 > type UserAPI2 = "users" :> Get '[JSON] [User]
 >            :<|> "albert" :> Get '[JSON] User
 >            :<|> "isaac" :> Get '[JSON] User
 
-And let's adapt our code a bit.
+それに合わせて、コードも少し直します。
 
 > isaac :: User
 > isaac = User "Isaac Newton" 372 "isaac@newton.co.uk" (fromGregorian 1683 3 1)
@@ -185,31 +181,27 @@ And let's adapt our code a bit.
 > users2 :: [User]
 > users2 = [isaac, albert]
 
-Now, just like we separate the various endpoints in `UserAPI` with `:<|>`, we
-are going to separate the handlers with `:<|>` too! They must be provided in
-the same order as the one they appear in in the API type.
+`UserAPI` の中で `:<|>` を使ってエンドポイントを分けたように、ハンドラも `:<|>` を使って分けます。
+ただし、API の type で宣言したのと同じ順番で並べなければなりません。
 
 > server2 :: Server UserAPI2
 > server2 = return users2
 >      :<|> return albert
 >      :<|> return isaac
 
-And that's it! You can run this example with
-`dist/build/tutorial/tutorial 2` and check out the data available
-at `/users`, `/albert` and `/isaac`.
+これで完成です！ この例題は `dist/build/tutorial/tutorial 2` で実行できます。
+`/users`, `/albert`, `/isaac` で確認してみましょう。
 
 From combinators to handler arguments
 =====================================
 
-Fine, we can write trivial webservices easily, but none of the two above use
-any "fancy" combinator from servant. Let's address this and use `QueryParam`,
-`Capture` and `ReqBody` right away. You'll see how each occurence of these
-combinators in an endpoint makes the corresponding handler receive an
-argument of the appropriate type automatically. You don't have to worry about
-manually looking up URL captures or query string parameters, or
-decoding/encoding data from/to JSON. Never.
+それで、簡単にちょっとしたウェブサービスを書けるようになったが、上記の2つはどちらも servant にある
+"変な"結合子は使っていない。とにかく `QueryParam`, `Capture`, `ReqBody` を使ってみよう。
+この項目では、エンドポイントにあるこれらの結合子が、どのようにして対応するハンドラに適切な型を持つ引数を
+自動的に受け取らせるかが書いてあります。URLキャプチャやクエリストリングパラメータ、JSONへのデータ変換
+などを調べる手間を心配するは必要はありません。心配無用です。
 
-We are going to use the following data types and functions to implement a server for `API`.
+以下のデータ型と関数を使ってサーバの `API` を実装しましょう。
 
 > type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
 >       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
@@ -258,7 +250,7 @@ We are going to use the following data types and functions to implement a server
 >                 ++ intercalate ", " (clientInterestedIn c)
 >                 ++ " products? Give us a visit!"
 
-We can implement handlers for the three endpoints:
+ハンドラの3つのエンドポイントを実装します。
 
 > server3 :: Server API
 > server3 = position
@@ -276,18 +268,17 @@ We can implement handlers for the three endpoints:
 >         marketing :: ClientInfo -> EitherT ServantErr IO Email
 >         marketing clientinfo = return (emailForClient clientinfo)
 
-Did you see that? The types for your handlers changed to be just what we
-needed! In particular:
+上記を見てください。ハンドラの型は必要な形に変わっています。
+特に注目すべきは以下の箇所です。
 
-  - a `Capture "something" a` becomes an argument of type `a` (for `position`);
-  - a `QueryParam "something" a` becomes an argument of type `Maybe a` (because
-an endpoint can technically be accessed without specifying any query
-string parameter, we decided to "force" handlers to be aware that the
-parameter might not always be there);
+  - `Capture "something" a` は 型 `a` の引数を持ちます (`position` の箇所です)
+  - `QueryParam "something" a` 型 `Maybe a` の引数を持ちます (エンドポイントは
+  クエリ文字列パラメータなしでアクセスできるので、ハンドラにパラメータが必ずしも必要
+  ではないことを明示できます。
+  - `ReqBody contentTypeList a` は 型 `a` の引数を持ちます。
 
-  - a `ReqBody contentTypeList a` becomes an argument of type `a`;
-
-And that's it. You can see this example in action by running `dist/build/tutorial/tutorial 3`.
+以上です。
+この例題は `dist/build/tutorial/tutorial 3` で実行できます。
 
 ``` bash
 $ curl http://localhost:8081/position/1/2
@@ -300,29 +291,25 @@ $ curl -X POST -d '{"name":"Alp Mestanogullari", "email" : "alp@foo.com", "age":
 {"subject":"Hey Alp Mestanogullari, we miss you!","body":"Hi Alp Mestanogullari,\n\nSince you've recently turned 25, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
 ```
 
-For reference, here's a list of some combinators from *servant* and for those
-that get turned into arguments to the handlers, the type of the argument.
+参考までに、*servant* の結合子の一覧、引数からハンドラへの変換、引数の型についてまとめました。
 
- > - `Delete`, `Get`, `Patch`, `Post`, `Put`: these do not become arguments. They provide the return type of handlers, which usually is `EitherT ServantErr IO <something>`.
- > - `Capture "something" a` becomes an argument of type `a`.
- > - `QueryParam "something" a`, `MatrixParam "something" a`, `Header "something" a` all become arguments of type `Maybe a`, because there might be no value at all specified by the client for these.
- > - `QueryFlag "something"` and `MatrixFlag "something"` get turned into arguments of type `Bool`.
- > - `QueryParams "something" a` and `MatrixParams "something" a` get turned into arguments of type `[a]`.
- > - `ReqBody contentTypes a` gets turned into an argument of type `a`.
+ > - `Delete`, `Get`, `Patch`, `Post`, `Put`: これらは引数にはならず、ハンドラの戻り値の型を示します。通常は `EitherT ServantErr IO <something>` のように表されます。
+ > - `Capture "something" a` は `a` 型の引数となります.
+ > - `QueryParam "something" a`, `MatrixParam "something" a`, `Header "something" a` はすべて `Maybe a` 型の引数となります。クライアントから渡される値がなくても大丈夫です。
+ > - `QueryFlag "something"` と `MatrixFlag "something"` は `Bool` 型の引数になります.
+ > - `QueryParams "something" a` と `MatrixParams "something" a` は `[a]` 型の引数となります。
+ > - `ReqBody contentTypes a` は `a` 型の引数となります.
 
 The `FromText`/`ToText` classes
 ===============================
 
-Wait... How does *servant* know how to decode the `Int`s from the URL? Or how
-to decode a `ClientInfo` value from the request body? This is what this and the
-following two sections address.
+servant は URL から `Int` にデコードしたり、リクエストボディから `ClientInfo` の値をデコードしたりする
+方法をどうやって知るのでしょうか？ この章と次の章でそれが明らかになります。
 
-`Capture`s and `QueryParam`s are represented by some textual value in URLs.
-`Header`s are similarly represented by a pair of a header name and a
-corresponding (textual) value in the request's "metadata". This is why we
-decided to provide a pair of typeclasses, `FromText` and `ToText` which just
-let you say that you can respectively *extract* or *encode* values of some type
-*from*/*to* text. Here are the definitions:
+`Capture` と `QueryParam` は URL 内にテキストで書かれています。`Header` はリクエストの
+メタデータ内にヘッダ名と値が同じようにテキストで書かれています。servant で `FromText` と `ToText`
+という2つの型クラスが提供されている理由は、これら各々のテキストから値または値からテキストへと変換できる
+ようにするためです。定義は以下のとおりです：
 
 ``` haskell
 class FromText a where
@@ -332,12 +319,11 @@ class ToText a where
   toText :: a -> Text
 ```
 
-And as long as the type that a `Capture`/`QueryParam`/`Header`/etc will be
-decoded to provides a `FromText` instance, it will Just Work. *servant*
-provides a decent number of instances, but here are some examples of defining
-your own.
+`Capture` や `QueryParam`, `Header` などは `FromText` インスタンスを提供してあげれば、
+正しく動作します。*servant* は十分な数のインスタンスを提供していますが、自分で定義する場合の
+例を以下に示します。
 
-> -- A typical enumeration
+> -- 典型的な enumeration
 > data Direction
 >   = Up
 >   | Down
@@ -345,7 +331,7 @@ your own.
 >   | Right
 >
 > instance FromText Direction where
->   -- requires {-# LANGUAGE OverloadedStrings #-}
+>   -- {-# LANGUAGE OverloadedStrings #-} が必要
 >   fromText "up"    = Just Up
 >   fromText "down"  = Just Down
 >   fromText "left"  = Just Server.Left
@@ -361,7 +347,7 @@ your own.
 > newtype UserId = UserId Int64
 >   deriving (FromText, ToText)
 
-or writing the instances by hand:
+もしくは以下のようにも書けます。
 
 ``` haskell
 instance FromText UserId where
@@ -371,28 +357,25 @@ instance ToText UserId where
   toText (UserId i) = toText i
 ```
 
-There's not much else to say about these classes. You will need instances for
-them when using `Capture`, `QueryParam`, `QueryParams`, `MatrixParam`,
-`MatrixParams` and `Header` with your types. You will need `FromText` instances
-for server-side request handlers and `ToText` instances only when using
-*servant-client*, as described in the [section about deriving haskell
-functions to query an API](/tutorial/0.4/client.html).
+これらの class について言うことは他に何もありません。`Capture`, `QueryParam`, `QueryParams`, 
+`MatrixParam`, `MatrixParams`, `Header` そして自作の型を使う時にはそれらのインスタンスが必要です。
+`FromText` インスタンスはサーバサイドで、`ToText` インスタンスは *servant-client* でのみ使います。
+servant-client については [section about deriving haskell functions to query an API](/tutorial/client.html)
+ に書きます。
 
 Using content-types with your data types
 ========================================
 
-The same principle was operating when decoding request bodies from JSON, and
-responses *into* JSON. (JSON is just the running example - you can do this with
-any content-type.)
+JSON からリクエストボディをデコードするまたはレスポンスから JSON をエンコードするときにも
+同じ原則が使われます (JSON は実行可能な例題で、任意の content-type で使うことができます)
 
-This section introduces a couple of typeclasses provided by *servant* that make
-all of this work.
+この章では *servant* が提供する2つの型クラスを紹介します。
 
 The truth behind `JSON`
 -----------------------
 
-What exactly is `JSON`? Like the 3 other content types provided out of the box
-by *servant*, it's a really dumb data type.
+`JSON` とは一体何でしょうか？ JSON は *servant* が提供する他の2つの content-type と同じように
+ダンプデータ型です。
 
 ``` haskell
 data JSON
@@ -401,19 +384,15 @@ data FormUrlEncoded
 data OctetStream
 ```
 
-Obviously, this is not all there is to `JSON`, otherwise it would be quite
-pointless. Like most of the data types in *servant*, `JSON` is mostly there as
-a special *symbol* that's associated with encoding (resp. decoding) to (resp.
-from) the *JSON* format. The way this association is performed can be
-decomposed into two steps.
+明らかにこれは `JSON` になるためのすべてではないし、全く要領を得ないとも言える。*servant* 内の
+多くのデータ型と同様に、`JSON` は JSON フォーマットへエンコードする特別なシンボルでもあります。
+この関係をつなぐ方法は2つのステップに分けられます。
 
-The first step is to provide a proper
+初めのステップは `JSON` または自前の content-type を表すのに適した 
 [`MediaType`](https://hackage.haskell.org/package/http-media-0.6.2/docs/Network-HTTP-Media.html)
-representation for `JSON`, or for your own content types. If you look at the
-haddocks from this link, you can see that we just have to specify
-`application/json` using the appropriate functions. In our case, we can just
-use `(//) :: ByteString -> ByteString -> MediaType`. The precise way to specify
-the `MediaType` is to write an instance for the `Accept` class:
+を提供することです。このリンクから haddock を生成するには、適切な関数を使って `application/json` を
+指定しなければなりません。この場合には、`(//) :: ByteString -> ByteString -> MediaType` を
+使いましょう。正しく `MediaType` を指定するには、`Accept` クラスのインスタンスを書きましょう。
 
 ``` haskell
 -- for reference:
@@ -424,9 +403,8 @@ instance Accept JSON where
     contentType _ = "application" // "json"
 ```
 
-The second step is centered around the `MimeRender` and `MimeUnrender` classes.
-These classes just let you specify a way to respectively encode and decode
-values respectively into or from your content-type's representation.
+2番目のステップは `MimeRender` と `MimeUnrender` クラスを中心としたことです。
+これらのクラスは値を自前の content-type に変換する方法を示します。
 
 ``` haskell
 class Accept ctype => MimeRender ctype a where
@@ -435,20 +413,20 @@ class Accept ctype => MimeRender ctype a where
     mimeRender  :: Proxy ctype -> (a -> ByteString)
 ```
 
-Given a content-type and some user type, `MimeRender` provides a function that
-encodes values of type `a` to lazy `ByteString`s.
+content-type と user type を与えると、`MimeRender`は`a`型の値を遅延`ByteString`型
+にエンコードする機能を提供します。
 
-In the case of `JSON`, this is easily dealt with! For any type `a` with a
-`ToJSON` instance, we can render values of that type to JSON using
-`Data.Aeson.encode`.
+`JSON` の場合は簡単です。任意の `a` 型に対する `ToJSON` インスタンスにおいて、
+`Data.Aeson.encode` を使うとその型の値を JSON に変換できます。
 
 ``` haskell
 instance ToJSON a => MimeRender JSON a where
   mimeRender _ = encode
 ```
 
-And now the `MimeUnrender` class, which lets us extract values from lazy
-`ByteString`s, alternatively failing with an error string.
+
+`MimeUnrender` クラスを使うと、遅延`ByteString`から値を抽出できる、もしくは
+エラー文字列を出して失敗します。
 
 ``` haskell
 class Accept ctype => MimeUnrender ctype a where
@@ -457,60 +435,53 @@ class Accept ctype => MimeUnrender ctype a where
     mimeUnrender :: Proxy ctype -> (ByteString -> Either String a)
 ```
 
-We don't have much work to do there either, `Data.Aeson.eitherDecode` is
-precisely what we need. However, it only allows arrays and objects as toplevel
-JSON values and this has proven to get in our way more than help us so we wrote
-our own little function around *aeson* and *attoparsec* that allows any type of
-JSON value at the toplevel of a "JSON document". Here's the definition in case
-you are curious.
+`Data.Aeson.eitherDecode` を使えば either についてすることはほとんどありません。
+しかし、トップレベル JSON の値として配列かオブジェクトしか許されておらず、"JSONドキュメント"
+のトップレベルで任意の型のJSONの値を使うことができる *aeson* や *attoparsec* を使って
+ちょっとした関数を書くほうがよく使われています。以下に定義を示します。
 
 > eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
 > eitherDecodeLenient input = do
 >     v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
 >     parseEither parseJSON v
 
-This function is exactly what we need for our `MimeUnrender` instance.
+以下の関数はまさに `MimeUnrender` インスタンスに必要なものです。
 
 ``` haskell
 instance FromJSON a => MimeUnrender JSON a where
     mimeUnrender _ = eitherDecodeLenient
 ```
 
-And this is all the code that lets you use `JSON` for with `ReqBody`, `Get`,
-`Post` and friends. We can check our understanding by implementing support
-for an `HTML` content type, so that users of your webservice can access an
-HTML representation of the data they want, ready to be included in any HTML
-document, e.g. using [jQuery's `load` function](https://api.jquery.com/load/), simply by adding `Accept:
-text/html` to their request headers.
+`ReqBody`, `Get`, `Post` そして友達のために `JSON` を使うためのすべてのコードができました。 
+どのくらい理解が進んだかを確認するために `HTML` content-type に対応する実装をしてみましょう。
+そして、そのウェブサービスのユーザが HTML データにアクセスできて、HTMLドキュメントをインクルード
+できる準備ができているかは、例えば [jQuery's `load` function](https://api.jquery.com/load/)
+を使ったり、リクエストヘッダに `Accept: text/html` を追加すれば確認できます。
 
 Case-studies: *servant-blaze* and *servant-lucid*
 -------------------------------------------------
 
-These days, most of the haskellers who write their HTML UIs directly from
-Haskell use either [blaze-html](http://hackage.haskell.org/package/blaze-html)
-or [lucid](http://hackage.haskell.org/package/lucid). The best option for
-*servant* is obviously to support both (and hopefully other templating
-solutions!).
+Haskell から直接 HTML UI を書くには、最近では [blaze-html](http://hackage.haskell.org/package/blaze-html)
+や [lucid](http://hackage.haskell.org/package/lucid) が使われています。
+*servant* ではどちらもサポートされています。
 
 > data HTMLLucid
 
-Once again, the data type is just there as a symbol for the encoding/decoding
-functions, except that this time we will only worry about encoding since
-*blaze-html* and *lucid* don't provide a way to extract data from HTML.
+改めて書きますが、データ型は関数を変換する記法です。*blaze-html* と *lucid* は HTML から
+データを抽出する方法を提供しないので、今回はエンコードについて心配しないことにします。
 
-Both packages also have the same `Accept` instance for their `HTMLLucid` type.
+両方のパッケージともに同じく `HTMLLucid` 型の `Accept` インスタンスを持ちます。
 
 > instance Accept HTMLLucid where
 >     contentType _ = "text" // "html" /: ("charset", "utf-8")
 
-Note that this instance uses the `(/:)` operator from *http-media* which lets
-us specify additional information about a content-type, like the charset here.
+注目すべきは、このインスタンスは *http-media* にある `(/:)` 演算子を使っていることです。
+この演算子は、上記の charset のような content-type についての追加情報を示します。
 
-The rendering instances for both packages both call similar functions that take
-types with an appropriate instance to an "abstract" HTML representation and
-then write that to a `ByteString`.
+両方のパッケージでレンダリングインスタンスは似たような関数を呼び出す。その関数は適切な
+インスタンスで型を"抽象的な"HTML表現に変え、`ByteString`で書き出す。
 
-For *lucid*:
+*lucid* の場合:
 
 > instance ToHtml a => MimeRender HTMLLucid a where
 >     mimeRender _ = renderBS . toHtml
@@ -520,7 +491,7 @@ For *lucid*:
 > instance MimeRender HTMLLucid (Html a) where
 >     mimeRender _ = renderBS
 
-For *blaze-html*:
+*blaze-html* の場合:
 
 > -- For this tutorial to compile 'HTMLLucid' and 'HTMLBlaze' have to be
 > -- distinct. Usually you would stick to one html rendering library and then
@@ -538,19 +509,19 @@ For *blaze-html*:
 > instance MimeRender HTMLBlaze Text.Blaze.Html.Html where
 >     mimeRender _ = renderHtml
 
-Both [servant-blaze](http://hackage.haskell.org/package/servant-blaze) and
-[servant-lucid](http://hackage.haskell.org/package/servant-lucid) let you use
-`HTMLLucid` in any content type list as long as you provide an instance of the
-appropriate class (`ToMarkup` for *blaze-html*, `ToHtml` for *lucid*).
+適切なクラス(*blaze-html* では `ToMarkup`、 *lucid* では `ToHtml`)のインスタンスを
+用意できる限り、[servant-blaze](http://hackage.haskell.org/package/servant-blaze) と
+[servant-lucid](http://hackage.haskell.org/package/servant-lucid) の両方ともが
+content-type リストで `HTMLLucid` を使えます。
 
-We can now write webservice that uses *servant-lucid* to show the `HTMLLucid`
-content type in action. First off, imports and pragmas as usual.
+`HTMLLucid` を表示するために *servant-lucid* を使うウェブサービスを書いてみましょう。
+まずは import や pragma などを書きます。
 
-We will be serving the following API:
+次の API を用意します。
 
 > type PersonAPI = "persons" :> Get '[JSON, HTMLLucid] [Person]
 
-where `Person` is defined as follows:
+`Person` は以下のように定義します。
 
 > data Person = Person
 >   { firstName :: String
@@ -559,8 +530,8 @@ where `Person` is defined as follows:
 >
 > instance ToJSON Person
 
-Now, let's teach *lucid* how to render a `Person` as a row in a table, and then
-a list of `Person`s as a table with a row per person.
+*lucid* に `Person` をテーブルの列として描画する方法を示しましょう。そして、`Person`
+のリストは person ごとの列として扱います。
 
 > -- HTML serialization of a single person
 > instance ToHtml Person where
@@ -585,7 +556,7 @@ a list of `Person`s as a table with a row per person.
 >
 >   toHtmlRaw = toHtml
 
-We create some `Person` values and serve them as a list:
+`Person` の値を作り、その一覧をサーバで扱いましょう。
 
 > persons :: [Person]
 > persons =
@@ -602,7 +573,8 @@ We create some `Person` values and serve them as a list:
 > app2 :: Application
 > app2 = serve personAPI server4
 
-And we're good to go. You can run this example with `dist/build/tutorial/tutorial 4`.
+これで大丈夫です。
+この例題は `dist/build/tutorial/tutorial 4` で実行できます。
 
 ``` bash
  $ curl http://localhost:8081/persons
@@ -615,17 +587,13 @@ And we're good to go. You can run this example with `dist/build/tutorial/tutoria
 The `EitherT ServantErr IO` monad
 =================================
 
-At the heart of the handlers is the monad they run in, namely `EitherT
-ServantErr IO`. One might wonder: why this monad? The answer is that it is the
-simplest monad with the following properties:
+ハンドラの中心には `EitherT ServantErr IO` モナドがあります。1つ不思議な事は、どうしてこのモナド
+なのでしょうか？ 答えは、以下の性質を持つ最も単純なモナドだから、です。
 
-- it lets us both return a successful result (with the `Right` branch of
-`Either`) or "fail" with a descriptive error (with the `Left` branch of
-`Either`);
-- it lets us perform IO, which is absolutely vital since most webservices exist
-as interfaces to databases that we interact with in `IO`;
+- 成功した場合の結果または失敗した場合のエラーを返します。
+- IO を取り扱えます。多くのウェブサービスは `IO` で扱うデータベースのインターフェースとして存在します。
 
-Let's recall some definitions.
+定義を思い出してみましょう。
 
 ``` haskell
 -- from the Prelude
@@ -637,34 +605,35 @@ newtype EitherT e m a
   = EitherT { runEitherT :: m (Either e a) }
 ```
 
-In short, this means that a handler of type `EitherT ServantErr IO a` is simply
-equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO
-action that either returns an error or a result.
+要するに、`EitherT ServantErr IO a` 型のハンドラは `IO (Either ServantErr a)` 型を操作したもの
+と単に等価であることを意味しています。これはつまりエラーか結果を返す IO アクションです。
 
-The aforementioned `either` package is worth taking a look at. Perhaps most
-importantly:
+前述の `either` パッケージは見る価値があります。以下も大事なことです。
 
 ``` haskell
 left :: Monad m => e -> EitherT e m a
 ```
-Allows you to return an error from your handler (whereas `return` is enough to
-return a success).
 
-Most of what you'll be doing in your handlers is running some IO and,
-depending on the result, you might sometimes want to throw an error of some
-kind and abort early. The next two sections cover how to do just that.
+これを使うとハンドラからエラーを返せます。
+
+ハンドラで処理しようとしていることの多くは IO を動かすことで、その結果によってエラーを返したり、
+処理を中断したりしたいと思うかもしれません。次の2つの章ではこの方法を示します。
 
 Performing IO
 -------------
 
-Another important instance from the list above is `MonadIO m => MonadIO (EitherT e m)`. [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html) is a class from the *transformers* package defined as:
+上述のうちのもう1つの大事なインスタンスは、`MonadIO m => MonadIO (EitherT e m)` です。
+[`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html) 
+は、*transformers* パッケージにあるクラスで、以下のように定義されています。
 
 ``` haskell
 class Monad m => MonadIO m where
   liftIO :: IO a -> m a
 ```
 
-Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type `e`, `EitherT e IO` has a `MonadIO` instance. So if you want to run any kind of IO computation in your handlers, just use `liftIO`:
+明らかに、IO モナドは `MonadIO` インスタンスを提供しています。
+したがって、任意の `e` 型において、`EitherT e IO` は `MonadIO` を持っています。
+ハンドラ内で IO 操作する任意の kind を実行したければ、`liftIO` を使いましょう。
 
 > type IOAPI1 = "myfile.txt" :> Get '[JSON] FileContent
 >
@@ -682,11 +651,9 @@ Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type `e`,
 Failing, through `ServantErr`
 -----------------------------
 
-If you want to explicitly fail at providing the result promised by an endpoint
-using the appropriate HTTP status code (not found, unauthorized, etc) and some
-error message, all you have to do is use the `left` function mentioned above
-and provide it with the appropriate value of type `ServantErr`, which is
-defined as:
+もし適切なHTTPステータスコードとエラーメッセージを使ってエンドポイントで決められた結果を
+明示的に失敗させたいのであれば、上述の `left` 関数を使うか、`ServantErr` 型の適切な値を
+生成しましょう。ServantErr は以下のように定義されています。
 
 ``` haskell
 data ServantErr = ServantErr
@@ -697,9 +664,8 @@ data ServantErr = ServantErr
     }
 ```
 
-Many standard values are provided out of the box by the `Servant.Server`
-module.  If you want to use these values but add a body or some headers, just
-use record update syntax:
+多くの標準的な値は、`Servant.Server` モジュールで提供されています。もしこれらの値を使うけど
+一部を変更したい場合には、以下の record update syntax を使いましょう。
 
 > failingHandler :: EitherT ServantErr IO ()
 > failingHandler = left myerr
@@ -707,8 +673,8 @@ use record update syntax:
 >   where myerr :: ServantErr
 >         myerr = err503 { errBody = "Sorry dear user." }
 
-Here's an example where we return a customised 404-Not-Found error message in
-the response body if "myfile.txt" isn't there:
+以下の例は、"myfile.txt" が存在しなかった場合にレスポンスボディに含まれるカスタマイズされた 
+404-Not-Found エラーメッセージです。
 
 > server6 :: Server IOAPI1
 > server6 = do
@@ -719,8 +685,8 @@ the response body if "myfile.txt" isn't there:
 >
 >   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
 
-Let's run this server (`dist/build/tutorial/tutorial 5`) and
-query it, first without the file and then with the file.
+`dist/build/tutorial/tutorial 5` でこのサーバを動かせます。
+初めはファイルが存在しない状態でクエリを送ってみましょう。
 
 ``` bash
  $ curl --verbose http://localhost:8081/myfile.txt
@@ -755,40 +721,36 @@ query it, first without the file and then with the file.
 Response headers
 ================
 
-To add headers to your response, use [addHeader](http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html).
-Note that this changes the type of your API, as we can see in the following example:
+レスポンスにヘッダを加えるためには [addHeader](http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html)
+を使います。以下の例のように API の型が変わることに注意しましょう。
 
 > type MyHandler = Get '[JSON] (Headers '[Header "X-An-Int" Int] User)
 >
 > myHandler :: Server MyHandler
 > myHandler = return $ addHeader 1797 albert
 
-
 Serving static files
 ====================
 
-*servant-server* also provides a way to just serve the content of a directory
-under some path in your web API. As mentioned earlier in this document, the
-`Raw` combinator can be used in your APIs to mean "plug here any WAI
-application". Well, servant-server provides a function to get a file and
-directory serving WAI application, namely:
+*servant-server* は Web API 内でのあるパス以下のディレクトリのコンテンツをサーブする方法も提供します。
+`Raw` 結合子は任意の WAI アプリケーションをつなぐ API で使われます。servant-server は WAI アプリを
+サーブするのにファイルやディレクトリを取得する機能を提供すます。
 
 ``` haskell
 -- exported by Servant and Servant.Server
 serveDirectory :: FilePath -> Server Raw
 ```
 
-`serveDirectory`'s argument must be a path to a valid directory. You can see an
-example below, runnable with `dist/build/tutorial/tutorial 6`
-(you **must** run it from within the *servant-examples/* directory!), which is
-a webserver that serves the various bits of code covered in this
-getting-started.
+`serveDirectory` の引数は有効なディレクトリへのパスでなければなりません。
+以下に例を示します。これは `dist/build/tutorial/tutorial 6` でこのサーバを動かせます。
+(必ず *servant-examples/* ディレクトリで動かさなければなりません)
+このチュートリアルで網羅されている大量のコードを動かすウェブサーバです。
 
-The API type will be the following.
+API の定義は次のようになります。
 
 > type CodeAPI = "code" :> Raw
 
-And the server:
+サーバ
 
 > codeAPI :: Proxy CodeAPI
 > codeAPI = Proxy
@@ -799,15 +761,17 @@ And the server:
 > app3 :: Application
 > app3 = serve codeAPI server7
 
-This server will match any request whose path starts with `/code` and will look for a file at the path described by the rest of the request path, inside the *tutorial/* directory of the path you run the program from.
+このサーバは `/code` でパスが始まる任意のリクエストにマッチします。
+そしてこのプログラムを動かしているパスの *tutorial/* ディレクトリの中で、
+残りのリクエストパスで指定されるパスでファイルを探します。
 
-In other words:
+これは以下のようにも言えます。
 
-- If a client requests `/code/foo.txt`, the server will look for a file at `./tutorial/foo.txt` (and fail)
-- If a client requests `/code/T1.hs`, the server will look for a file at `./tutorial/T1.hs` (and succeed)
-- If a client requests `/code/foo/bar/baz/movie.mp4`, the server will look for a file at `./tutorial/foo/bar/baz/movie.mp4` (and fail)
+- もしクライアントが `/code/foo.txt` をリクエストした場合、サーバは `./tutorial/foo.txt` を探します。(これは失敗します。)
+- もしクライアントが `/code/T1.hs` をリクエストした場合、サーバは `./tutorial/T1.hs` を探します。(これは成功します。)
+- もしクライアントが `/code/foo/bar/baz/movie.mp4` をリクエストした場合、サーバは `./tutorial/foo/bar/baz/movie.mp4` を探します。(これは失敗します。)
 
-Here is our little server in action.
+これが実際に動くサーバです。
 
 ``` haskell
 $ curl http://localhost:8081/code/T1.hs
@@ -901,7 +865,8 @@ not found
 Nested APIs
 ===========
 
-Let's see how you can define APIs in a modular way, while avoiding repetition. Consider this simple example:
+重複を避けて、組み立て式の方法でどうやってAPIを定義することができるか見てみましょう。
+シンプルな例を考えます。
 
 > type UserAPI3 = -- view the user with given userid, in JSON
 >                 Capture "userid" Int :> Get '[JSON] User
@@ -909,14 +874,14 @@ Let's see how you can define APIs in a modular way, while avoiding repetition. C
 >            :<|> -- delete the user with given userid. empty response
 >                 Capture "userid" Int :> Delete '[] ()
 
-We can instead factor out the `userid`:
+むしろ `userid` をくくりだすことができます。
 
 > type UserAPI4 = Capture "userid" Int :>
 >   (    Get '[JSON] User
 >   :<|> Delete '[] ()
 >   )
 
-However, you have to be aware that this has an effect on the type of the corresponding `Server`:
+しかし、対応する `Server` の型に影響することには注意しなければなりません。
 
 ``` haskell
 Server UserAPI3 = (Int -> EitherT ServantErr IO User)
@@ -927,8 +892,9 @@ Server UserAPI4 = Int -> (    EitherT ServantErr IO User
                          )
 ```
 
-In the first case, each handler receives the *userid* argument. In the latter,
-the whole `Server` takes the *userid* and has handlers that are just computations in `EitherT`, with no arguments. In other words:
+前者の場合には、ハンドラごとに *userid* 引数を取ります。
+後者の場合には、`Server` 全体が *userid* を取り、引数無しで `EitherT` を処理するハンドラを持ちます。
+以下のようにも書けます。
 
 > server8 :: Server UserAPI3
 > server8 = getUser :<|> deleteUser
@@ -951,7 +917,9 @@ the whole `Server` takes the *userid* and has handlers that are just computation
 >         deleteUser :: Int -> EitherT ServantErr IO ()
 >         deleteUser = error "..."
 
-Note that there's nothing special about `Capture` that lets you "factor it out": this can be done with any combinator. Here are a few examples of APIs with a combinator factored out for which we can write a perfectly valid `Server`.
+くくりだせる `Capture` は何も特別でなく、任意の結合子に対して可能であることに注目しましょう。
+くくりだせる結合子を使ったいくつかの API の例を示します。
+これを使えば完全に有効に機能するサーバを書くことができます。
 
 > -- we just factor out the "users" path fragment
 > type API1 = "users" :>
@@ -974,7 +942,8 @@ Note that there's nothing special about `Capture` that lets you "factor it out":
 > newtype Token = Token ByteString
 > newtype SecretData = SecretData ByteString
 
-This approach lets you define APIs modularly and assemble them all into one big API type only at the end.
+このアプローチでモジュール構造のAPIを定義できます。
+最終的に巨大な API type として組み立てることができます。
 
 > type UsersAPI =
 >        Get '[JSON] [User] -- list users
@@ -1046,7 +1015,7 @@ This approach lets you define APIs modularly and assemble them all into one big 
 > server10 :: Server CombinedAPI
 > server10 = usersServer :<|> productsServer
 
-Finally, we can realize the user and product APIs are quite similar and abstract that away:
+最後に、user と product API がほとんど同じなので、1つにまとめることができます。
 
 > -- API for values of type 'a'
 > -- indexed by values of type 'i'
@@ -1074,21 +1043,25 @@ Finally, we can realize the user and product APIs are quite similar and abstract
 Using another monad for your handlers
 =====================================
 
-Remember how `Server` turns combinators for HTTP methods into `EitherT ServantErr IO`? Well, actually, there's more to that. `Server` is actually a simple type synonym.
+`Server` が HTTP メソッドの結合子をどのように `EitherT ServantErr IO` に変えたのかを思い出してみましょう。
+`Server` は実際には単純な type synonym に過ぎません。
 
 ``` haskell
 type Server api = ServerT api (EitherT ServantErr IO)
 ```
 
-`ServerT` is the actual type family that computes the required types for the handlers that's part of the `HasServer` class. It's like `Server` except that it takes a third parameter which is the monad you want your handlers to run in, or more generally the return types of your handlers. This third parameter is used for specifying the return type of the handler for an endpoint, e.g when computing `ServerT (Get '[JSON] Person) SomeMonad`. The result would be `SomeMonad Person`.
+`ServerT` は `HasServer` クラスの一部のハンドラが必要な型を算出する type family です。これは3番目のパラメータ
+を取ることを除けば `Server` のようなものです。このパラメータはハンドラを差し込みたいモナドもしくはハンドラが返す型
+です。3番目のパラメータはエンドポイントのハンドラが返す型を特定するのに使います。
+`ServerT (Get '[JSON] Person) SomeMonad` を処理すると、`SomeMonad Person` を返します。
 
-The first and main question one might have then is: how do we write handlers that run in another monad? How can we "bring back" the value from a given monad into something *servant* can understand?
+最初の、そして主な疑問はどうしてこれが必要なのでしょうか。他のモナドに差し込むハンドラをどのように書けばいいのでしょうか。
 
 Natural transformations
 -----------------------
 
-If we have a function that gets us from an `m a` to an `n a`, for any `a`, what
-do we have?
+もし任意の `a` において `m a` から `n a` へ変換できる関数があったとすると、その関数はどういうもの
+になるのでしょうか。
 
 ``` haskell
 newtype m :~> n = Nat { unNat :: forall a. m a -> n a}
@@ -1097,20 +1070,18 @@ newtype m :~> n = Nat { unNat :: forall a. m a -> n a}
 -- listToMaybeNat ::`[] :~> Maybe`
 -- listToMaybeNat = Nat listToMaybe  -- from Data.Maybe
 ```
-(`Nat` comes from "natural transformation", in case you're wondering.)
+(`Nat` は "natural transformation" のことで、今回取り扱うものです。)
 
-So if you want to write handlers using another monad/type than `EitherT
-ServantErr IO`, say the `Reader String` monad, the first thing you have to
-prepare is a function:
+もし `EitherT ServantErr IO` とは別のモナド(`Reader String` モナド)または型を使ってハンドラを
+書きたいのであれば、最初に用意すべきなのは以下の関数です。
 
 ``` haskell
 readerToEither :: Reader String :~> EitherT ServantErr IO
 ```
 
-Let's start with `readerToEither'`. We obviously have to run the `Reader`
-computation by supplying it with a `String`, like `"hi"`. We get an `a` out
-from that and can then just `return` it into `EitherT`. We can then just wrap
-that function with the `Nat` constructor to make it have the fancier type.
+`readerToEither'` から始めましょう。例えば "hi" のような `String` をそれに供給する処理を
+`Reader` にさせなければならないことは明らかです。`a` を取り出して `EitherT` の中で `return`
+しましょう。変わった型を持たせるために `Nat` コンストラクタを使った関数でラップします。
 
 > readerToEither' :: forall a. Reader String a -> EitherT ServantErr IO a
 > readerToEither' r = return (runReader r "hi")
@@ -1118,7 +1089,7 @@ that function with the `Nat` constructor to make it have the fancier type.
 > readerToEither :: Reader String :~> EitherT ServantErr IO
 > readerToEither = Nat readerToEither'
 
-We can write some simple webservice with the handlers running in `Reader String`.
+`Reader String` を差し込みハンドラを使って単純なウェブサービスを書いてみましょう。
 
 > type ReaderAPI = "a" :> Get '[JSON] Int
 >             :<|> "b" :> Get '[JSON] String
@@ -1135,20 +1106,19 @@ We can write some simple webservice with the handlers running in `Reader String`
 >         b :: Reader String String
 >         b = ask
 
-We unfortunately can't use `readerServerT` as an argument of `serve`, because
-`serve` wants a `Server ReaderAPI`, i.e., with handlers running in `EitherT
-ServantErr IO`. But there's a simple solution to this.
+運の悪いことに `serve` の引数として `readerServerT` を使うことはできません。`serve` の
+引数として使えるのは `Server ReaderAPI` です。これは `EitherT ServantErr IO` を差し込む
+ハンドラで使います。それでも上記は単純な解決方法の1つです。
 
 Enter `enter`
 -------------
 
-That's right. We have just written `readerToEither`, which is exactly what we
-would need to apply to the results of all handlers to make the handlers have the
-right type for `serve`. Being cumbersome to do by hand, we provide a function
-`enter` which takes a natural transformation between two parametrized types `m`
-and `n` and a `ServerT someapi m`, and returns a `ServerT someapi n`.
+上で書いてきた `readerToEither` ですが、`serve` の正しい型を持つハンドラを作るために
+すべてのハンドラの戻り値にこれを正確に適用する必要があります。これを手動でやるのは面倒なので、
+`enter` 関数が用意されています。これは `m` と `n` という2つのパラメータの型と `ServerT someapi m`
+の間の natural transformation を行い、`ServerT someapi n` を返します。
 
-In our case, we can wrap up our little webservice by using `enter readerToEither` on our handlers.
+具体的には、ハンドラ上で `enter readerToEither` を使ってウェブサービスをラップします。
 
 > readerServer :: Server ReaderAPI
 > readerServer = enter readerToEither readerServerT
@@ -1156,7 +1126,7 @@ In our case, we can wrap up our little webservice by using `enter readerToEither
 > app4 :: Application
 > app4 = serve readerAPI readerServer
 
-And we can indeed see this webservice in action by running `dist/build/tutorial/tutorial 7`.
+`dist/build/tutorial/tutorial 7` でこのウェブサービスを実行できます。
 
 ``` bash
 $ curl http://localhost:8081/a
@@ -1168,9 +1138,11 @@ $ curl http://localhost:8081/b
 Conclusion
 ==========
 
-You're now equipped to write any kind of webservice/web-application using *servant*. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on *servant-client*, *servant-jquery* and *servant-docs*.
+*servant* を使ってウェブサービス・ウェブアプリケーションを実装できるようになりました。
+ここでは唯一、自分の結合子を組み込むのを取り扱いませんでしたが、このウェブサイトの別ページで扱っています。
+残りの文章では *servant-client* と *servant-jquery*、 *servant-docs* について取り扱います。
 
 <div style="text-align: center;">
-  <p><a href="/tutorial/0.4/api-type.html">Previous page: A web API as a type</a></p>
-  <p><a href="/tutorial/0.4/client.html">Next page: Deriving Haskell functions to query an API</a></p>
+  <p><a href="/tutorial/api-type.html">Previous page: A web API as a type</a></p>
+  <p><a href="/tutorial/client.html">Next page: Deriving Haskell functions to query an API</a></p>
 </div>

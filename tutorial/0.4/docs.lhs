@@ -3,8 +3,8 @@ title: Generating documentation from API types
 toc: true
 ---
 
-The source for this tutorial section is a literate haskell file, so first we
-need to have some language extensions and imports:
+この章のソースは literate haskell file として書かれています。
+まずは言語拡張と import が必要です。
 
 > {-# LANGUAGE DataKinds #-}
 > {-# LANGUAGE DeriveGeneric #-}
@@ -26,15 +26,19 @@ need to have some language extensions and imports:
 > import Servant.Docs
 > import Servant.Server
 
-And we'll import some things from one of our earlier modules
-([Serving an API](/tutorial/0.4/server.html)):
+[Serving an API](/tutorial/server.html) モジュールの1つからいくつかを import します。
 
 > import Server (Email(..), ClientInfo(..), Position(..), HelloMessage(..),
 >   server3, emailForClient)
 
-Like client function generation, documentation generation amounts to inspecting the API type and extracting all the data we need to then present it in some format to users of your API.
+クライアントの関数生成のように、ドキュメント生成とは API type の推論と、APIのユーザへのフォーマットとして
+示す必要がある全データの抽出を意味しています。
 
-This time however, we have to assist *servant*. While it is able to deduce a lot of things about our API, it can't magically come up with descriptions of the various pieces of our APIs that are human-friendly and explain what's going on "at the business-logic level". A good example to study for documentation generation is our webservice with the `/position`, `/hello` and `/marketing` endpoints from earlier:
+しかし今回は *servant* を補助しなければなりません。APIについてたくさんのことを推定できるので、
+ユーザフレンドリーなAPIの様々な点を記述するのに偶然気づいたり、"ビジネスロジックレベル"で何であるのか
+説明できません。
+ドキュメント生成のための勉強となるいい例が `/position`, `/hello`, `/marketing` エンドポイントを
+使ったウェブサービスです。
 
 > type ExampleAPI = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
 >       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
@@ -43,9 +47,12 @@ This time however, we have to assist *servant*. While it is able to deduce a lot
 > exampleAPI :: Proxy ExampleAPI
 > exampleAPI = Proxy
 
-While *servant* can see e.g. that there are 3 endpoints and that the response bodies will be in JSON, it doesn't know what influence the captures, parameters, request bodies and other combinators have on the webservice. This is where some manual work is required.
+*servant* の例では3つのエンドポイントとそのレスポンスボディがJSONで出力されるので、ウェブサービス上の
+キャプチャ、パラメータリクエストボディやその他の結合子がどのような影響を与えるかを知ることはできません。
+これには手動での操作が必要になります。
 
-For every capture, request body, response body, query param, we have to give some explanations about how it influences the response, what values are possible and the likes. Here's how it looks like for the parameters we have above.
+キャプチャ、リクエストボディ、レスポンスボディ、クエリパラメータによって、レスポンスにどのような影響を
+あたえ、どんな値を取りうるかの説明をしなければなりません。上述の例は以下のようになります。
 
 > instance ToCapture (Capture "x" Int) where
 >   toCapture _ =
@@ -83,22 +90,29 @@ For every capture, request body, response body, query param, we have to give som
 > instance ToSample Email Email where
 >   toSample _ = Just (emailForClient ci)
 
-Types that are used as request or response bodies have to instantiate the `ToSample` typeclass which lets you specify one or more examples of values. `Capture`s and `QueryParam`s have to instantiate their respective `ToCapture` and `ToParam` classes and provide a name and some information about the concrete meaning of that argument, as illustrated in the code above.
+リクエストまたはレスポンス本体として使われる型は、1つ以上の値の例を示す `ToSample` 型クラスを
+インスタンス化しなければなりません。`Capture` と `QueryParam` はそれぞれ `ToCapture` と 
+`ToParam` クラスをインスタンス化しなければなりません。そして名前と上記のコードで書かれているような
+引数の具体的な意味についての情報を与えなければなりません。
 
-With all of this, we can derive docs for our API.
+APIによってdocsを導出できます。
 
 > apiDocs :: API
 > apiDocs = docs exampleAPI
 
-`API` is a type provided by *servant-docs* that stores all the information one needs about a web API in order to generate documentation in some format. Out of the box, *servant-docs* only provides a pretty documentation printer that outputs [Markdown](http://en.wikipedia.org/wiki/Markdown), but the [servant-pandoc](http://hackage.haskell.org/package/servant-pandoc) package can be used to target many useful formats.
+`API` は *servant-docs* によって導出される型です。servant-docs は同じフォーマットでドキュメントを
+生成するために web API について必要な情報をすべて保持しています。
+*servant-docs* は [Markdown](http://en.wikipedia.org/wiki/Markdown) 出力するドキュメント生成器
+しか持ちませんが、[servant-pandoc](http://hackage.haskell.org/package/servant-pandoc) パッケージ
+にはたくさんの便利なフォーマットを使う機能があります。
 
-*servant*'s markdown pretty printer is a function named `markdown`.
+*servant* のマークダウン pretty printer は `markdown` という名前の関数です。
 
 ``` haskell
 markdown :: API -> String
 ```
 
-That lets us see what our API docs look down in markdown, by looking at `markdown apiDocs`.
+`maekdown apiDocs` を見ると、どのように markdown で書かれた API ドキュメントが生成されるかが分かります。
 
 ``` text
  ## Welcome
@@ -190,7 +204,8 @@ That lets us see what our API docs look down in markdown, by looking at `markdow
 
 ```
 
-However, we can also add one or more introduction sections to the document. We just need to tweak the way we generate `apiDocs`. We will also convert the content to a lazy `ByteString` since this is what *wai* expects for `Raw` endpoints.
+さらに、ドキュメントについて紹介する章を追加します。`apiDocs` を生成する方法を微調整するだけです。
+`wai` が求めてるのは `Raw` エンドポイントなので、文章内容を遅延`ByteString`型に変えます
 
 > docsBS :: ByteString
 > docsBS = encodeUtf8
@@ -200,9 +215,10 @@ However, we can also add one or more introduction sections to the document. We j
 >
 >   where intro = DocIntro "Welcome" ["This is our super webservice's API.", "Enjoy!"]
 
-`docsWithIntros` just takes an additional parameter, a list of `DocIntro`s that must be displayed before any endpoint docs.
+`docsWithIntros` は `DocIntro` のリストという追加のパラメータを取ります。
+これはどのエンドポイントのドキュメントよりも先に表示されなければなりません。
 
-We can now serve the API *and* the API docs with a simple server.
+これで API と API ドキュメントが単純なサーバで動かすことができるようになりました。
 
 > type DocsAPI = ExampleAPI :<|> Raw
 >
@@ -220,8 +236,11 @@ We can now serve the API *and* the API docs with a simple server.
 > app :: Application
 > app = serve api server
 
-And if you spin up this server with `dist/build/tutorial/tutorial 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
+このサーバは `dist/build/tutorial/tutorial 10` で動かすことができます。
+`/position`, `/hello`, `/marketing` 以外で API ドキュメントを見ることが出来ます。
+`serverDocs` は3つ以外のエンドポイントがマッチしなくてシステム的に成功するかどうかを試されるからです。
+成功の定義は `text/plain` コンテントタイプと決められた bytestring を返すことです。
 
 <div style="text-align: center;">
-  <a href="/tutorial/0.4/javascript.html">Previous page: Generating javascript functions to query an API</a>
+  <a href="/tutorial/javascript.html">Previous page: Generating javascript functions to query an API</a>
 </div>

@@ -3,13 +3,14 @@ title: Write a client library for any web API in 5 minutes
 toc: true
 ---
 
-*servant* lets us write request handlers for webservices in a quite
-straighforward way, without polluting your logic with encoding/decoding of all
-sorts. What may be less obvious is that you also get a somehow symmetric benefit too by being able to *derive* (without *actually writing them*) functions to query an API described by some servant API type. Here's an example.
+*servant* を使うと、すごく直接的な方法でウェブサービスのリクエストハンドラを書けます。
+各種のエンコードやデコードでロジックを汚すことはありません。あまり明らかでないこととしては、
+servant の API type で書かれた API にクエリを投げる関数を導出(実際には記述しない)できる
+ことによって、それに釣り合う利益も得ることです。以下に例を示します。
 
 # The Hackage API
 
-Let's write some functions to query a couple of endpoints of [Hackage's API](http://hackage.haskell.org/api). Let's just consider the following ones:
+[Hackage's API](http://hackage.haskell.org/api) の2つのエンドポイントにクエリを投げる関数を書いてみましょう。
 
 ```
 /users/
@@ -22,7 +23,7 @@ GET: json -- user id info
 GET: json -- List of all packages
 ```
 
-Let's see what the output looks like by using *curl*:
+*curl* を使って何が出力されているか見てみましょう。
 
 ``` bash
 $ curl -H "Accept: application/json" http://hackage.haskell.org/users/
@@ -33,11 +34,11 @@ $ curl -H "Accept: application/json" http://hackage.haskell.org/packages/
 [{"packageName":"3d-graphics-examples"},{"packageName":"3dmodels"}, ...]
 ```
 
-This is enough to get us started.
+初めてとしては十分でしょう。
 
 # Describing Hackage's API as a type
 
-First, some pragmas and imports:
+初めに 言語拡張と import を書きます。
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
@@ -60,7 +61,7 @@ import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 ```
 
-Now, let's write the API type that corresponds to those 3 endpoints we're interested in.
+興味のある3つのエンドポイントに対応する API type を書いてみましょう。
 
 ``` haskell
 type HackageAPI =
@@ -69,12 +70,12 @@ type HackageAPI =
   :<|> "packages" :> Get '[JSON] [Package]
 ```
 
-Nothing fancy here, except that we clearly specify
-we are expecting the output to be in JSON (this will insert the appropriate `Accept` header).
+JSON で出力されることを明らかに期待していることを除けば、何もおかしいことはありません。
+(これは適切な `Accept` header を挿入します)
 
 # Data types and JSON serialization
 
-We also need some types to go with that: `UserSummary`, `Username`, `UserDetailed`, `Package`. Here they are, along with JSON deserialization instances.
+いくつかの型も定義します。JSON のデシリアライズインスタンスも合わせて定義します。
 
 ``` haskell
 type Username = Text
@@ -109,7 +110,7 @@ instance FromJSON Package
 
 # Deriving functions to query hackage
 
-Finally, we can automatically derive our client functions:
+最後に、クライアント関数は自動的に導出されます。
 
 ``` haskell
 hackageAPI :: Proxy HackageAPI
@@ -121,7 +122,7 @@ getPackages :: EitherT ServantError IO [Package]
 getUsers :<|> getUser :<|> getPackages = client hackageAPI (BaseUrl Http "hackage.haskell.org" 80)
 ```
 
-And here's some runnable code to actually check that everything works as expected:
+期待通りにすべてが動くことを実際に確認するコードは以下の通りです。
 
 ``` haskell
 main :: IO ()
@@ -145,7 +146,7 @@ uselessNumbers = runEitherT $ do
   where isMonadPackage = T.isInfixOf "monad"
 ```
 
-Here's a sample run:
+コードを動かしてみましょう。
 
 ```
 $ cabal run hackage
@@ -161,4 +162,4 @@ Right ()
 
 # Code
 
-The whole code is available in [servant's repo](http://github.com/haskell-servant/servant), under the `servant-examples/hackage` directory.
+すべてのコードは [servant's repo](http://github.com/haskell-servant/servant) で利用できます。`servant-examples/hackage` ディレクトリ以下にあります。

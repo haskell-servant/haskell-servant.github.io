@@ -3,13 +3,15 @@ title: Deriving Haskell functions to query an API
 toc: true
 ---
 
-While defining handlers that serve an API has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. Except that we usually have to write the querying functions by hand because the structure of the API isn't a first class citizen and can't be inspected to generate a bunch of client-side functions.
+API をサーブするハンドラを定義するには数多くのことをやらなければならないが、APIにクエリを投げるのがよりシンプルで、
+ウェブサーバの中で何が起こっているのかを気にしません。Webサーバとやり取りする方法とレスポンスの受け取り型を知っている
+だけで良いのです。ただし、APIの構造がリッチではなく大量のクライアント側の関数を生成するために調査させることはないので、普通は手でクエリ関数を書かなければならないことはあります。
 
-*servant* however has a way to inspect API, because APIs are just Haskell types and (GHC) Haskell lets us do quite a few things with types. In the same way that we look at an API type to deduce the types the handlers should have, we can inspect the structure of the API to *derive* Haskell functions that take one argument for each occurence of `Capture`, `ReqBody`, `QueryParam`
-and friends. By *derive*, we mean that there's no code generation involved, the functions are defined just by the structure of the API type.
+しかし *servant* は API を調査する方法を持っています。API はただの Haskell 型で Haskell は型でできることがたくさんあるからです。ハンドラが持つべき型を推測するような API を見つけるのと同様の方法で、
+`Capture`, `ReqBody`, `QueryParam` などのように1つの引数を持つ Haskell の関数を *derive* する API の構造を推測できます。*derive* によって複雑なコード生成は不要になり、関数は API type の構造だけで定義されます。
 
-The source for this tutorial section is a literate haskell file, so first we
-need to have some language extensions and imports:
+この章のソースは literate haskell file として書かれています。
+まず、言語拡張と import が必要です。
 
 > {-# LANGUAGE DataKinds #-}
 > {-# LANGUAGE DeriveGeneric #-}
@@ -24,7 +26,7 @@ need to have some language extensions and imports:
 > import Servant.API
 > import Servant.Client
 
-Also, we need examples for some domain specific data types:
+次はドメインを特定するデータ型です。
 
 > data Position = Position
 >   { x :: Int
@@ -56,13 +58,14 @@ Also, we need examples for some domain specific data types:
 >
 > instance FromJSON Email
 
-Enough chitchat, let's see an example. Consider the following API type from the previous section:
+本題に入ります。前章をふまえて次のような API type を考えてみましょう。
 
 > type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
 >       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
 >       :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
 
-What we are going to get with *servant-client* here is 3 functions, one to query each endpoint:
+*servant-client* で得ようとしている3つの関数を示します。
+それぞれがエンドポイントにクエリを投げます。
 
 > position :: Int -- ^ value for "x"
 >          -> Int -- ^ value for "y"
@@ -74,14 +77,17 @@ What we are going to get with *servant-client* here is 3 functions, one to query
 > marketing :: ClientInfo -- ^ value for the request body
 >           -> EitherT ServantError IO Email
 
-Each function makes available as an argument any value that the response may depend on, as evidenced in the API type. How do we get these functions? Just give a `Proxy` to your API and a host to make the requests to:
+関数はそれぞれ、レスポンスが依存する任意の値の引数として、API type を確かにするものとして使うことができます。
+それではどのようにしてこれらの関数を書けばよいのでしょうか。実は `Proxy` を API とリクエストを送るホストに
+与えれば良いのです。
 
 > api :: Proxy API
 > api = Proxy
 >
 > position :<|> hello :<|> marketing = client api (BaseUrl Http "localhost" 8081)
 
-As you can see in the code above, we just "pattern match our way" to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The `BaseUrl` value there is just:
+上記のコードを見ると、これらの関数のパターンマッチになっていることが分かります。もしAPI内にあるエンドポイントよりも
+多いまたは少ない関数を導こうとすると、明らかにエラーになります。`BaseUrl` の値は次のようになります。
 
 ``` haskell
 -- | URI scheme to use
@@ -99,7 +105,7 @@ data BaseUrl = BaseUrl
   }
 ```
 
-That's it. Let's now write some code that uses our client functions.
+できました。クライアントの関数を使うコードを書いてみましょう。
 
 > queries :: EitherT ServantError IO (Position, HelloMessage, Email)
 > queries = do
@@ -118,8 +124,9 @@ That's it. Let's now write some code that uses our client functions.
 >       print msg
 >       print em
 
-You can now run `dist/build/tutorial/tutorial 8` (the server) and
-`dist/build/t8-main/t8-main` (the client) to see them both in action.
+
+`dist/build/tutorial/tutorial 8` でサーバを動かせます。
+クライアントは `dist/build/t8-main/t8-main` で動きます。
 
 ``` bash
  $ dist/build/tutorial/tutorial 8
@@ -130,9 +137,9 @@ You can now run `dist/build/tutorial/tutorial 8` (the server) and
  Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we miss you!", body = "Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!"}
 ```
 
-The types of the arguments for the functions are the same as for (server-side) request handlers. You now know how to use *servant-client*!
+関数の引数の型は(サーバ側の)リクエストハンドラと同じです。以上が *servant-client* の使い方です！
 
 <div style="text-align: center;">
-  <p><a href="/tutorial/0.4/server.html">Previous page: Serving an API</a></p>
-  <p><a href="/tutorial/0.4/javascript.html">Next page: Generating javascript functions to query an API</a></p>
+  <p><a href="/tutorial/server.html">Previous page: Serving an API</a></p>
+  <p><a href="/tutorial/javascript.html">Next page: Generating javascript functions to query an API</a></p>
 </div>
