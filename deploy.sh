@@ -19,6 +19,6 @@ git rm -r ./*
 cp -R $SITE/* ./ 
 git add ./**
 git commit -m "Built from $COMMIT"
-git push origin master
+git push origin gh-pages
 echo $MSG
 cd $CURRDIR
