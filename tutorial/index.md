@@ -41,8 +41,8 @@ servant でウェブサービスを書けるようになるためには初めの
 
 # Tutorial
 
-1. [型として扱うWeb API (A web API as a type)](/jp/tutorial/0.4/api-type.html)
-2. [APIをサーバとして動かす (Serving an API)](/jp/tutorial/0.4/server.html)
-3. [APIにクエリを投げるHaskellの関数を扱う (Deriving Haskell functions to query an API)](/jp/tutorial/0.4/client.html)
-4. [APIにクエリを投げるjavascript関数を生成する (Generating javascript functions to query an API)](/jp/tutorial/0.4/javascript.html)
-5. [APIのドキュメントを生成する (Generating documentation for APIs)](/jp/tutorial/0.4/docs.html)
+1. [型として扱うWeb API (A web API as a type)](/tutorial/0.4/api-type.html)
+2. [APIをサーバとして動かす (Serving an API)](/tutorial/0.4/server.html)
+3. [APIにクエリを投げるHaskellの関数を扱う (Deriving Haskell functions to query an API)](/tutorial/0.4/client.html)
+4. [APIにクエリを投げるjavascript関数を生成する (Generating javascript functions to query an API)](/tutorial/0.4/javascript.html)
+5. [APIのドキュメントを生成する (Generating documentation for APIs)](/tutorial/0.4/docs.html)
