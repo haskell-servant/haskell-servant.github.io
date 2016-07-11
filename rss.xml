@@ -7,33 +7,8 @@
         <description><![CDATA[Posts from the haskell-servant blog]]></description>
         <atom:link href="http://haskell-servant.github.io/rss.xml" rel="self"
                    type="application/rss+xml" />
-        <lastBuildDate>Mon, 04 Apr 2016 00:00:00 UT</lastBuildDate>
+        <lastBuildDate>Sat, 19 Mar 2016 00:00:00 UT</lastBuildDate>
         <item>
-    <title>servant 0.6 released</title>
-    <link>http://haskell-servant.github.io/posts/2016-04-04-servant-0.6-release.html</link>
-    <description><![CDATA[<p>We just released <code>servant-0.6</code> to hackage. As promised this is only a small increment on the <code>0.5</code> release. Here are main changes:</p>
-<ul>
-<li>When encountering parse errors on query parameters, <code>servant-server</code> returns a <code>400</code> (was <code>404</code>).</li>
-<li><code>servant-client</code>: How the <code>BaseUrl</code> and the <code>Manager</code> arguments are being passed in to the client functions changed. It’s best explained through an example:</li>
-</ul>
-<p>``` haskell :qa</p>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>We hope you enjoy the new release. It was certainly lots of fun to work on <code>servant-0.5</code>. We’d like to say thanks to all the people that helped, big or small. Happy hacking.</p>
-</section>
-
-<div class="info">
-    Posted on April  4, 2016
-    
-        by Sönke Hahn
-    
-</div>
-]]></description>
-    <pubDate>Mon, 04 Apr 2016 00:00:00 UT</pubDate>
-    <guid>http://haskell-servant.github.io/posts/2016-04-04-servant-0.6-release.html</guid>
-    <dc:creator>servant developers</dc:creator>
-</item>
-<item>
     <title>servant 0.5 released</title>
     <link>http://haskell-servant.github.io/posts/2016-03-19-servant-0.5-release.html</link>
     <description><![CDATA[<div id="toc"><h3>Table of contents</h3><ul>
