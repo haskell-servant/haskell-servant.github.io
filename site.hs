@@ -67,15 +67,19 @@ main = hakyllWith config $ do
 
     match "home.md" $ compile pandocCompiler
 
+    match "consultancies.md" $ compile pandocCompiler
+
     match "index.html" $ do
         route idRoute
         compile $ do
             posts <- recentFirst =<< loadAll "posts/*"
             homeContent <- loadBody "home.md"
+            consultanciesContent <- loadBody "consultancies.md"
             let indexCtx =
                     listField "posts" postCtx (return posts) `mappend`
                     constField "title" "Home"                `mappend`
                     field "home" (\_ -> return homeContent)  `mappend`
+                    field "consultancies" (\_ -> return consultanciesContent)  `mappend`
                     defaultContext
 
             getResourceBody
