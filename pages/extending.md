@@ -3,22 +3,27 @@ title: Extending servant
 toc: true
 ---
 
-One of the best features of servant is that it is easily extensible. Extensions and plugins, such as client-library generation and support for authentication or cookies, generally happen along two axes: through the introduction of new combinators, and through new 'interpretations' for the combinators. You can think of the combinators as a little "API DSL", which is a deep-embedding in that multiple interpretations for it are possible.
+servant の最高な機能の1つは容易に拡張可能なことです。クライアントライブラリを生成したり認証や
+クッキーを扱うようなエクステンションやプラグインは一般に2つの軸に沿っています。1つは新しい結合子
+を出すもの、もう1つは結合子を変換するものです。結合子をちょっとした "API DSL" として考えて
+みましょう。複数の変換が可能であることは深く織り込み済みです。
 
-Note that the two axes don't quite exhaust the ways in which you can extend servant, but they are the most common.
+2つの軸は servant を拡張する方法を駆使するというわけではなく一般的なやり方です。
 
 # New combinators
 
-Let's suppose our objective was to add a `Post`-like combinator that returns a response with an HTTP [Location](http://en.wikipedia.org/wiki/HTTP_location) header with the location of a newly-created resource.
+`Post`何とかのような結合子を加えることが目的だと仮定しましょう。この結合子は新規作成された
+リソースの場所を持つHTTP [Location](http://en.wikipedia.org/wiki/HTTP_location) ヘッダでレスポンスを返します。
 
-First we define a datatype:
+初めにデータ型を定義します。
 
 ``` haskell
 data PostWithLocation a
     deriving Typeable
 ```
 
-Next, we need to describe how this ought to be interpreted. Interpretations are defined via instances of classes. In particular, when we want to define how the server should behave, we instantiate the `HasServer` class:
+次に、これをどのように変換すべきでしょうか。変換はクラスのインスタンスによって定義されます。
+例えば、サーバがどのように振る舞うかを定義したい時、`HasServer` クラスをインスタンス化します。
 
 ``` haskell
 import Control.Monad.Trans.Either
@@ -51,11 +56,21 @@ instance ToJSON a => HasServer (PostWithLocation a) where
     | otherwise = respond $ failWith NotFound
 ```
 
-If you compare this with the implementation of [Post](http://haskell-servant.github.io/servant/src/Servant-API-Post.html#Post), you'll see that very little changed. We've changed the type of the associated `Server` type to be a `EitherT (Int, String) IO (Link, a)` instead of `EitherT (Int, String) IO a`. This means that the function that ultimately implements this endpoint must return a tuple of the link and the return value, and not just the return value. In the definition of the `route` method, we also changed the code to add the link to the `Location` header. Note how in the definition of the instance, we have access to the details (e.g., headers) of the request and response, whereas the code that implements the endpoint doesn't (or at least not directly - we could, if we so desired, pass all of the details of the request to the function, creating a new combinator).
+[Post](http://haskell-servant.github.io/servant/src/Servant-API-Post.html#Post) 
+の実装と上記を比較すると、ほんの少し違っていることが分かります。サーバの型が `EitherT (Int, String) IO a` 
+から `EitherT (Int, String) IO (Link, a)` に変わっています。それはこのエンドポイントを実装する
+関数が単純な値を返すわけではなく、リンクと戻り値のタプルを返すということを意味しています。`route`
+メソッドの定義の中で、`Location`ヘッダへのリンクを加えるコードも異なっています。そのインスタンスの
+定義内で、リクエストやレスポンスの詳細(ヘッダなど)にアクセスしますが、エンドポイントを実装するコードは
+アクセスしません。
 
-If we look at the original definition of `HasServer`, we see that the second parameter of `route` -- in this case, `action` has the type of the `Server` associated type synonym instance. In this case, that is our `EitherT (Int, String) IO (Link, a)`. This is just what we wanted in this case, because `PostWithLocation` should always be the last element of any route type. But if we were defining a combinator that wasn't at the end, we would likely need to delegate some decision-making to combinators further on down the line. Look at the `HasServer` instance for `(:>)` if you're curious how that works.
+`HasServer` の元の定義を見ると、`route` の第2引数である `action` が型シノニムインスタンスで関連した
+`Server` の型を持っていることが分かります。これは `EitherT (Int, String) IO (Link, a)` に相当します。
+`PostWithLocation` は常に任意の route type の最後の要素であるべきなので、これがまさに目的と一致します。
+末尾に来る結合子は定義していないので、結合子に決定権を委譲する必要があります。`(:>)` のための `HasServer` 
+インスタンスを見てみましょう。
 
-We can now use our combinator:
+自作の結合子を使ってみましょう。
 
 ``` haskell
 type MyAPI = "user" :> ReqBody User :> PostWithLocation ()
@@ -70,24 +85,30 @@ server = mkNewUser
       mkNewUser = ...
 ```
 
-Depending on your use case, you may also want to define `HasClient` and `HasDocs` instances for your combinator, so that you (and other people) can benefit from code and documentation generation.
+ユースケースによって、自作の結合子のために `HasClient`, `HasDocs` インスタンスも定義したいと思うかも
+しれません。その時はコード生成やドキュメント生成の恩恵を受けられます。
 
 # New Interpreters
 
-If you've come this far, you should already have a sense for what defining new 'interpreters' for the API consists of. You write a new class, akin to `HasServer`, and instances of that class for existing combinators.
+APIが属している新しい「インタプリタ」を定義してみましょう。`HasServer` と同類の新しい
+クラスと、既存の結合子のクラスのインスタンスを書きます。
 
-The most obvious use of a new interpreter is code generation. I highly recommend taking a look at [servant-jquery](http://hackage.haskell.org/package/servant-jquery) for inspiration. As you'll see, one approach is to have a record type that represents all the information you need to write a client for a particular endpoint, and then pass that record along, from instance to instance, filling in the details until you reach an end combinator (`Get`, `Post`, etc.).
+この新しいインタプリタのもっとも一般的な使い方はコード生成です。[servant-jquery](http://hackage.haskell.org/package/servant-jquery) に特に注目してみましょう。この後見ていく
+ものとしては、1つの手法は特定のエンドポイントのためのクライアントを書くのに必要なすべての
+情報を表現する record type を持っていることです。インスタンスからインスタンスへその 
+record を渡し、最後に結合子(`Get`など)が来るまで詳細を伝えていきます。
 
 # Other Directions
 
-In rare cases, extensions to servant may involve something that doesn't quite belong in either of these categories. For instance, a distant dream of mine in getting *HATEOAS* for free in servant. The idea is that given an API:
+まれなケースとして、servant の拡張がこれらのカテゴリのいずれにも属さないことがあります。
+例えば、servant で無料で *HATEOAS* を手に入れたいとしましょう。次のAPIで実現します。
 
 ``` haskell
 type MyAPI = "user" :> ReqBody User :> Post ()
         :<|> "names" :> Capture "name" String :> Get User
 ```
 
-And a server `MyServer` for it, we would *automatically* create a type:
+`MyServer` サーバは自動的に型を生成します。
 
 ``` haskell
 type MyAPIResty = Get HATEOASData
@@ -97,10 +118,14 @@ type MyAPIResty = Get HATEOASData
             :<|> "names" :> Capture "name" String :> Get User
 ```
 
-And a server for it, that behaves just like `MyServer` insofar as their endpoints coincide, but would return information about the server's layout beneath the current endpoint for all other endpoints.
+そのためのサーバはエンドポイントに一致するする限りにおいて `MyServer` のように振る舞い
+ます。しかし、他のすべてのエンドポイントを現在のエンドポイントの下にサーバを配置する
+ような情報を返すべきです。
 
-This involves considerable trickery at the type-level. In particular, it involves writing a class that rewrites types and servers hand-in-hand, to generate a new server.
+型レベルで重要な策略です。特に新しいサーバを生成するために型とサーバを同時に書き換える
+クラスを書く場合に用います。
 
-Similarly, an interesting extension to servant would be a rewrite system that makes a trie out of the API type, and correspondingly changing the data-level implementation of a server, so that route lookups can be faster than linear.
+同様に、servant の拡張で興味深いことは API type の外でトライを作るシステムを書き換える
+ことで、それに応じてサーバのデータレベル実装を変えるので、ルート参照が線形より速くなります。
 
-If this, or related more advanced projects, sounds interesting to you, get in touch!
+もしこれ以上発展的なプロジェクトに関わったり興味があるのでしたら、ぜひ試してみてください。
