@@ -124,17 +124,15 @@ myPandocCompiler' withToc =
     where writerOpts = defaultHakyllWriterOptions
                            { writerReferenceLinks = True
                            , writerSectionDivs = True
-                           , writerHtml5 = True
                            , writerHTMLMathMethod = MathJax "http://cdn.mathjax.org/mathjax/latest/MathJax.js"
                            , writerColumns = 100
-                           , writerExtensions =
-                              delete Ext_literate_haskell
-                                (writerExtensions defaultHakyllWriterOptions)
+                           , writerExtensions
+                              = disableExtension Ext_literate_haskell
+                              $ writerExtensions defaultHakyllWriterOptions
                            }
           writerWithToc =
             writerOpts { writerTableOfContents = True
-                       , writerTemplate = "$if(toc)$<div id=\"toc\"><h3>Table of contents</h3>$toc$</div>$endif$\n$body$"
-                       , writerStandalone = True
+                       , writerTemplate = Just "$if(toc)$<div id=\"toc\"><h3>Table of contents</h3>$toc$</div>$endif$\n$body$"
                        }
 
 myPandocCompiler :: Compiler (Item String)
