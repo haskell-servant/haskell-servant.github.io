@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>servant 0.14 released - haskell-servant</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a href="../">servant</a>
+            </div>
+            <div id="navigation">
+                <a href="../">Home</a>
+                <a href="../blog.html">Blog</a>
+                <a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Tutorial</a>
+                <a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook</a>
+                <a href="../talks.html">Talks</a>
+                <a href="https://github.com/haskell-servant/servant">GitHub</a>
+            </div>
+        </div>
+
+        <div id="content">
+            <h1>servant 0.14 released</h1>
+
+            <div id="toc"><h3>Table of contents</h3><ul>
+<li><a href="#introduction">Introduction</a><ul>
+<li><a href="#significant-changes">Significant changes</a></li>
+<li><a href="#other-changes">Other changes</a></li>
+</ul></li>
+</ul></div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>We’re happy to announce the release of <code>servant-0.14</code>. This is relatively small release, still containing some new features and breaking changes.</p>
+<section id="significant-changes" class="level2">
+<h2>Significant changes</h2>
+<ul>
+<li><p><code>Stream</code> takes a status code argument</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="st">-Stream method        framing ctype a</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="va">+Stream method status framing ctype a</span></a></code></pre></div>
+<p>(<a href="https://github.com/haskell-servant/servant/pull/966">#966</a> <a href="https://github.com/haskell-servant/servant/pull/972">#972</a>)</p></li>
+<li><p><code>ToStreamGenerator</code> definition changed, so it’s possible to write an instance for conduits.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="st">-class ToStreamGenerator f a where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="st">-   toStreamGenerator :: f a -&gt; StreamGenerator a</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="va">+class ToStreamGenerator a b | a -&gt; b where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="va">+   toStreamGenerator :: a -&gt; StreamGenerator b</span></a></code></pre></div>
+<p>(<a href="https://github.com/haskell-servant/servant/pull/959">#959</a>)</p></li>
+<li><p>Added <code>NoFraming</code> streaming strategy (<a href="https://github.com/haskell-servant/servant/pull/959">#959</a>)</p></li>
+<li><p><em>servant-client-core</em> Free <code>Client</code> implementation. Useful for testing <code>HasClient</code> instances. (<a href="https://github.com/haskell-servant/servant/pull/920">#920</a>)</p></li>
+<li><p><em>servant-client-core</em> Add <code>hoistClient</code> to <code>HasClient</code>. Just like <code>hoistServer</code> allows us to change the monad in which request handlers of a web application live in, we also have <code>hoistClient</code> for changing the monad in which <em>client functions</em> live. Read <a href="https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in">tutorial section for more information</a>. (<a href="https://github.com/haskell-servant/servant/pull/936">#936</a>)</p>
+<p>iF you have own combinators, you’ll need to define a new method of <code>HasClient</code> class, for example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Client</span> m (<span class="dt">MyCombinator</span> <span class="fu">:&gt;</span> api) <span class="fu">=</span> <span class="dt">MyValue</span> <span class="fu">:&gt;</span> <span class="dt">Client</span> m api</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">hoistClientMonad pm _ nt cl <span class="fu">=</span> hoistClientMonad pm (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> api) nt <span class="fu">.</span> cl</a></code></pre></div></li>
+<li><p><em>servant</em> Add <code>safeLink' :: (Link -&gt; a) -&gt; ... -&gt; MkLink endpoint a</code>, which allows to create helpers returning something else than <code>Link</code>. (<a href="https://github.com/haskell-servant/servant/pull/968">#968</a>)</p></li>
+<li><p><em>servant-server</em> File serving in polymorphic monad. i.e. Generalised types of <code>serveDirectoryFileServer</code> etc functions in <code>Servant.Utils.StaticFiles</code> (<a href="https://github.com/haskell-servant/servant/pull/953">#953</a>)</p></li>
+<li><p><em>servant-server</em> <code>ReqBody</code> content type check is recoverable. This allows writing APIs like:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">      <span class="dt">ReqBody</span> '[<span class="dt">JSON</span>] <span class="dt">Int</span>      <span class="fu">:&gt;</span> <span class="dt">Post</span> '[<span class="dt">PlainText</span>] <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">:&lt;|&gt;</span>  <span class="dt">ReqBody</span> '[<span class="dt">PlainText</span>] <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> '[<span class="dt">PlainText</span>] <span class="dt">Int</span></a></code></pre></div>
+<p>which is useful when handlers are subtly different, for example may do less work. (<a href="https://github.com/haskell-servant/servant/pull/937">#937</a>)</p></li>
+<li><p><em>servant-client</em> Add more constructors to <code>RequestBody</code>, including <code>RequestBodyStream</code>. <em>Note:</em> we are looking for http-library agnostic API, so the might change again soon. Tell us which constructors are useful for you! (<a href="https://github.com/haskell-servant/servant/pull/913">#913</a>)</p></li>
+</ul>
+</section>
+<section id="other-changes" class="level2">
+<h2>Other changes</h2>
+<ul>
+<li><p><code>GetHeaders</code> instances implemented without <code>OverlappingInstances</code> (<a href="https://github.com/haskell-servant/servant/pull/971">#971</a>)</p></li>
+<li><p>Added tests or enabled tests (<a href="https://github.com/haskell-servant/servant/pull/975">#975</a>)</p></li>
+<li><p>Add <a href="https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/pagination/Pagination.html">pagination cookbook recipe</a> (<a href="https://github.com/haskell-servant/servant/pull/946">#946</a>)</p></li>
+<li><p>Add <a href="https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/structuring-apis/StructuringApis.html"><code>servant-flatten</code> “spice” to the structuring api recipe</a> (<a href="https://github.com/haskell-servant/servant/pull/929">#929</a>)</p></li>
+<li><p>Dependency updates (<a href="https://github.com/haskell-servant/servant/pull/900">#900</a> <a href="https://github.com/haskell-servant/servant/pull/919">#919</a> <a href="https://github.com/haskell-servant/servant/pull/924">#924</a> <a href="https://github.com/haskell-servant/servant/pull/943">#943</a> <a href="https://github.com/haskell-servant/servant/pull/964">#964</a> <a href="https://github.com/haskell-servant/servant/pull/967">#967</a> <a href="https://github.com/haskell-servant/servant/pull/976">#976</a>)</p></li>
+<li><p>Documentation updates <a href="https://github.com/haskell-servant/servant/pull/963">#963</a> <a href="https://github.com/haskell-servant/servant/pull/960">#960</a> <a href="https://github.com/haskell-servant/servant/pull/908">#908</a> <a href="https://github.com/haskell-servant/servant/pull/958">#958</a> <a href="https://github.com/haskell-servant/servant/pull/948">#948</a> <a href="https://github.com/haskell-servant/servant/pull/928">#928</a> <a href="https://github.com/haskell-servant/servant/pull/921">#921</a>)</p></li>
+<li><p>Development process improvements (<a href="https://github.com/haskell-servant/servant/pull/680">#680</a> <a href="https://github.com/haskell-servant/servant/pull/917">#917</a> <a href="https://github.com/haskell-servant/servant/pull/923">#923</a> <a href="https://github.com/haskell-servant/servant/pull/961">#961</a> <a href="https://github.com/haskell-servant/servant/pull/973">#973</a>)</p></li>
+</ul>
+</section>
+</section>
+
+<div class="info">
+    Posted on June 19, 2018
+    
+        by The servant team
+    
+</div>
+
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            -
+            <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
+        </div>
+    </body>
+</html>

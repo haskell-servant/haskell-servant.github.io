@@ -15,22 +15,30 @@
             <div id="navigation">
                 <a href="./">Home</a>
                 <a href="./blog.html">Blog</a>
-                <a href="./tutorial">Tutorial</a>
-                <a href="./tips.html">Tips and tricks</a>
+                <a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Tutorial</a>
+                <a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook</a>
                 <a href="./talks.html">Talks</a>
-                <a href="https://github.com/haskell-servant/servant">Github</a>
+                <a href="https://github.com/haskell-servant/servant">GitHub</a>
             </div>
         </div>
 
         <div id="content">
             <h1>Home</h1>
 
-            <p class="notice">
-The main documentation for <em>servant</em> can now be found here: <a href="http://haskell-servant.readthedocs.org/">haskell-servant.readthedocs.org</a>
-</p>
+            <p><emph>servant</emph> is a set of packages for declaring web APIs at the type-level and then using those API specifications to:</p>
+<ul>
+<li>write servers (this part of servant can be considered a web framework),</li>
+<li>obtain client functions (in haskell),</li>
+<li>generate client functions for other programming languages,</li>
+<li>generate documentation for your web applications</li>
+<li>and more…</li>
+</ul>
+<p>All in a type-safe manner.</p>
 <h1 id="tutorials-and-blog-posts">Tutorials and Blog Posts</h1>
 <ul>
 <li><a href="http://www.andres-loeh.de/Servant/servant-wgp.pdf">Paper</a> for a more technical introduction</li>
+<li><a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Official tutorial</a></li>
+<li><a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook</a></li>
 <li><a href="./extending.html">Extending servant</a></li>
 <li><a href="./client-in-5-minutes.html">Hackage API client in 5 minutes</a></li>
 <li><a href="https://halcyon.sh/tutorial/">Developing a servant application with Halcyon</a></li>
@@ -38,12 +46,29 @@ The main documentation for <em>servant</em> can now be found here: <a href="http
 <li><a href="http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/">Type-safe web services in Haskell with servant</a></li>
 <li><a href="http://www.arow.info/blog/posts/2015-07-10-servant-intro.html">Servant, Type Families, and Type-level Everything</a></li>
 <li><a href="http://www.parsonsmatt.org/2015/06/07/servant-persistent.html">Combining Servant With Persistent</a></li>
+<li><a href="https://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">Implementing a minimal version of haskell-servant</a></li>
 <li>See <a href="./talks.html">the talks</a></li>
 </ul>
 
 <h2>Blog</h2>
 <p>Latest blog posts (<a href="./blog.html">all</a>)</p>
 <ul>
+    
+        <li>
+            <a href="./posts/2018-06-19-servant-0.14-released.html">servant 0.14 released</a>,
+            
+            	by <i>The servant team</i>
+            
+            - June 19, 2018
+        </li>
+    
+        <li>
+            <a href="./posts/2017-03-03-servant-and-db.html">Passing a DB connection to handlers in Servant</a>,
+            
+            	by <i>Oleg Grenrus</i>
+            
+            - March  3, 2017
+        </li>
     
         <li>
             <a href="./posts/2016-03-19-servant-0.5-release.html">servant 0.5 released</a>,

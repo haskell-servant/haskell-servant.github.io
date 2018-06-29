@@ -7,8 +7,185 @@
         <description><![CDATA[Posts from the haskell-servant blog]]></description>
         <atom:link href="http://haskell-servant.github.io/rss.xml" rel="self"
                    type="application/rss+xml" />
-        <lastBuildDate>Sat, 19 Mar 2016 00:00:00 UT</lastBuildDate>
+        <lastBuildDate>Tue, 19 Jun 2018 00:00:00 UT</lastBuildDate>
         <item>
+    <title>servant 0.14 released</title>
+    <link>http://haskell-servant.github.io/posts/2018-06-19-servant-0.14-released.html</link>
+    <description><![CDATA[<div id="toc"><h3>Table of contents</h3><ul>
+<li><a href="#introduction">Introduction</a><ul>
+<li><a href="#significant-changes">Significant changes</a></li>
+<li><a href="#other-changes">Other changes</a></li>
+</ul></li>
+</ul></div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>We’re happy to announce the release of <code>servant-0.14</code>. This is relatively small release, still containing some new features and breaking changes.</p>
+<section id="significant-changes" class="level2">
+<h2>Significant changes</h2>
+<ul>
+<li><p><code>Stream</code> takes a status code argument</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="st">-Stream method        framing ctype a</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="va">+Stream method status framing ctype a</span></a></code></pre></div>
+<p>(<a href="https://github.com/haskell-servant/servant/pull/966">#966</a> <a href="https://github.com/haskell-servant/servant/pull/972">#972</a>)</p></li>
+<li><p><code>ToStreamGenerator</code> definition changed, so it’s possible to write an instance for conduits.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="st">-class ToStreamGenerator f a where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="st">-   toStreamGenerator :: f a -&gt; StreamGenerator a</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="va">+class ToStreamGenerator a b | a -&gt; b where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="va">+   toStreamGenerator :: a -&gt; StreamGenerator b</span></a></code></pre></div>
+<p>(<a href="https://github.com/haskell-servant/servant/pull/959">#959</a>)</p></li>
+<li><p>Added <code>NoFraming</code> streaming strategy (<a href="https://github.com/haskell-servant/servant/pull/959">#959</a>)</p></li>
+<li><p><em>servant-client-core</em> Free <code>Client</code> implementation. Useful for testing <code>HasClient</code> instances. (<a href="https://github.com/haskell-servant/servant/pull/920">#920</a>)</p></li>
+<li><p><em>servant-client-core</em> Add <code>hoistClient</code> to <code>HasClient</code>. Just like <code>hoistServer</code> allows us to change the monad in which request handlers of a web application live in, we also have <code>hoistClient</code> for changing the monad in which <em>client functions</em> live. Read <a href="https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in">tutorial section for more information</a>. (<a href="https://github.com/haskell-servant/servant/pull/936">#936</a>)</p>
+<p>iF you have own combinators, you’ll need to define a new method of <code>HasClient</code> class, for example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Client</span> m (<span class="dt">MyCombinator</span> <span class="fu">:&gt;</span> api) <span class="fu">=</span> <span class="dt">MyValue</span> <span class="fu">:&gt;</span> <span class="dt">Client</span> m api</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">hoistClientMonad pm _ nt cl <span class="fu">=</span> hoistClientMonad pm (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> api) nt <span class="fu">.</span> cl</a></code></pre></div></li>
+<li><p><em>servant</em> Add <code>safeLink' :: (Link -&gt; a) -&gt; ... -&gt; MkLink endpoint a</code>, which allows to create helpers returning something else than <code>Link</code>. (<a href="https://github.com/haskell-servant/servant/pull/968">#968</a>)</p></li>
+<li><p><em>servant-server</em> File serving in polymorphic monad. i.e. Generalised types of <code>serveDirectoryFileServer</code> etc functions in <code>Servant.Utils.StaticFiles</code> (<a href="https://github.com/haskell-servant/servant/pull/953">#953</a>)</p></li>
+<li><p><em>servant-server</em> <code>ReqBody</code> content type check is recoverable. This allows writing APIs like:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">      <span class="dt">ReqBody</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Int</span>      <span class="fu">:&gt;</span> <span class="dt">Post</span> &#39;[<span class="dt">PlainText</span>] <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">:&lt;|&gt;</span>  <span class="dt">ReqBody</span> &#39;[<span class="dt">PlainText</span>] <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> &#39;[<span class="dt">PlainText</span>] <span class="dt">Int</span></a></code></pre></div>
+<p>which is useful when handlers are subtly different, for example may do less work. (<a href="https://github.com/haskell-servant/servant/pull/937">#937</a>)</p></li>
+<li><p><em>servant-client</em> Add more constructors to <code>RequestBody</code>, including <code>RequestBodyStream</code>. <em>Note:</em> we are looking for http-library agnostic API, so the might change again soon. Tell us which constructors are useful for you! (<a href="https://github.com/haskell-servant/servant/pull/913">#913</a>)</p></li>
+</ul>
+</section>
+<section id="other-changes" class="level2">
+<h2>Other changes</h2>
+<ul>
+<li><p><code>GetHeaders</code> instances implemented without <code>OverlappingInstances</code> (<a href="https://github.com/haskell-servant/servant/pull/971">#971</a>)</p></li>
+<li><p>Added tests or enabled tests (<a href="https://github.com/haskell-servant/servant/pull/975">#975</a>)</p></li>
+<li><p>Add <a href="https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/pagination/Pagination.html">pagination cookbook recipe</a> (<a href="https://github.com/haskell-servant/servant/pull/946">#946</a>)</p></li>
+<li><p>Add <a href="https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/structuring-apis/StructuringApis.html"><code>servant-flatten</code> “spice” to the structuring api recipe</a> (<a href="https://github.com/haskell-servant/servant/pull/929">#929</a>)</p></li>
+<li><p>Dependency updates (<a href="https://github.com/haskell-servant/servant/pull/900">#900</a> <a href="https://github.com/haskell-servant/servant/pull/919">#919</a> <a href="https://github.com/haskell-servant/servant/pull/924">#924</a> <a href="https://github.com/haskell-servant/servant/pull/943">#943</a> <a href="https://github.com/haskell-servant/servant/pull/964">#964</a> <a href="https://github.com/haskell-servant/servant/pull/967">#967</a> <a href="https://github.com/haskell-servant/servant/pull/976">#976</a>)</p></li>
+<li><p>Documentation updates <a href="https://github.com/haskell-servant/servant/pull/963">#963</a> <a href="https://github.com/haskell-servant/servant/pull/960">#960</a> <a href="https://github.com/haskell-servant/servant/pull/908">#908</a> <a href="https://github.com/haskell-servant/servant/pull/958">#958</a> <a href="https://github.com/haskell-servant/servant/pull/948">#948</a> <a href="https://github.com/haskell-servant/servant/pull/928">#928</a> <a href="https://github.com/haskell-servant/servant/pull/921">#921</a>)</p></li>
+<li><p>Development process improvements (<a href="https://github.com/haskell-servant/servant/pull/680">#680</a> <a href="https://github.com/haskell-servant/servant/pull/917">#917</a> <a href="https://github.com/haskell-servant/servant/pull/923">#923</a> <a href="https://github.com/haskell-servant/servant/pull/961">#961</a> <a href="https://github.com/haskell-servant/servant/pull/973">#973</a>)</p></li>
+</ul>
+</section>
+</section>
+
+<div class="info">
+    Posted on June 19, 2018
+    
+        by The servant team
+    
+</div>
+]]></description>
+    <pubDate>Tue, 19 Jun 2018 00:00:00 UT</pubDate>
+    <guid>http://haskell-servant.github.io/posts/2018-06-19-servant-0.14-released.html</guid>
+    <dc:creator>servant developers</dc:creator>
+</item>
+<item>
+    <title>Passing a DB connection to handlers in Servant</title>
+    <link>http://haskell-servant.github.io/posts/2017-03-03-servant-and-db.html</link>
+    <description><![CDATA[<p>This post is originally published in http://oleg.fi/gists/posts/2017-03-03-servant-and-db.html. This version is updated to use <code>hoistServer</code>.</p>
+<p>This write-up is motivated by discussion in <a href="https://github.com/haskell-servant/servant/issues/704">servant/#704 issue</a>. I try to summarize the main points.</p>
+<p>As this is a literate haskell file, we’ll need to do a small prelude dance:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE DataKinds #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE DeriveFunctor #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="ot">{-# LANGUAGE TypeOperators #-}</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Data.Pool</span> (<span class="dt">Pool</span>, withResource)</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Control.Monad.Reader</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Control.Monad.Base</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Control.Monad.Trans.Control</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Database.PostgreSQL.Simple</span> (<span class="dt">Connection</span>)</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Log</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Servant</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Category</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="co">-- | Needed for &#39;MonadLog (LogT Handler)&#39; instance</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">instance</span> <span class="dt">MonadTime</span> <span class="dt">Handler</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">    currentTime <span class="fu">=</span> liftIO currentTime</a></code></pre></div>
+<section id="the-problem" class="level2">
+<h2>The problem</h2>
+<p>The issue started as instance XY-problem:</p>
+<ul>
+<li><strong>Y</strong>: Docs explaining how to actually create a full combinator (ex. one to create/store a DB connection)</li>
+<li><strong>X</strong>: How to pass a db connection to the handlers.</li>
+</ul>
+<p>I won’t answer to the <strong>Y</strong>, how to write combinators is different topic (have to write about that later). Let’s see how to deal with <strong>X</strong>, by implementing a small Cat CR(UD) API:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- we should have proper data/newtypes, but then we&#39;ll need to write instances.</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="co">-- we&#39;ll try to keep a boilerplate at the minimum in this example.</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">type</span> <span class="dt">Cat</span> <span class="fu">=</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">type</span> <span class="dt">CatName</span> <span class="fu">=</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;cat&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">CatName</span> <span class="fu">:&gt;</span> <span class="dt">Put</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Cat</span>  <span class="co">-- create</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;cat&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;name&quot;</span> <span class="dt">CatName</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Cat</span>  <span class="co">-- read</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">api <span class="fu">=</span> <span class="dt">Proxy</span></a></code></pre></div>
+<p>Now we’ll need to implement the api, we’ll write a basic Haskell functions, which we would write anyway, we could reuse them in a console application, for example.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">createCat ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">CatName</span> <span class="ot">-&gt;</span> m <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">createCat <span class="fu">=</span> error <span class="st">&quot;not implemented&quot;</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">readCat ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">CatName</span> <span class="ot">-&gt;</span> m <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">readCat <span class="fu">=</span> error <span class="st">&quot;not implemented&quot;</span></a></code></pre></div>
+<p>And the problem is that if we try to do</p>
+<pre class="foo"><code>-- THIS DOESN&#39;T WORK
+app :: Application
+app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
+<p>it will fail with a type-error message from GHC. Obviously, GHC cannot conjure <code>Connection</code> for us. We need to pass it in somehow.</p>
+</section>
+<section id="partial-application" class="level2">
+<h2>Partial application</h2>
+<p><em>Partial application</em> is a simple tool. We can partially apply the implementation to fit into type required by <code>serve</code>. We’ll make a situation a bit more interesting by using a connection pool:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">app ::</span> <span class="dt">Pool</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Application</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">app pool <span class="fu">=</span> serve api <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    withResource1 pool createCat <span class="fu">:&lt;|&gt;</span> withResource1 pool readCat</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="ot">    withResource1 ::</span> <span class="dt">MonadBaseControl</span> <span class="dt">IO</span> m <span class="ot">=&gt;</span> <span class="dt">Pool</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> m c) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> m c</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    withResource1 pool f b <span class="fu">=</span> withResource pool <span class="fu">$</span> \a <span class="ot">-&gt;</span> f a b</a></code></pre></div>
+<p>As you can see we’d need to wrap every handler in <code>withResource1</code>. It’s not very elegant, but <strong>it works</strong>. And is very <strong>simple</strong> to understand.</p>
+</section>
+<section id="hoistserver" class="level2">
+<h2>hoistServer</h2>
+<p><code>servant</code> offers the <a href="http://hackage.haskell.org/package/servant-server-0.14/docs/Servant-Server.html#v:hoistServer"><code>hoistServer</code></a> helper function. which let’s you to remove this kind of boilerplate. We’ll rewrite our handlers in MTL-style, with a <code>MonadDB</code> type class. For the sake of example let’s also add a <code>MonadLog</code> from <a href="http://hackage.haskell.org/package/log-base"><code>log-base</code></a> to the first endpoint.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">class</span> <span class="dt">MonadDB</span> m <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">    withConnection ::</span> (<span class="dt">Connection</span> <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> m a</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="ot">createCat&#39; ::</span> (<span class="dt">MonadDB</span> m, <span class="dt">MonadLog</span> m) <span class="ot">=&gt;</span> <span class="dt">CatName</span> <span class="ot">-&gt;</span> m <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">createCat&#39; <span class="fu">=</span> error <span class="st">&quot;not implemented&quot;</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"><span class="ot">readCat&#39; ::</span> (<span class="dt">MonadDB</span> m) <span class="ot">=&gt;</span> <span class="dt">CatName</span> <span class="ot">-&gt;</span> m <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">readCat&#39; <span class="fu">=</span> error <span class="st">&quot;not implemented&quot;</span></a></code></pre></div>
+<p>Looks good, but how we’ll pass a connection (and a logger)? The answer is obvious, when you know it: we’ll need to use a concrete monad implementation, for example:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">H</span> a <span class="fu">=</span> <span class="dt">H</span> {<span class="ot"> runH ::</span> <span class="dt">ReaderT</span> (<span class="dt">Pool</span> <span class="dt">Connection</span>) (<span class="dt">LogT</span> <span class="dt">Handler</span>) a }</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">   <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadTime</span>, <span class="dt">MonadLog</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">MonadDB</span> <span class="dt">H</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">    withConnection f <span class="fu">=</span> <span class="dt">H</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">        pool <span class="ot">&lt;-</span> ask</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">        withResource pool <span class="fu">$</span> \conn <span class="ot">-&gt;</span> runH (f conn)</a></code></pre></div>
+<p>And now <code>hoistServer</code> will do the magic:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">app&#39; ::</span> <span class="dt">Pool</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Logger</span> <span class="ot">-&gt;</span> <span class="dt">Application</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">app&#39; pool logger <span class="fu">=</span> serve api <span class="fu">$</span> hoistServer api nt <span class="fu">$</span> createCat&#39; <span class="fu">:&lt;|&gt;</span> readCat&#39;</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">    nt ::</span> <span class="dt">H</span> x <span class="ot">-&gt;</span> <span class="dt">Handler</span> x</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">    nt m <span class="ot">-&gt;</span> runLogT <span class="st">&quot;api&quot;</span> logger (runReaderT (runH m) pool)</a></code></pre></div>
+<p>The <code>nt</code> (for natural transformation) tells how to transform the concrete monad <code>H</code> into servant’s <code>Handler</code>. The <code>hoistServer</code> machinery walks through <code>ServerT H</code> value and applies that transformation, resulting into <code>ServerT Handler</code> value. If <code>api</code> has <code>HasServer</code> instance, you can <code>hoistServer</code> it.</p>
+<p>The <code>hoistServer</code> is most useful when you have polymorphic handlers defined with mtl-like monad type-classes, so you can instantiate them all with the same concrete monad at then end. Note: that if we had concrete <code>LogT Handler</code> in some handler, and <code>ReaderT (Pool Connection) Handler</code> in some other one, <code>hoistServer</code> won’t help!</p>
+<p>So to conclude:</p>
+<ul>
+<li>start with <em>partial application</em> to pass arguments into handlers</li>
+<li>later you may transfer to use fancier <code>hoistServer</code>.</li>
+</ul>
+<p><a href="https://github.com/haskell-servant/servant/issues/704#issuecomment-283396827">Alp Mestanogullari summarised it well</a>: <em>gradually reach for fancier things as your needs grow, never when it’s not required</em>.</p>
+</section>
+
+<div class="info">
+    Posted on March  3, 2017
+    
+        by Oleg Grenrus
+    
+</div>
+]]></description>
+    <pubDate>Fri, 03 Mar 2017 00:00:00 UT</pubDate>
+    <guid>http://haskell-servant.github.io/posts/2017-03-03-servant-and-db.html</guid>
+    <dc:creator>servant developers</dc:creator>
+</item>
+<item>
     <title>servant 0.5 released</title>
     <link>http://haskell-servant.github.io/posts/2016-03-19-servant-0.5-release.html</link>
     <description><![CDATA[<div id="toc"><h3>Table of contents</h3><ul>
