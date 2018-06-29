@@ -29,105 +29,105 @@
 <p>While defining handlers that serve an API has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. Except that we usually have to write the querying functions by hand because the structure of the API isn’t a first class citizen and can’t be inspected to generate a bunch of client-side functions.</p>
 <p><em>servant</em> however has a way to inspect API, because APIs are just Haskell types and (GHC) Haskell lets us do quite a few things with types. In the same way that we look at an API type to deduce the types the handlers should have, we can inspect the structure of the API to <em>derive</em> Haskell functions that take one argument for each occurence of <code>Capture</code>, <code>ReqBody</code>, <code>QueryParam</code> and friends. By <em>derive</em>, we mean that there’s no code generation involved, the functions are defined just by the structure of the API type.</p>
 <p>The source for this tutorial section is a literate haskell file, so first we need to have some language extensions and imports:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
-<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
-<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
-
-<span class="kw">module</span> <span class="dt">Client</span> <span class="kw">where</span>
-
-<span class="kw">import </span><span class="dt">Control.Monad.Trans.Either</span>
-<span class="kw">import </span><span class="dt">Data.Aeson</span>
-<span class="kw">import </span><span class="dt">Data.Proxy</span>
-<span class="kw">import </span><span class="dt">GHC.Generics</span>
-<span class="kw">import </span><span class="dt">Servant.API</span>
-<span class="kw">import </span><span class="dt">Servant.Client</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE DataKinds #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE DeriveGeneric #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">{-# LANGUAGE TypeOperators #-}</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">module</span> <span class="dt">Client</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Control.Monad.Trans.Either</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Data.Aeson</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Data.Proxy</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">GHC.Generics</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Servant.API</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Servant.Client</span></a></code></pre></div>
 <p>Also, we need examples for some domain specific data types:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Position</span> <span class="fu">=</span> <span class="dt">Position</span>
-  {<span class="ot"> x ::</span> <span class="dt">Int</span>
-  ,<span class="ot"> y ::</span> <span class="dt">Int</span>
-  } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Position</span>
-
-<span class="kw">newtype</span> <span class="dt">HelloMessage</span> <span class="fu">=</span> <span class="dt">HelloMessage</span> {<span class="ot"> msg ::</span> <span class="dt">String</span> }
-  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">HelloMessage</span>
-
-<span class="kw">data</span> <span class="dt">ClientInfo</span> <span class="fu">=</span> <span class="dt">ClientInfo</span>
-  {<span class="ot"> clientName ::</span> <span class="dt">String</span>
-  ,<span class="ot"> clientEmail ::</span> <span class="dt">String</span>
-  ,<span class="ot"> clientAge ::</span> <span class="dt">Int</span>
-  ,<span class="ot"> clientInterestedIn ::</span> [<span class="dt">String</span>]
-  } <span class="kw">deriving</span> <span class="dt">Generic</span>
-
-<span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">ClientInfo</span>
-
-<span class="kw">data</span> <span class="dt">Email</span> <span class="fu">=</span> <span class="dt">Email</span>
-  {<span class="ot"> from ::</span> <span class="dt">String</span>
-  ,<span class="ot"> to ::</span> <span class="dt">String</span>
-  ,<span class="ot"> subject ::</span> <span class="dt">String</span>
-  ,<span class="ot"> body ::</span> <span class="dt">String</span>
-  } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Email</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Position</span> <span class="fu">=</span> <span class="dt">Position</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  {<span class="ot"> x ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  ,<span class="ot"> y ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Position</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="kw">newtype</span> <span class="dt">HelloMessage</span> <span class="fu">=</span> <span class="dt">HelloMessage</span> {<span class="ot"> msg ::</span> <span class="dt">String</span> }</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">HelloMessage</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="kw">data</span> <span class="dt">ClientInfo</span> <span class="fu">=</span> <span class="dt">ClientInfo</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">  {<span class="ot"> clientName ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">  ,<span class="ot"> clientEmail ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">  ,<span class="ot"> clientAge ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">  ,<span class="ot"> clientInterestedIn ::</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">  } <span class="kw">deriving</span> <span class="dt">Generic</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">ClientInfo</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22"><span class="kw">data</span> <span class="dt">Email</span> <span class="fu">=</span> <span class="dt">Email</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">  {<span class="ot"> from ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">  ,<span class="ot"> to ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">  ,<span class="ot"> subject ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">  ,<span class="ot"> body ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">  } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Email</span></a></code></pre></div>
 <p>Enough chitchat, let’s see an example. Consider the following API type from the previous section:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;position&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;y&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Position</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] HelloMessage</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;marketing&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] ClientInfo :&gt; Post '</span>[<span class="dt">JSON</span>] <span class="dt">Email</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;position&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;x&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;y&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">Position</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;name&quot;</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">HelloMessage</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;marketing&quot;</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> '[<span class="dt">JSON</span>] <span class="dt">ClientInfo</span> <span class="fu">:&gt;</span> <span class="dt">Post</span> '[<span class="dt">JSON</span>] <span class="dt">Email</span></a></code></pre></div>
 <p>What we are going to get with <em>servant-client</em> here is 3 functions, one to query each endpoint:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">position ::</span> <span class="dt">Int</span> <span class="co">-- ^ value for &quot;x&quot;</span>
-         <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="co">-- ^ value for &quot;y&quot;</span>
-         <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">Position</span>
-
-<span class="ot">hello ::</span> <span class="dt">Maybe</span> <span class="dt">String</span> <span class="co">-- ^ an optional value for &quot;name&quot;</span>
-      <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">HelloMessage</span>
-
-<span class="ot">marketing ::</span> <span class="dt">ClientInfo</span> <span class="co">-- ^ value for the request body</span>
-          <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">Email</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">position ::</span> <span class="dt">Int</span> <span class="co">-- ^ value for &quot;x&quot;</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">         <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="co">-- ^ value for &quot;y&quot;</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">         <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">Position</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="ot">hello ::</span> <span class="dt">Maybe</span> <span class="dt">String</span> <span class="co">-- ^ an optional value for &quot;name&quot;</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">      <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">HelloMessage</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="ot">marketing ::</span> <span class="dt">ClientInfo</span> <span class="co">-- ^ value for the request body</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">          <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">Email</span></a></code></pre></div>
 <p>Each function makes available as an argument any value that the response may depend on, as evidenced in the API type. How do we get these functions? Just give a <code>Proxy</code> to your API and a host to make the requests to:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
-api <span class="fu">=</span> <span class="dt">Proxy</span>
-
-position <span class="fu">:&lt;|&gt;</span> hello <span class="fu">:&lt;|&gt;</span> marketing <span class="fu">=</span> client api (<span class="dt">BaseUrl</span> <span class="dt">Http</span> <span class="st">&quot;localhost&quot;</span> <span class="dv">8081</span>)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">api <span class="fu">=</span> <span class="dt">Proxy</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">position <span class="fu">:&lt;|&gt;</span> hello <span class="fu">:&lt;|&gt;</span> marketing <span class="fu">=</span> client api (<span class="dt">BaseUrl</span> <span class="dt">Http</span> <span class="st">&quot;localhost&quot;</span> <span class="dv">8081</span>)</a></code></pre></div>
 <p>As you can see in the code above, we just “pattern match our way” to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The <code>BaseUrl</code> value there is just:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | URI scheme to use</span>
-<span class="kw">data</span> <span class="dt">Scheme</span> <span class="fu">=</span>
-    <span class="dt">Http</span>  <span class="co">-- ^ http://</span>
-  <span class="fu">|</span> <span class="dt">Https</span> <span class="co">-- ^ https://</span>
-  <span class="kw">deriving</span>
-
-<span class="co">-- | Simple data type to represent the target of HTTP requests</span>
-<span class="co">--   for servant's automatically-generated clients.</span>
-<span class="kw">data</span> <span class="dt">BaseUrl</span> <span class="fu">=</span> <span class="dt">BaseUrl</span>
-  {<span class="ot"> baseUrlScheme ::</span> <span class="dt">Scheme</span> <span class="co">-- ^ URI scheme to use</span>
-  ,<span class="ot"> baseUrlHost ::</span> <span class="dt">String</span>   <span class="co">-- ^ host (eg &quot;haskell.org&quot;)</span>
-  ,<span class="ot"> baseUrlPort ::</span> <span class="dt">Int</span>      <span class="co">-- ^ port (eg 80)</span>
-  }</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- | URI scheme to use</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Scheme</span> <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">    <span class="dt">Http</span>  <span class="co">-- ^ http://</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  <span class="fu">|</span> <span class="dt">Https</span> <span class="co">-- ^ https://</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  <span class="kw">deriving</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"><span class="co">-- | Simple data type to represent the target of HTTP requests</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"><span class="co">--   for servant's automatically-generated clients.</span></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="kw">data</span> <span class="dt">BaseUrl</span> <span class="fu">=</span> <span class="dt">BaseUrl</span></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">  {<span class="ot"> baseUrlScheme ::</span> <span class="dt">Scheme</span> <span class="co">-- ^ URI scheme to use</span></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">  ,<span class="ot"> baseUrlHost ::</span> <span class="dt">String</span>   <span class="co">-- ^ host (eg &quot;haskell.org&quot;)</span></a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">  ,<span class="ot"> baseUrlPort ::</span> <span class="dt">Int</span>      <span class="co">-- ^ port (eg 80)</span></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">  }</a></code></pre></div>
 <p>That’s it. Let’s now write some code that uses our client functions.</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">queries ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> (<span class="dt">Position</span>, <span class="dt">HelloMessage</span>, <span class="dt">Email</span>)
-queries <span class="fu">=</span> <span class="kw">do</span>
-  pos <span class="ot">&lt;-</span> position <span class="dv">10</span> <span class="dv">10</span>
-  msg <span class="ot">&lt;-</span> hello (<span class="dt">Just</span> <span class="st">&quot;servant&quot;</span>)
-  em  <span class="ot">&lt;-</span> marketing (<span class="dt">ClientInfo</span> <span class="st">&quot;Alp&quot;</span> <span class="st">&quot;alp@foo.com&quot;</span> <span class="dv">26</span> [<span class="st">&quot;haskell&quot;</span>, <span class="st">&quot;mathematics&quot;</span>])
-  return (pos, msg, em)
-
-<span class="ot">run ::</span> <span class="dt">IO</span> ()
-run <span class="fu">=</span> <span class="kw">do</span>
-  res <span class="ot">&lt;-</span> runEitherT queries
-  <span class="kw">case</span> res <span class="kw">of</span>
-    <span class="dt">Left</span> err <span class="ot">-&gt;</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Error: &quot;</span> <span class="fu">++</span> show err
-    <span class="dt">Right</span> (pos, msg, em) <span class="ot">-&gt;</span> <span class="kw">do</span>
-      print pos
-      print msg
-      print em</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">queries ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> (<span class="dt">Position</span>, <span class="dt">HelloMessage</span>, <span class="dt">Email</span>)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">queries <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  pos <span class="ot">&lt;-</span> position <span class="dv">10</span> <span class="dv">10</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  msg <span class="ot">&lt;-</span> hello (<span class="dt">Just</span> <span class="st">&quot;servant&quot;</span>)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  em  <span class="ot">&lt;-</span> marketing (<span class="dt">ClientInfo</span> <span class="st">&quot;Alp&quot;</span> <span class="st">&quot;alp@foo.com&quot;</span> <span class="dv">26</span> [<span class="st">&quot;haskell&quot;</span>, <span class="st">&quot;mathematics&quot;</span>])</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  return (pos, msg, em)</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8"><span class="ot">run ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">run <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">  res <span class="ot">&lt;-</span> runEitherT queries</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">  <span class="kw">case</span> res <span class="kw">of</span></a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">    <span class="dt">Left</span> err <span class="ot">-&gt;</span> putStrLn <span class="fu">$</span> <span class="st">&quot;Error: &quot;</span> <span class="fu">++</span> show err</a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">    <span class="dt">Right</span> (pos, msg, em) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">      print pos</a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">      print msg</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">      print em</a></code></pre></div>
 <p>You can now run <code>dist/build/tutorial/tutorial 8</code> (the server) and <code>dist/build/t8-main/t8-main</code> (the client) to see them both in action.</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"> $ <span class="kw">dist/build/tutorial/tutorial</span> 8
- <span class="co"># and in another terminal:</span>
- $ <span class="kw">dist/build/t8-main/t8-main</span>
- <span class="kw">Position</span> {x = 10, y = 10}
- <span class="kw">HelloMessage</span> {msg = <span class="st">&quot;Hello, servant&quot;</span>}
- <span class="kw">Email</span> {from = <span class="st">&quot;great@company.com&quot;</span>, to = <span class="st">&quot;alp@foo.com&quot;</span>, subject = <span class="st">&quot;Hey Alp, we miss you!&quot;</span>, body = <span class="st">&quot;Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!&quot;</span>}</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" data-line-number="1"> $ <span class="ex">dist/build/tutorial/tutorial</span> 8</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"> <span class="co"># and in another terminal:</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"> $ <span class="ex">dist/build/t8-main/t8-main</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"> <span class="ex">Position</span> {x = 10, y = 10}</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5"> <span class="ex">HelloMessage</span> {msg = <span class="st">&quot;Hello, servant&quot;</span>}</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"> <span class="ex">Email</span> {from = <span class="st">&quot;great@company.com&quot;</span>, to = <span class="st">&quot;alp@foo.com&quot;</span>, subject = <span class="st">&quot;Hey Alp, we miss you!&quot;</span>, body = <span class="st">&quot;Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!&quot;</span>}</a></code></pre></div>
 <p>The types of the arguments for the functions are the same as for (server-side) request handlers. You now know how to use <em>servant-client</em>!</p>
 <div style="text-align: center;">
 <p>

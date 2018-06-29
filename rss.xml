@@ -55,10 +55,10 @@
 <li><p><code>Post</code> now returns 200. Replace <code>Post</code> with <code>PostCreated</code> if you want to stick to the old behaviour, which was returning a 201.</p></li>
 <li><p>Methods returning <code>()</code> do not automatically return 204 anymore. Use <code>GetNoContent</code> (and <code>PostNoContent</code>, etc.) in conjunction with the <code>NoContent</code> type instead:</p></li>
 </ul>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    <span class="co">-- Old code</span>
-    <span class="dt">Get</span> <span class="ch">&#39;[] ()</span>
-    <span class="co">-- New code</span>
-    <span class="dt">GetNoContent</span> <span class="ch">&#39;[JSON] NoContent</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">    <span class="co">-- Old code</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="dt">Get</span> &#39;[] ()</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="co">-- New code</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="dt">GetNoContent</span> &#39;[<span class="dt">JSON</span>] <span class="dt">NoContent</span></a></code></pre></div>
 <ul>
 <li><p><code>MatrixParam</code> has been removed.</p></li>
 <li><p>The content-type list now is invariably used to determine whether to respond – that is, even when you’re returning <code>NoContent</code> you need to specify matching content-types.</p></li>
@@ -81,15 +81,15 @@
 <section id="if-you-have-your-own-combinators" class="level2">
 <h2>If you have your own combinators</h2>
 <p>Then the story is more complicated. The <code>HasServer</code> class changed quite drastically:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Previously</span>
-<span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span>
-   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span>
-<span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Server</span> layout <span class="ot">-&gt;</span> <span class="dt">RoutingApplication</span>
-
-<span class="co">-- Now</span>
-<span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span>
-   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span>
-<span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Config</span> config <span class="ot">-&gt;</span> <span class="dt">Delayed</span> (<span class="dt">Server</span> layout) <span class="ot">-&gt;</span> <span class="dt">Router</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- Previously</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Server</span> layout <span class="ot">-&gt;</span> <span class="dt">RoutingApplication</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="co">-- Now</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Config</span> config <span class="ot">-&gt;</span> <span class="dt">Delayed</span> (<span class="dt">Server</span> layout) <span class="ot">-&gt;</span> <span class="dt">Router</span></a></code></pre></div>
 <p>Read below for more information.</p>
 </section>
 </section>
@@ -103,13 +103,13 @@
 <h2>Proper error handling</h2>
 <p>One of the biggest embarassements for <code>servant</code> was the fact that in certain circumstances, the HTTP error returned was not what one would expect. For example, if a request had both the wrong method and the wrong body, the error returned would be 400 (Bad Request) rather 405 (Method Not Allowed). This was because we matched against parts of your API in the order they appeared in your API type. Andres Löh came up with an elegant solution to this problem, creating a datatype that allows checks (and their side-effects) to be delayed.</p>
 <p>This allows for a fine-grained control over when side-effects and general HTTP logic is run. Currently there are five ‘slots’ for effects:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Delayed</span> c <span class="kw">where</span>
-  <span class="dt">Delayed</span><span class="ot"> ::</span> {<span class="ot"> capturesD ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> captures)
-             ,<span class="ot"> methodD   ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> ())
-             ,<span class="ot"> authD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> auth)
-             ,<span class="ot"> bodyD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> body)
-             ,<span class="ot"> serverD   ::</span> (captures <span class="ot">-&gt;</span> auth <span class="ot">-&gt;</span> body <span class="ot">-&gt;</span> <span class="dt">RouteResult</span> c)
-             } <span class="ot">-&gt;</span> <span class="dt">Delayed</span> c</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Delayed</span> c <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="dt">Delayed</span><span class="ot"> ::</span> {<span class="ot"> capturesD ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> captures)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">             ,<span class="ot"> methodD   ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> ())</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">             ,<span class="ot"> authD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> auth)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">             ,<span class="ot"> bodyD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> body)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">             ,<span class="ot"> serverD   ::</span> (captures <span class="ot">-&gt;</span> auth <span class="ot">-&gt;</span> body <span class="ot">-&gt;</span> <span class="dt">RouteResult</span> c)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">             } <span class="ot">-&gt;</span> <span class="dt">Delayed</span> c</a></code></pre></div>
 <p>Which are run in the order in which they appear in the code. <a href="https://github.com/haskell-servant/servant/blob/master/servant-server/src/Servant/Server/Internal/RoutingApplication.hs#L140-L202">Helper functions</a> can be used to add more effects. In practice, this means that if you are writing a combinator for authentication, for example, you can simply use <code>addAuthCheck</code> to schedule your action. It will only be run if the captures and methods match, but before the body is looked at.</p>
 <p>These five slots do not exhaust the steps of handling an HTTP request. But rather than straight away implement a very large datatype for the entire <a href="https://camo.githubusercontent.com/4e15cccf2a9277dcca2c8824092547dee7058744/68747470733a2f2f7261776769746875622e636f6d2f666f722d4745542f687474702d6465636973696f6e2d6469616772616d2f6d61737465722f6874747064642e706e67">HTTP decision diagram</a>, we decided to implement what was needed for the official <code>servant</code> combinators. We now want to gather some experience to see, if something’s missing. So if you feel like another slot is needed, open an issue!</p>
 </section>
@@ -122,46 +122,46 @@
 <section id="http-api-data" class="level2">
 <h2><code>http-api-data</code></h2>
 <p>The type classes <code>FromText</code> and <code>ToText</code> have been renamed, revamped, and relocated. They are now called <code>FromHttpApiData</code> and <code>ToHttpApiData</code> respectively, and exist in the new package <code>http-api-data</code>. This was work by Nickolay Kudasov, and includes a variety of other improvements. Most noticeably, rather than having a single [de/]serialization method, there are now ones for each of the cases for which we need the [de/]serialization. (This was based on an idea from Greg Weber.):</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">FromHttpApiData</span> a <span class="kw">where</span>
-    <span class="ot">{-# MINIMAL parseUrlPiece | parseQueryParam #-}</span>
-<span class="ot">    parseUrlPiece ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a
-    parseUrlPiece <span class="fu">=</span> parseQueryParam
-
-<span class="ot">    parseHeader ::</span> <span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a
-    parseHeader <span class="fu">=</span> parseUrlPiece <span class="fu">.</span> decodeUtf8
-
-<span class="ot">    parseQueryParam ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a
-    parseQueryParam <span class="fu">=</span> parseUrlPiece</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">class</span> <span class="dt">FromHttpApiData</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    <span class="ot">{-# MINIMAL parseUrlPiece | parseQueryParam #-}</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="ot">    parseUrlPiece ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    parseUrlPiece <span class="fu">=</span> parseQueryParam</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="ot">    parseHeader ::</span> <span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    parseHeader <span class="fu">=</span> parseUrlPiece <span class="fu">.</span> decodeUtf8</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="ot">    parseQueryParam ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">    parseQueryParam <span class="fu">=</span> parseUrlPiece</a></code></pre></div>
 <p>As an added bonus, the Template Haskell for <code>persistent</code> generates these automatically, making using <code>persistent</code> with <code>servant</code> a lot easier.</p>
 <p>The <a href="http://hackage.haskell.org/package/http-api-data-0.2.2/docs/Web-HttpApiData.html">haddocks</a> for the package have more information.</p>
 </section>
 <section id="simplify-tosample" class="level2">
 <h2>Simplify <code>ToSample</code></h2>
 <p><code>ToSample</code> now takes only one parameter. It was an annoying mistake that it ever took two, which Nickolay Kudasov fixed. Additionally, instead of having two methods (<code>toSample</code> and <code>toSamples</code>) defined in terms of one another, we now have a single one (<code>toSamples</code>).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span>
-
-<span class="co">-- Old code</span>
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="dt">MyData</span> <span class="kw">where</span>
-    toSample _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)
-
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="kw">where</span>
-    toSamples _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co">-- Old code</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="dt">MyData</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    toSample _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">    toSamples _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)</a></code></pre></div>
 <p>Nickolay also made a <code>Generic</code> default method for this class, so that now you could simply have:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span></a></code></pre></div>
 </section>
 <section id="unifying-method-combinators" class="level2">
 <h2>Unifying method combinators</h2>
 <p>Previously each of ‘Get’, ‘Put’, ‘Post’, etc. were entirely separate datatypes. This also meant each interpretation needed to included instances for all of them. The 0.5 release makes them instead type-synonyms, e.g.:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Get</span> contentTypes a <span class="fu">=</span> <span class="dt">Verb</span> <span class="ch">&#39;GET 200 contentTypes a</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Get</span> contentTypes a <span class="fu">=</span> <span class="dt">Verb</span> &#39;<span class="dt">GET</span> <span class="dv">200</span> contentTypes a</a></code></pre></div>
 <p>This makes it easy to change the status code of a success response. To further facilitate that, we now provide a variety of other type synonyms for responses other than 200, for example <code>PostCreated</code> for 201.</p>
 </section>
 <section id="non-memoized-request-body" class="level2">
 <h2>Non-memoized request body</h2>
 <p>Prior to Andres Löh’s trie-based routing improvements, we had to keep the request body in memory for more-or-less the duration of the request-response cycle. This was of course far from ideal, but necessary given that we could not tell whether the request might be re-routed to a different endpoint. After the changes, we can now remove it. Note however that certain idioms, such as</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">ReqBody</span> <span class="ch">&#39;[JSON] Int :&gt; Get &#39;</span>[<span class="dt">JSON</span>] <span class="dt">Int</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">&#39;[JSON] String :&gt; Get &#39;</span>[<span class="dt">JSON</span>] <span class="dt">String</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">ReqBody</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span></a></code></pre></div>
 <p>no longer make sense – a request body that cannot be decoded as an <code>Int</code> will be rejected with a 400, and the second endpoint will not be tried. This accords with the behaviour of more traditional frameworks and, as Edsko de Vries showed in a <a href="http://www.edsko.net/temp/dependently-typed-servers/">blog post</a>, no loss of expressivity is entailed by the change.</p>
 <p>We expect this to enable streaming combinators.</p>
 </section>
@@ -176,12 +176,12 @@
 <section id="manager-and-baseurl-as-an-argument" class="level2">
 <h2><code>Manager</code> and <code>BaseUrl</code> as an argument</h2>
 <p>Previously the <em>http-client</em> <code>Manager</code> – which is used to issue http requests – was created (with <code>unsafePerformIO</code>) by the <em>servant-client</em> library itself. This meant that it was impossible to configure the <code>Manager</code>. Now the <code>Manager</code> is passed in as an argument to client:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Old code</span>
-endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api
-<span class="co">-- endpoint1 :: BaseUrl -&gt; X</span>
-<span class="co">-- New code</span>
-endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api baseUrl manager
-<span class="co">-- endpoint1 :: X</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- Old code</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="co">-- endpoint1 :: BaseUrl -&gt; X</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="co">-- New code</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api baseUrl manager</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"><span class="co">-- endpoint1 :: X</span></a></code></pre></div>
 <p>We’re not entirely happy with this solution, since sometimes you want the <code>endpoint1</code> functions to take these two arguments instead (for example, if you would like to distribute client functions as a library). But it is certainly an improvement.</p>
 </section>
 <section id="nocontent-and-status-codes" class="level2">
@@ -205,20 +205,20 @@ endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span>
 <h3>Basic Auth</h3>
 <p>(<em>NOTE</em>: Basic Auth sends text in the clear, so only use this over HTTPS!)</p>
 <p>An API protected by Basic Auth in <code>servant</code> looks like this:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">User</span> <span class="fu">=</span> <span class="fu">...</span>
-<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">BasicAuth</span> <span class="st">&quot;my-realm&quot;</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">PrivateAPI</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">data</span> <span class="dt">User</span> <span class="fu">=</span> <span class="fu">...</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">BasicAuth</span> <span class="st">&quot;my-realm&quot;</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">PrivateAPI</span></a></code></pre></div>
 <p>Where <code>User</code> is an application-specific datatype that your handlers will receive as an argument in case authentication succeeds.</p>
 <p><code>servant</code> needs to know how to generate a <code>User</code> from a username and password string. For that, we use the new <code>Context</code> mechanism.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">serverContext ::</span> <span class="dt">Context</span> (<span class="dt">BasicAuthCheck</span> <span class="dt">User</span> <span class="ch">&#39;: &#39;</span>[])
-serverContext <span class="fu">=</span> authCheck <span class="fu">:.</span> <span class="dt">EmptyContext</span>
-
-<span class="ot">authCheck ::</span> <span class="dt">BasicAuthCheck</span> <span class="dt">User</span>
-authCheck <span class="fu">=</span>
-  <span class="kw">let</span> check (<span class="dt">BasicAuthData</span> username password) <span class="fu">=</span>
-        <span class="kw">if</span> username <span class="fu">==</span> <span class="st">&quot;servant&quot;</span> <span class="fu">&amp;&amp;</span> password <span class="fu">==</span> <span class="st">&quot;server&quot;</span>
-        <span class="kw">then</span> return (<span class="dt">Authorized</span> (<span class="dt">User</span> <span class="st">&quot;servant&quot;</span>))
-        <span class="kw">else</span> return <span class="dt">Unauthorized</span>
-  <span class="kw">in</span> <span class="dt">BasicAuthCheck</span> check</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">serverContext ::</span> <span class="dt">Context</span> (<span class="dt">BasicAuthCheck</span> <span class="dt">User</span> &#39;<span class="fu">:</span> &#39;[])</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">serverContext <span class="fu">=</span> authCheck <span class="fu">:.</span> <span class="dt">EmptyContext</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="ot">authCheck ::</span> <span class="dt">BasicAuthCheck</span> <span class="dt">User</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">authCheck <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">  <span class="kw">let</span> check (<span class="dt">BasicAuthData</span> username password) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">        <span class="kw">if</span> username <span class="fu">==</span> <span class="st">&quot;servant&quot;</span> <span class="fu">&amp;&amp;</span> password <span class="fu">==</span> <span class="st">&quot;server&quot;</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">        <span class="kw">then</span> return (<span class="dt">Authorized</span> (<span class="dt">User</span> <span class="st">&quot;servant&quot;</span>))</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">        <span class="kw">else</span> return <span class="dt">Unauthorized</span></a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">  <span class="kw">in</span> <span class="dt">BasicAuthCheck</span> check</a></code></pre></div>
 </section>
 </section>
 <section id="documentation" class="level2">
@@ -261,117 +261,117 @@ authCheck <span class="fu">=</span>
 <p>Thankfully David Johnson and Nickolay Kudasov have written two Haskell libraries, <a href="https://hackage.haskell.org/package/swagger2">swagger2</a> and <a href="https://hackage.haskell.org/package/servant-swagger">servant-swagger</a>, that automate nearly all of that process for <code>servant</code> APIs. They use the mechanism that guides most of the <code>servant</code> ecosystem — interpreters for the type-level DSL for APIs that is <code>servant</code> — to generate a swagger spec for that API.</p>
 <p>Let’s see how it is used; as an example, we’re going to take the Gists part of the <a href="https://developer.github.com/v3/gists/">GitHub API v3</a>. For the purpose of this post we will ignore authentication and consider only <code>GET</code> requests which do not require one. Furthermore, we’ll use simplified representation for the responses (i.e. we are also ignoring some fields of the response objects).</p>
 <p>First the imports and pragmas (this is a <a href="https://github.com/haskell-servant/haskell-servant.github.io/blob/hakyll/posts/2016-02-06-servant-swagger.lhs">literate haskell file</a>):</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
-<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
-<span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span>
-<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
-<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
-<span class="kw">module</span> <span class="dt">Gists</span> <span class="kw">where</span>
-
-<span class="kw">import </span><span class="dt">Control.Lens</span>
-<span class="kw">import </span><span class="dt">Data.Aeson</span>
-<span class="kw">import </span><span class="dt">Data.Aeson.Types</span> (camelTo2)
-<span class="kw">import qualified</span> <span class="dt">Data.Aeson.Types</span> <span class="kw">as</span> <span class="dt">JSON</span>
-<span class="kw">import qualified</span> <span class="dt">Data.ByteString.Lazy.Char8</span> <span class="kw">as</span> <span class="dt">BL8</span>
-<span class="kw">import </span><span class="dt">Data.HashMap.Strict</span> (<span class="dt">HashMap</span>)
-<span class="kw">import </span><span class="dt">Data.Proxy</span>
-<span class="kw">import </span><span class="dt">Data.Swagger</span>
-<span class="kw">import </span><span class="dt">Data.Text</span> (<span class="dt">Text</span>)
-<span class="kw">import </span><span class="dt">Data.Time</span> (<span class="dt">UTCTime</span>)
-<span class="kw">import </span><span class="dt">GHC.Generics</span> (<span class="dt">Generic</span>)
-<span class="kw">import </span><span class="dt">Servant</span>
-<span class="kw">import </span><span class="dt">Servant.Swagger</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE DataKinds #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE DeriveGeneric #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">{-# LANGUAGE TypeOperators #-}</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">module</span> <span class="dt">Gists</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Control.Lens</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Data.Aeson</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Data.Aeson.Types</span> (camelTo2)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Aeson.Types</span> <span class="kw">as</span> <span class="dt">JSON</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString.Lazy.Char8</span> <span class="kw">as</span> <span class="dt">BL8</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Data.HashMap.Strict</span> (<span class="dt">HashMap</span>)</a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Data.Proxy</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Data.Swagger</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Data.Time</span> (<span class="dt">UTCTime</span>)</a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">GHC.Generics</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Servant</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Servant.Swagger</span></a></code></pre></div>
 <p>The API:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">GitHubGistAPI</span>
-    <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] [Gist]</span>
- <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">GistsAPI</span>
-
-<span class="kw">type</span> <span class="dt">GistsAPI</span>
-    <span class="fu">=</span> <span class="st">&quot;public&quot;</span>  <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] [Gist]</span>
- <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;starred&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] [Gist]</span>
- <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> <span class="dt">GistId</span> <span class="fu">:&gt;</span> <span class="dt">GistAPI</span>
-
-<span class="kw">type</span> <span class="dt">GistAPI</span>
-    <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] Gist</span>
- <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;sha&quot;</span> <span class="dt">Revision</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] Gist</span>
-
-<span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">GitHubGistAPI</span>
-api <span class="fu">=</span> <span class="dt">Proxy</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">type</span> <span class="dt">GitHubGistAPI</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] [<span class="dt">Gist</span>]</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"> <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">GistsAPI</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">type</span> <span class="dt">GistsAPI</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    <span class="fu">=</span> <span class="st">&quot;public&quot;</span>  <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] [<span class="dt">Gist</span>]</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"> <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;starred&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] [<span class="dt">Gist</span>]</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"> <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> <span class="dt">GistId</span> <span class="fu">:&gt;</span> <span class="dt">GistAPI</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">type</span> <span class="dt">GistAPI</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="fu">=</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Gist</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"> <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;sha&quot;</span> <span class="dt">Revision</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Gist</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">GitHubGistAPI</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">api <span class="fu">=</span> <span class="dt">Proxy</span></a></code></pre></div>
 <p>Data types:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Username</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)
-
-<span class="kw">newtype</span> <span class="dt">GistId</span> <span class="fu">=</span> <span class="dt">GistId</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)
-
-<span class="kw">newtype</span> <span class="dt">SHA</span> <span class="fu">=</span> <span class="dt">SHA</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>)
-
-<span class="kw">type</span> <span class="dt">Revision</span> <span class="fu">=</span> <span class="dt">SHA</span>
-
-<span class="kw">data</span> <span class="dt">Gist</span> <span class="fu">=</span> <span class="dt">Gist</span>
-  {<span class="ot"> gistId          ::</span> <span class="dt">GistId</span>
-  ,<span class="ot"> gistDescription ::</span> <span class="dt">Text</span>
-  ,<span class="ot"> gistOwner       ::</span> <span class="dt">Owner</span>
-  ,<span class="ot"> gistFiles       ::</span> <span class="dt">HashMap</span> FilePath <span class="dt">GistFile</span>
-  ,<span class="ot"> gistTruncated   ::</span> <span class="dt">Bool</span>
-  ,<span class="ot"> gistComments    ::</span> <span class="dt">Integer</span>
-  ,<span class="ot"> gistCreatedAt   ::</span> <span class="dt">UTCTime</span>
-  ,<span class="ot"> gistUpdatedAt   ::</span> <span class="dt">UTCTime</span>
-  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">data</span> <span class="dt">OwnerType</span> <span class="fu">=</span> <span class="dt">User</span> <span class="fu">|</span> <span class="dt">Organization</span>
-  <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">data</span> <span class="dt">Owner</span> <span class="fu">=</span> <span class="dt">Owner</span>
-  {<span class="ot"> ownerLogin      ::</span> <span class="dt">Username</span>
-  ,<span class="ot"> ownerType       ::</span> <span class="dt">OwnerType</span>
-  ,<span class="ot"> ownerSiteAdmin  ::</span> <span class="dt">Bool</span>
-  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">data</span> <span class="dt">GistFile</span> <span class="fu">=</span> <span class="dt">GistFile</span>
-  {<span class="ot"> gistfileSize      ::</span> <span class="dt">Integer</span>
-  ,<span class="ot"> gistfileLanguage  ::</span> <span class="dt">Text</span>
-  ,<span class="ot"> gistfileRawUrl    ::</span> <span class="dt">Text</span>
-  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Username</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">GistId</span> <span class="fu">=</span> <span class="dt">GistId</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="kw">newtype</span> <span class="dt">SHA</span> <span class="fu">=</span> <span class="dt">SHA</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw">type</span> <span class="dt">Revision</span> <span class="fu">=</span> <span class="dt">SHA</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="kw">data</span> <span class="dt">Gist</span> <span class="fu">=</span> <span class="dt">Gist</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">  {<span class="ot"> gistId          ::</span> <span class="dt">GistId</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">  ,<span class="ot"> gistDescription ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">  ,<span class="ot"> gistOwner       ::</span> <span class="dt">Owner</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">  ,<span class="ot"> gistFiles       ::</span> <span class="dt">HashMap</span> FilePath <span class="dt">GistFile</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">  ,<span class="ot"> gistTruncated   ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">  ,<span class="ot"> gistComments    ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">  ,<span class="ot"> gistCreatedAt   ::</span> <span class="dt">UTCTime</span></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">  ,<span class="ot"> gistUpdatedAt   ::</span> <span class="dt">UTCTime</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb3-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="kw">data</span> <span class="dt">OwnerType</span> <span class="fu">=</span> <span class="dt">User</span> <span class="fu">|</span> <span class="dt">Organization</span></a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">  <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb3-23" data-line-number="23"><span class="kw">data</span> <span class="dt">Owner</span> <span class="fu">=</span> <span class="dt">Owner</span></a>
+<a class="sourceLine" id="cb3-24" data-line-number="24">  {<span class="ot"> ownerLogin      ::</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb3-25" data-line-number="25">  ,<span class="ot"> ownerType       ::</span> <span class="dt">OwnerType</span></a>
+<a class="sourceLine" id="cb3-26" data-line-number="26">  ,<span class="ot"> ownerSiteAdmin  ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-27" data-line-number="27">  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb3-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb3-29" data-line-number="29"><span class="kw">data</span> <span class="dt">GistFile</span> <span class="fu">=</span> <span class="dt">GistFile</span></a>
+<a class="sourceLine" id="cb3-30" data-line-number="30">  {<span class="ot"> gistfileSize      ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb3-31" data-line-number="31">  ,<span class="ot"> gistfileLanguage  ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb3-32" data-line-number="32">  ,<span class="ot"> gistfileRawUrl    ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb3-33" data-line-number="33">  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a></code></pre></div>
 <p><code>FromJSON</code> instances:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">modifier ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-modifier <span class="fu">=</span> drop <span class="dv">1</span> <span class="fu">.</span> dropWhile (<span class="fu">/=</span> <span class="ch">&#39;_&#39;</span>) <span class="fu">.</span> camelTo2 <span class="ch">&#39;_&#39;</span>
-
-<span class="ot">prefixOptions ::</span> <span class="dt">JSON.Options</span>
-prefixOptions <span class="fu">=</span> JSON.defaultOptions { JSON.fieldLabelModifier <span class="fu">=</span> modifier }
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">OwnerType</span>
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Owner</span>    <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">GistFile</span> <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Gist</span>     <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">modifier ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">modifier <span class="fu">=</span> drop <span class="dv">1</span> <span class="fu">.</span> dropWhile (<span class="fu">/=</span> <span class="ch">&#39;_&#39;</span>) <span class="fu">.</span> camelTo2 <span class="ch">&#39;_&#39;</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">prefixOptions ::</span> <span class="dt">JSON.Options</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">prefixOptions <span class="fu">=</span> JSON.defaultOptions { JSON.fieldLabelModifier <span class="fu">=</span> modifier }</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">OwnerType</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Owner</span>    <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">GistFile</span> <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Gist</span>     <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</a></code></pre></div>
 <p>So far this is what you would usually have when working with <code>servant</code>. Now to generate Swagger specification we need to define schemas for our types. This is done with <code>ToParamSchema</code> and <code>ToSchema</code> instances:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">prefixSchemaOptions ::</span> <span class="dt">SchemaOptions</span>
-prefixSchemaOptions <span class="fu">=</span> defaultSchemaOptions { fieldLabelModifier <span class="fu">=</span> modifier }
-
-<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">SHA</span>
-<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">Username</span>
-<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">GistId</span>
-
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Username</span>
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistId</span>
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">OwnerType</span>
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Owner</span>    <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistFile</span> <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Gist</span>     <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">prefixSchemaOptions ::</span> <span class="dt">SchemaOptions</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">prefixSchemaOptions <span class="fu">=</span> defaultSchemaOptions { fieldLabelModifier <span class="fu">=</span> modifier }</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">SHA</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">GistId</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistId</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">OwnerType</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Owner</span>    <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistFile</span> <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Gist</span>     <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</a></code></pre></div>
 <p>These will give us a generically-derived Swagger schema (which is sort of a deterministic version of JSON Schema).</p>
 <p>Part of the <code>swagger2</code> package, <code>Schema</code> and <code>ParamSchema</code> can be quite useful in their own right if you want to e.g. respond with a schema in case of bad request bodies, or <code>OPTIONS</code> requests.</p>
 <p>The next step will traverse the <code>GitHubGistAPI</code>, gathering information about it and <code>swagger2</code> schemas to generate a <code>Swagger</code> value:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">swaggerDoc1 ::</span> <span class="dt">Swagger</span>
-swaggerDoc1 <span class="fu">=</span> toSwagger api</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">swaggerDoc1 ::</span> <span class="dt">Swagger</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">swaggerDoc1 <span class="fu">=</span> toSwagger api</a></code></pre></div>
 <p>Now we can generate the swagger documentation:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">genSwaggerDoc1 ::</span> <span class="dt">IO</span> ()
-genSwaggerDoc1 <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc1</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">genSwaggerDoc1 ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">genSwaggerDoc1 <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc1</a></code></pre></div>
 <p>You can attach more information to your <code>Swagger</code> doc quite easily, using the lenses provided by <code>swagger2</code>:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">swaggerDoc2 ::</span> <span class="dt">Swagger</span>
-swaggerDoc2 <span class="fu">=</span> swaggerDoc1
-  <span class="fu">&amp;</span> host <span class="fu">?~</span> <span class="st">&quot;api.github.com&quot;</span>
-  <span class="fu">&amp;</span> info<span class="fu">.</span>title <span class="fu">.~</span> <span class="st">&quot;GitHub Gists API&quot;</span>
-  <span class="fu">&amp;</span> info<span class="fu">.</span>version <span class="fu">.~</span> <span class="st">&quot;v3&quot;</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc2</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">swaggerDoc2 ::</span> <span class="dt">Swagger</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">swaggerDoc2 <span class="fu">=</span> swaggerDoc1</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="fu">&amp;</span> host <span class="fu">?~</span> <span class="st">&quot;api.github.com&quot;</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  <span class="fu">&amp;</span> info<span class="fu">.</span>title <span class="fu">.~</span> <span class="st">&quot;GitHub Gists API&quot;</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="fu">&amp;</span> info<span class="fu">.</span>version <span class="fu">.~</span> <span class="st">&quot;v3&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">main <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc2</a></code></pre></div>
 <p>Which results in <a href="https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json">this</a>.</p>
 <p>There’s a lot more you can do with both <code>servant-swagger</code> and <code>swagger2</code> — write manual <code>ToSchema</code> instances for more detailed information, conveniently add tags or change responses of parts of your API, use convenient lenses to modify any part of your schema, generate automatic tests, etc.</p>
 <p>Check out the <a href="https://hackage.haskell.org/package/servant-swagger"><code>servant-swagger</code></a> and <a href="https://hackage.haskell.org/package/swagger2"><code>swagger2</code></a> docs for more.</p>
@@ -404,18 +404,18 @@ main <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swagg
                       --data-binary &quot;@haskell-logo.png&quot; \
                       &gt; haskell-logo.jpeg</code></pre>
 <p>To get there, we need to do a couple of things. We need to of course run the application:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> run <span class="dv">8001</span> conversion</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">main <span class="fu">=</span> run <span class="dv">8001</span> conversion</a></code></pre></div>
 <p>And describe the API:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ConversionApi</span>
-     <span class="fu">=</span> <span class="dt">ReqBody</span> <span class="ch">&#39;[BMP, GIF, JPEG 50, PNG, TIFF, RADIANCE] DynamicImage</span>
-    <span class="fu">:&gt;</span> <span class="dt">Post</span> <span class="ch">&#39;[BMP, GIF, JPEG 50, PNG, TIFF, RADIANCE] DynamicImage</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">ConversionApi</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">     <span class="fu">=</span> <span class="dt">ReqBody</span> &#39;[<span class="dt">BMP</span>, <span class="dt">GIF</span>, <span class="dt">JPEG</span> <span class="dv">50</span>, <span class="dt">PNG</span>, <span class="dt">TIFF</span>, <span class="dt">RADIANCE</span>] <span class="dt">DynamicImage</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="fu">:&gt;</span> <span class="dt">Post</span> &#39;[<span class="dt">BMP</span>, <span class="dt">GIF</span>, <span class="dt">JPEG</span> <span class="dv">50</span>, <span class="dt">PNG</span>, <span class="dt">TIFF</span>, <span class="dt">RADIANCE</span>] <span class="dt">DynamicImage</span></a></code></pre></div>
 <p>As you can see, we state that we accept and can return a variety of image formats.</p>
 <p>The application is then:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">conversion ::</span> <span class="dt">Application</span>
-conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> <span class="dt">ConversionApi</span>) handler</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">conversion ::</span> <span class="dt">Application</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> <span class="dt">ConversionApi</span>) handler</a></code></pre></div>
 <p>And for the clincher, the handler:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    <span class="kw">where</span> handler <span class="fu">=</span> return</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">    <span class="kw">where</span> handler <span class="fu">=</span> return</a></code></pre></div>
 <p>And that’s it!</p>
 </section>
 <section id="conclusion" class="level1">
@@ -449,117 +449,117 @@ conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span c
 <section id="summary" class="level1">
 <h1>Summary</h1>
 <p>A couple of days ago, <em>marcushg</em> mentioned on the <strong>#servant</strong> IRC channel that one could probably easily use the information available from API types to “derive” a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post, but in short, it lets us take a type describing a web API, such as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] User</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">User</span></a></code></pre></div>
 <p>and generate request handlers that just respond with random values of the appropriate type, <code>User</code> in our case. In <em>servant</em>/<em>wai</em> terms, this means we get a <code>mock</code> function with the type:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mock ::</span> <span class="dt">HasMock</span> api <span class="ot">=&gt;</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">mock ::</span> <span class="dt">HasMock</span> api <span class="ot">=&gt;</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</a></code></pre></div>
 <p>i.e., “given an API type, please generate a mock server for such an API”. This effectively means “please pull a mock server out of thin air for me”.</p>
 <p>Out of thin air, really? Not exactly. But let’s start by clearly stating the problem.</p>
 </section>
 <section id="the-problem" class="level1">
 <h1>The Problem</h1>
 <p><em>servant</em> lets you describe web applications with a Haskell type using the combinators from servant’s type-level EDSL. Such a type would be:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- In English:</span>
-<span class="co">-- the API has one endpoint, under /user, which returns</span>
-<span class="co">-- response bodies in JSON that describe values of type User</span>
-<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] User</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- In English:</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co">-- the API has one endpoint, under /user, which returns</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">-- response bodies in JSON that describe values of type User</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">User</span></a></code></pre></div>
 <p>where <code>User</code> could be defined as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }</a></code></pre></div>
 <p>The goal would be to “automagically” derive a request handler of the right type that we could use as a placeholder until we properly implement a handler that talks to the database and responds with “the real data”.</p>
 <p>For anyone not familiar with <em>servant</em> already, you just need to know that it means we need to somehow automatically implement a computation with the type:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">getUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></a></code></pre></div>
 <p>possibly by constraining the user to provide an instance for some random generation class.</p>
 </section>
 <section id="the-plan" class="level1">
 <h1>The Plan</h1>
 <p>Just like <em>servant-server</em>, <em>servant-client</em> and others, we need a class whose instances will define the way we interpret each combinator, in a way very specific to this task: we will produce what <em>servant-server</em> takes as input, i.e., request handlers! This all means we are basically looking at a class like:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">HasServer</span> api <span class="ot">=&gt;</span> <span class="dt">HasMock</span> api <span class="kw">where</span>
-<span class="ot">  mock ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">class</span> <span class="dt">HasServer</span> api <span class="ot">=&gt;</span> <span class="dt">HasMock</span> api <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">  mock ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</a></code></pre></div>
 <p>where <code>Server api</code> just computes the types of the all the request handlers of an <em>API type</em>. In our case, <code>Server api</code> is computed as follows:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- api = the API type from above in our case</span>
-<span class="dt">Server</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">Server</span> (<span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] User)</span>
-           <span class="co">-- static strings in the path do not influence</span>
-           <span class="co">-- the type of a handler</span>
-           <span class="fu">=</span> <span class="dt">Server</span> (<span class="dt">Get</span> <span class="ch">&#39;[JSON] User)</span>
-           <span class="co">-- EitherT ServantErr IO is the default monad</span>
-           <span class="co">-- in which handlers run</span>
-           <span class="fu">=</span> <span class="dt">Either</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- api = the API type from above in our case</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="dt">Server</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">Server</span> (<span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">User</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">           <span class="co">-- static strings in the path do not influence</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">           <span class="co">-- the type of a handler</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">           <span class="fu">=</span> <span class="dt">Server</span> (<span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">User</span>)</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">           <span class="co">-- EitherT ServantErr IO is the default monad</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">           <span class="co">-- in which handlers run</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">           <span class="fu">=</span> <span class="dt">Either</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></a></code></pre></div>
 <p>So we have to implement at least support for static string fragments in the path and the <code>Get</code> combinator (i.e handlers for HTTP GET requests).</p>
 </section>
 <section id="hasmock-instances" class="level1">
 <h1><code>HasMock</code> instances</h1>
 <p>Let’s start with the one for static path fragments, it’s the simplest one: we ignore the string bit and move on to what comes after.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">KnownSymbol</span> path, <span class="dt">HasMock</span> rest) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (path <span class="fu">:&gt;</span> rest) <span class="kw">where</span>
-  mock _ <span class="fu">=</span> mock (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> rest)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">KnownSymbol</span> path, <span class="dt">HasMock</span> rest) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (path <span class="fu">:&gt;</span> rest) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  mock _ <span class="fu">=</span> mock (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> rest)</a></code></pre></div>
 <p>Don’t be scared by <code>KnownSymbol</code>, it basically just means “<code>path</code> is a type-level string”, that is, a string that appears in a type.</p>
 <p>Next comes the one for <code>Get</code>. This one is trickier: this is the combinator that says what type the handler returns. The returned value then gets encoded into JSON, HTML, CSV or any format of your choice. In our case, the handler returns a <code>User</code> and can only encode it in the JSON format.</p>
 <p>Now the heart of the matter really is: we know we need to return an <code>User</code> and our <code>EitherT ServantErr IO</code> monad mentions <code>IO</code>, couldn’t we randomly generate an <code>User</code>? Yes, we can! For the purpose of a mock server, we will simply use <a href="http://hackage.haskell.org/package/QuickCheck">QuickCheck</a>’s <code>Arbitrary</code> class, which represents types for which we can generate random values, given a random number generator.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Arbitrary</span> a <span class="kw">where</span>
-<span class="ot">  arbitrary ::</span> <span class="dt">Gen</span> a
-  <span class="co">-- and another method, but optional</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Arbitrary</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="ot">  arbitrary ::</span> <span class="dt">Gen</span> a</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="co">-- and another method, but optional</span></a></code></pre></div>
 <p>The <code>Gen</code> type provides instances for the <code>Functor</code>, <code>Applicative</code> and <code>Monad</code> classes and <code>Arbitrary</code> comes with instances for many of the types in <em>base</em>.</p>
 <p>This essentially means writing an <code>Arbitrary</code> instance for <code>User</code> is as simple as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">User</span> <span class="kw">where</span>
-  <span class="co">-- we just rely on the arbitrary instance for lists of</span>
-  <span class="co">-- chars, i.e., Strings, and use the Functor instance for Gen</span>
-  arbitrary <span class="fu">=</span> fmap <span class="dt">User</span> arbitrary</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">User</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="co">-- we just rely on the arbitrary instance for lists of</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  <span class="co">-- chars, i.e., Strings, and use the Functor instance for Gen</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  arbitrary <span class="fu">=</span> fmap <span class="dt">User</span> arbitrary</a></code></pre></div>
 <p>If you have multiple fields, you can use the usual combo of <code>&lt;$&gt;</code> (i.e., <code>fmap</code>) and <code>&lt;*&gt;</code> (comes with <code>Applicative</code>).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- a point: x, y coordinates</span>
-<span class="kw">data</span> <span class="dt">Point</span> <span class="fu">=</span> <span class="dt">Point</span> <span class="dt">Double</span> <span class="dt">Double</span>
-
-<span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Point</span> <span class="kw">where</span>
-  arbitrary <span class="fu">=</span> <span class="dt">Point</span> <span class="fu">&lt;$&gt;</span> arbitrary <span class="fu">&lt;*&gt;</span> arbitrary</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- a point: x, y coordinates</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Point</span> <span class="fu">=</span> <span class="dt">Point</span> <span class="dt">Double</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Point</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  arbitrary <span class="fu">=</span> <span class="dt">Point</span> <span class="fu">&lt;$&gt;</span> arbitrary <span class="fu">&lt;*&gt;</span> arbitrary</a></code></pre></div>
 <p>Once you have an <code>Arbitrary</code> instance, in order to generate a random value using your instance, you have to call a function called… <code>generate</code>!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generate ::</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">generate ::</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a></code></pre></div>
 <p>Putting the two together, we get:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">generate<span class="ot"> arbitrary ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">IO</span> a</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">generate<span class="ot"> arbitrary ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">IO</span> a</a></code></pre></div>
 <p>All we need to do is just “lift” that up into our <code>EitherT ServantErr IO</code> monad, which is exactly what <code>Control.Monad.IO.Class.liftIO</code> is about in the <a href="http://hackage.haskell.org/package/transformers">transformers</a> package.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">liftIO (generate arbitrary)<span class="ot"> ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> a</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">liftIO (generate arbitrary)<span class="ot"> ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> a</a></code></pre></div>
 <p>In order to automatically “fill” request handlers with this expression we just need to write the <code>HasMock</code> instance for <code>Get</code>, shown below.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Arbitrary</span> a, <span class="dt">AllCTRender</span> ctypes a) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (<span class="dt">Get</span> ctypes a) <span class="kw">where</span>
-  mock _ <span class="fu">=</span> liftIO (generate arbitrary)</code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">Arbitrary</span> a, <span class="dt">AllCTRender</span> ctypes a) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (<span class="dt">Get</span> ctypes a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  mock _ <span class="fu">=</span> liftIO (generate arbitrary)</a></code></pre></div>
 <p>The <code>AllCTRender</code> constraint just says “we know how to encode values of type <code>a</code> in the formats listed in the <code>Get</code> combinator”.</p>
 <p>And that’s it! You can now actually use all of this to put together a mock server for our little API.</p>
 </section>
 <section id="using-mock" class="level1">
 <h1>Using <code>mock</code></h1>
 <p>All we need to do to run the mock server is call <em>servant-server</em>’s <code>serve</code> function. It is illustrated below, along with <strong>all</strong> of the code you’d have to write if you were to use this mock-generation feature (aside from language pragmas and imports).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- 1/ define our user type, deriving the Arbitrary instance</span>
-<span class="co">--    since it&#39;s just a newtype and we can use the</span>
-<span class="co">--    GeneralizedNewtypeDeriving extension. We also</span>
-<span class="co">--    derive the Generic class to get our JSON encoding</span>
-<span class="co">--    functions for free.</span>
-<span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }
-  <span class="kw">deriving</span> (<span class="dt">Arbitrary</span>, <span class="dt">Generic</span>)
-
-<span class="co">-- 2/ we get the JSON encoding for free</span>
-<span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">Generic</span>
-
-<span class="co">-- 3/ recall our API type</span>
-<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] User</span>
-
-<span class="co">-- 4/ define this simple Proxy.</span>
-<span class="co">-- for any given type &#39;a&#39;, there&#39;s only one value of type &#39;Proxy a&#39;</span>
-<span class="co">-- that is not equivalent to error &quot;foo&quot; and the likes, a real honest value.</span>
-<span class="co">-- The way to build this value is to use the Proxy constructor.</span>
-<span class="co">-- In other words, this value lets us target one precise type. Servant</span>
-<span class="co">-- uses this to tie the type-level information with value-level data.</span>
-<span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
-api <span class="fu">=</span> <span class="dt">Proxy</span>
-
-<span class="co">-- 5/ we magically derive the mock server.</span>
-<span class="co">-- the run function comes from the warp webserver,</span>
-<span class="co">-- http://hackage.haskell.org/package/warp</span>
-<span class="co">-- &#39;mock&#39; is the method of the `HasMock` class we&#39;ve</span>
-<span class="co">-- developed in this post.</span>
-<span class="co">-- This will run a mock web server with an endpoint at</span>
-<span class="co">-- http://localhost:8080/user that generates random values</span>
-<span class="co">-- of type User</span>
-<span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span class="fu">$</span> mock api)</code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- 1/ define our user type, deriving the Arbitrary instance</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="co">--    since it&#39;s just a newtype and we can use the</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="co">--    GeneralizedNewtypeDeriving extension. We also</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="co">--    derive the Generic class to get our JSON encoding</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5"><span class="co">--    functions for free.</span></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }</a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">  <span class="kw">deriving</span> (<span class="dt">Arbitrary</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb16-9" data-line-number="9"><span class="co">-- 2/ we get the JSON encoding for free</span></a>
+<a class="sourceLine" id="cb16-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">Generic</span></a>
+<a class="sourceLine" id="cb16-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb16-12" data-line-number="12"><span class="co">-- 3/ recall our API type</span></a>
+<a class="sourceLine" id="cb16-13" data-line-number="13"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">User</span></a>
+<a class="sourceLine" id="cb16-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb16-15" data-line-number="15"><span class="co">-- 4/ define this simple Proxy.</span></a>
+<a class="sourceLine" id="cb16-16" data-line-number="16"><span class="co">-- for any given type &#39;a&#39;, there&#39;s only one value of type &#39;Proxy a&#39;</span></a>
+<a class="sourceLine" id="cb16-17" data-line-number="17"><span class="co">-- that is not equivalent to error &quot;foo&quot; and the likes, a real honest value.</span></a>
+<a class="sourceLine" id="cb16-18" data-line-number="18"><span class="co">-- The way to build this value is to use the Proxy constructor.</span></a>
+<a class="sourceLine" id="cb16-19" data-line-number="19"><span class="co">-- In other words, this value lets us target one precise type. Servant</span></a>
+<a class="sourceLine" id="cb16-20" data-line-number="20"><span class="co">-- uses this to tie the type-level information with value-level data.</span></a>
+<a class="sourceLine" id="cb16-21" data-line-number="21"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span></a>
+<a class="sourceLine" id="cb16-22" data-line-number="22">api <span class="fu">=</span> <span class="dt">Proxy</span></a>
+<a class="sourceLine" id="cb16-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb16-24" data-line-number="24"><span class="co">-- 5/ we magically derive the mock server.</span></a>
+<a class="sourceLine" id="cb16-25" data-line-number="25"><span class="co">-- the run function comes from the warp webserver,</span></a>
+<a class="sourceLine" id="cb16-26" data-line-number="26"><span class="co">-- http://hackage.haskell.org/package/warp</span></a>
+<a class="sourceLine" id="cb16-27" data-line-number="27"><span class="co">-- &#39;mock&#39; is the method of the `HasMock` class we&#39;ve</span></a>
+<a class="sourceLine" id="cb16-28" data-line-number="28"><span class="co">-- developed in this post.</span></a>
+<a class="sourceLine" id="cb16-29" data-line-number="29"><span class="co">-- This will run a mock web server with an endpoint at</span></a>
+<a class="sourceLine" id="cb16-30" data-line-number="30"><span class="co">-- http://localhost:8080/user that generates random values</span></a>
+<a class="sourceLine" id="cb16-31" data-line-number="31"><span class="co">-- of type User</span></a>
+<a class="sourceLine" id="cb16-32" data-line-number="32"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-33" data-line-number="33">main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span class="fu">$</span> mock api)</a></code></pre></div>
 <p>Our little program in action:</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> localhost:8080/user
-<span class="dt">{&quot;username&quot;:&quot;Yv\rG\u0014±Ssv\u001e&gt;\u001aVF\u001e\u000fM5ø\u000ctefÚJ\u0001K4&quot;}</span>
-<span class="co"># yes, a truly original username.</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb17-1" data-line-number="1">$ <span class="ex">curl</span> localhost:8080/user</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="dt">{&quot;username&quot;:&quot;Yv\rG\u0014±Ssv\u001e&gt;\u001aVF\u001e\u000fM5ø\u000ctefÚJ\u0001K4&quot;}</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="co"># yes, a truly original username.</span></a></code></pre></div>
 <p>This is really all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress <a href="https://github.com/haskell-servant/servant/tree/master/servant-mock">servant-mock</a> package on github. The example can be found under <code>example/main.hs</code> there.</p>
 <p>There are many more <code>HasMock</code> instances than the ones I have shown here of course – there’s one for all the combinators provided by the <em>servant</em> package! So you can take any API type out there and just create a mock server for it, as long as you provide <code>Arbitrary</code> instances for your data types. Nothing too interesting though, but feel free to take a look at <code>src/Servant/Mock.hs</code> in the repository if you want to read the other instances.</p>
 <p>I hope this makes clear how simple writing your own servant interpretation can be, and encourages you to try your hand at it!</p>
@@ -625,54 +625,54 @@ main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span
 <h1>Multiple content-type support</h1>
 <p><em>servant</em> combinators are not JSON-centric anymore.</p>
 <p>If you had an API type like the following with servant <em>0.2.x</em>:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span>
-           <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> [<span class="dt">User</span>]
-           <span class="co">-- update an user</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Put</span> ()</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">           <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> [<span class="dt">User</span>]</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">           <span class="co">-- update an user</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Put</span> ()</a></code></pre></div>
 <p>You now have to change it to:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span>
-           <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] [User]</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> <span class="ch">&#39;[JSON] User :&gt; Put &#39;</span>[<span class="dt">JSON</span>] ()</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="co">-- list users</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">           <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] [<span class="dt">User</span>]</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">      <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">ReqBody</span> &#39;[<span class="dt">JSON</span>] <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">Put</span> &#39;[<span class="dt">JSON</span>] ()</a></code></pre></div>
 <p>Wherever applicable (i.e., <code>ReqBody</code> and all the combinators that correspond to an HTTP method), you can now specify all the content types in which you want to want to be able to encode/decode values. As you can see, we use the <code>DataKinds</code> GHC extension to let you specify a type-level list of content-types, which are simple dummy types:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">JSON</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">JSON</span></a></code></pre></div>
 <p>In <em>servant-server</em>, a list of these content-types as the first argument of a method gets translated into a set of constraints on the return type:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Get</span> <span class="ch">&#39;[JSON, PlainText] Int</span>
-<span class="fu">==&gt;</span>
-<span class="dt">MimeRender</span> <span class="dt">JSON</span> <span class="dt">Int</span>, <span class="dt">MimeRender</span> <span class="dt">PlainText</span> <span class="dt">Int</span> <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">Int</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="dt">Get</span> &#39;[<span class="dt">JSON</span>, <span class="dt">PlainText</span>] <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="dt">MimeRender</span> <span class="dt">JSON</span> <span class="dt">Int</span>, <span class="dt">MimeRender</span> <span class="dt">PlainText</span> <span class="dt">Int</span> <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">Int</span></a></code></pre></div>
 <p>Which have unsurprising instances:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">ToJSON</span> a) <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">JSON</span> a</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">ToJSON</span> a) <span class="ot">=&gt;</span> <span class="dt">MimeRender</span> <span class="dt">JSON</span> a</a></code></pre></div>
 <p>Thus, <em>servant</em> checks at <em>compile-time</em> that it really can serialize your values as you describe. And of course, it handles picking the appropriate serialization format based on the request’s “Accept” header for you.</p>
 <p>(For <code>ReqBody</code>, <em>deserialization</em> is involved. For <em>servant-client</em>, the logic goes the other way around - serialization for <code>ReqBody</code>, deserialization for methods.)</p>
 </section>
 <section id="servant-blaze-and-servant-lucid" class="level1">
 <h1><em>servant-blaze</em> and <em>servant-lucid</em></h1>
 <p>Declaring new content-types, and the associated constraints for them, is quite easy. But to make it easier still, we are also announcing two new packages: servant-blaze and servant-lucid. To use them, just import their <code>HTML</code> datatype:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Servant.HTML.Lucid</span> (<span class="dt">HTML</span>) <span class="co">-- or Servant.HTML.Blaze</span>
-
-<span class="kw">type</span> <span class="dt">MyHTML</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">&#39;[HTML] User</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Servant.HTML.Lucid</span> (<span class="dt">HTML</span>) <span class="co">-- or Servant.HTML.Blaze</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">type</span> <span class="dt">MyHTML</span> <span class="fu">=</span> <span class="dt">Get</span> &#39;[<span class="dt">HTML</span>] <span class="dt">User</span></a></code></pre></div>
 <p>And <code>User</code> will be checked for the appropriate (e.g. <code>ToHtml</code>) instance.</p>
 </section>
 <section id="response-headers" class="level1">
 <h1>Response headers</h1>
 <p>There was no easy way so far to have handlers add headers to a response. We’ve since come up with a solution that stays true to the <em>servant</em> spirit: <em>what</em> headers your response will include (and what their types are) is still enforced statically:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] (Headers &#39;</span>[<span class="dt">Header</span> <span class="st">&quot;Location&quot;</span> <span class="dt">Link</span>] <span class="dt">User</span>)
-
-<span class="ot">myHandler ::</span> <span class="dt">Server</span> <span class="dt">MyHandler</span>
-myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="fu">&lt;</span>someLink<span class="fu">&gt;</span> <span class="fu">$</span> <span class="fu">&lt;</span>someuser<span class="fu">&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">type</span> <span class="dt">MyHandler</span> <span class="fu">=</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] (<span class="dt">Headers</span> &#39;[<span class="dt">Header</span> <span class="st">&quot;Location&quot;</span> <span class="dt">Link</span>] <span class="dt">User</span>)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="ot">myHandler ::</span> <span class="dt">Server</span> <span class="dt">MyHandler</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">myHandler <span class="fu">=</span> return <span class="fu">$</span> addHeader <span class="fu">&lt;</span>someLink<span class="fu">&gt;</span> <span class="fu">$</span> <span class="fu">&lt;</span>someuser<span class="fu">&gt;</span></a></code></pre></div>
 <p><em>servant-docs</em> and <em>servant-client</em> are also response-header aware.</p>
 <p>Our current solution isn’t something we are entirely happy with from an internal persepctive. We use overlapping instances for all the handlers, which some might think is already a problem. But more concretely, there’s the threat of an exponential blowup in the number of instances we have to declare. And that can be a problem for end users too, if they decide to further modify behavior via a similar mechanism. But these things thankfully don’t seem to pose any <em>immediate</em> problems.</p>
 </section>
 <section id="running-handlers-in-other-monads-than-eithert" class="level1">
 <h1>Running handlers in other monads than <code>EitherT</code></h1>
 <p>An often-requested feature has been easy use of datatypes/monads besides <code>EitherT</code>. Now we believe we have a good story for that (thanks in large part to <a href="http://github.com/rschatz">rschatz</a>). To convert from one datatype to another, all you need to do is provide a natural transformation between them. For example:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ReaderAPI</span> <span class="fu">=</span> <span class="st">&quot;a&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] Int</span>
-            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;b&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON] String</span>
-
-<span class="ot">readerServerT ::</span> <span class="dt">ServerT</span> <span class="dt">ReaderAPI</span> (<span class="dt">Reader</span> <span class="dt">String</span>)
-readerServerT <span class="fu">=</span> return <span class="dv">1797</span> <span class="fu">:&lt;|&gt;</span> ask
-
-<span class="ot">readerServer ::</span> <span class="dt">Server</span> <span class="dt">ReaderAPI</span>
-readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span class="fu">$</span> return <span class="fu">.</span> (<span class="ot">`runReader`</span> <span class="st">&quot;hi&quot;</span>)) readerServerT</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">type</span> <span class="dt">ReaderAPI</span> <span class="fu">=</span> <span class="st">&quot;a&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">            <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;b&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">readerServerT ::</span> <span class="dt">ServerT</span> <span class="dt">ReaderAPI</span> (<span class="dt">Reader</span> <span class="dt">String</span>)</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">readerServerT <span class="fu">=</span> return <span class="dv">1797</span> <span class="fu">:&lt;|&gt;</span> ask</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="ot">readerServer ::</span> <span class="dt">Server</span> <span class="dt">ReaderAPI</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span class="fu">$</span> return <span class="fu">.</span> (<span class="ot">`runReader`</span> <span class="st">&quot;hi&quot;</span>)) readerServerT</a></code></pre></div>
 <p>The new <code>ServerT</code> type synonym takes an extra paramer that represents what datatype/monad you are using over your handlers (instead of <code>EitherT ServantErr IO</code>).</p>
 <p>(Note that we also provide a number of pre-existing <code>Nat</code>s, which are an instance of <code>Category</code>. We could have used</p>
 <pre><code>readerServer = enter (generalizeNat . (runReaderTNat &quot;hi&quot;)) readerServerT</code></pre>
@@ -691,9 +691,9 @@ readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span 
 <section id="baseurl" class="level1">
 <h1>BaseUrl</h1>
 <p>We also changed the <code>client</code> function from <code>servant-client</code> so that, instead of returning various functions that each take a <code>BaseUrl</code> argument (often in inconvenient argument positions), the <code>client</code> function itself takes a <code>BaseUrl</code> argument, and the functions it returns don’t. So the type of <code>client</code> went from</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</a></code></pre></div>
 <p>To</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">BaseUrl</span> <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">client ::</span> <span class="dt">HasClient</span> (<span class="dt">Canonicalize</span> layout) <span class="ot">=&gt;</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">BaseUrl</span> <span class="ot">-&gt;</span> <span class="dt">Client</span> layout</a></code></pre></div>
 </section>
 <section id="complete-changelogs" class="level1">
 <h1>Complete CHANGELOGs</h1>
@@ -712,7 +712,7 @@ readerServer <span class="fu">=</span> enter (<span class="dt">Nat</span> <span 
 <section id="conclusions" class="level1">
 <h1>Conclusions</h1>
 <p>As you can see, more and more information is getting encoded statically - the types are becoming a pretty rich DSL. In order to keep the noise down, do what you normally do: abstract away common patterns! If your endpoints always return the same content-types, make aliases:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Get&#39;</span> a <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">&#39;[JSON, HTML, PlainText] a</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Get&#39;</span> a <span class="fu">=</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>, <span class="dt">HTML</span>, <span class="dt">PlainText</span>] a</a></code></pre></div>
 <p>There’s still an outstanding issue with the errors servant returns when a request doesn’t get handled. For example, if the path of a request, but not the method nor the request body, match, rather than returning a 405 (Method Not Allowed) we return a 400 (Bad Request), which is not the desired behavior. Andres Löh made some great suggestions for how to improve our routing time complexity, and hopefully we can integrate a fix for this issue when we tackle that.</p>
 <p>We also merged our repos into <a href="https://github.com/haskell-servant/servant">servant</a>. Please use that repo exclusively for PRs and issues (we’ll get rid of the others eventually).</p>
 <p>Special thanks to <a href="https://github.com/anchor">the Anchor team</a> from Australia, <a href="https://github.com/mpickering">Matthew Pickering</a>, <a href="https://github.com/dlarsson">Daniel Larsson</a>, <a href="https://github.com/paf31">Phil Freeman</a>, <a href="https://github.com/fisx">Matthias Fischmann</a>, <a href="https://github.com/rschatz">rschatz</a>, <a href="https://github.com/Fuuzetsu">Mateusz Kowalczyk</a>, <a href="https://github.com/codedmart">Brandon Martin</a> and <a href="https://github.com/spl">Sean Leather</a> who’ve contributed from little fixes to whole new features. Several companies are now running <em>servant</em>-powered web applications.</p>

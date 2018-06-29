@@ -69,10 +69,10 @@
 <li><p><code>Post</code> now returns 200. Replace <code>Post</code> with <code>PostCreated</code> if you want to stick to the old behaviour, which was returning a 201.</p></li>
 <li><p>Methods returning <code>()</code> do not automatically return 204 anymore. Use <code>GetNoContent</code> (and <code>PostNoContent</code>, etc.) in conjunction with the <code>NoContent</code> type instead:</p></li>
 </ul>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    <span class="co">-- Old code</span>
-    <span class="dt">Get</span> <span class="ch">'[] ()</span>
-    <span class="co">-- New code</span>
-    <span class="dt">GetNoContent</span> <span class="ch">'[JSON] NoContent</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">    <span class="co">-- Old code</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="dt">Get</span> '[] ()</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="co">-- New code</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="dt">GetNoContent</span> '[<span class="dt">JSON</span>] <span class="dt">NoContent</span></a></code></pre></div>
 <ul>
 <li><p><code>MatrixParam</code> has been removed.</p></li>
 <li><p>The content-type list now is invariably used to determine whether to respond – that is, even when you’re returning <code>NoContent</code> you need to specify matching content-types.</p></li>
@@ -95,15 +95,15 @@
 <section id="if-you-have-your-own-combinators" class="level2">
 <h2>If you have your own combinators</h2>
 <p>Then the story is more complicated. The <code>HasServer</code> class changed quite drastically:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Previously</span>
-<span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span>
-   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span>
-<span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Server</span> layout <span class="ot">-&gt;</span> <span class="dt">RoutingApplication</span>
-
-<span class="co">-- Now</span>
-<span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span>
-   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span>
-<span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Config</span> config <span class="ot">-&gt;</span> <span class="dt">Delayed</span> (<span class="dt">Server</span> layout) <span class="ot">-&gt;</span> <span class="dt">Router</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- Previously</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Server</span> layout <span class="ot">-&gt;</span> <span class="dt">RoutingApplication</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="co">-- Now</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="kw">class</span> <span class="dt">HasServer</span> layout config <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">   <span class="kw">type</span> <span class="dt">ServerT</span> layout (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="ot">   route ::</span> <span class="dt">Proxy</span> layout <span class="ot">-&gt;</span> <span class="dt">Config</span> config <span class="ot">-&gt;</span> <span class="dt">Delayed</span> (<span class="dt">Server</span> layout) <span class="ot">-&gt;</span> <span class="dt">Router</span></a></code></pre></div>
 <p>Read below for more information.</p>
 </section>
 </section>
@@ -117,13 +117,13 @@
 <h2>Proper error handling</h2>
 <p>One of the biggest embarassements for <code>servant</code> was the fact that in certain circumstances, the HTTP error returned was not what one would expect. For example, if a request had both the wrong method and the wrong body, the error returned would be 400 (Bad Request) rather 405 (Method Not Allowed). This was because we matched against parts of your API in the order they appeared in your API type. Andres Löh came up with an elegant solution to this problem, creating a datatype that allows checks (and their side-effects) to be delayed.</p>
 <p>This allows for a fine-grained control over when side-effects and general HTTP logic is run. Currently there are five ‘slots’ for effects:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Delayed</span> c <span class="kw">where</span>
-  <span class="dt">Delayed</span><span class="ot"> ::</span> {<span class="ot"> capturesD ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> captures)
-             ,<span class="ot"> methodD   ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> ())
-             ,<span class="ot"> authD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> auth)
-             ,<span class="ot"> bodyD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> body)
-             ,<span class="ot"> serverD   ::</span> (captures <span class="ot">-&gt;</span> auth <span class="ot">-&gt;</span> body <span class="ot">-&gt;</span> <span class="dt">RouteResult</span> c)
-             } <span class="ot">-&gt;</span> <span class="dt">Delayed</span> c</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Delayed</span> c <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="dt">Delayed</span><span class="ot"> ::</span> {<span class="ot"> capturesD ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> captures)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">             ,<span class="ot"> methodD   ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> ())</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">             ,<span class="ot"> authD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> auth)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">             ,<span class="ot"> bodyD     ::</span> <span class="dt">IO</span> (<span class="dt">RouteResult</span> body)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">             ,<span class="ot"> serverD   ::</span> (captures <span class="ot">-&gt;</span> auth <span class="ot">-&gt;</span> body <span class="ot">-&gt;</span> <span class="dt">RouteResult</span> c)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">             } <span class="ot">-&gt;</span> <span class="dt">Delayed</span> c</a></code></pre></div>
 <p>Which are run in the order in which they appear in the code. <a href="https://github.com/haskell-servant/servant/blob/master/servant-server/src/Servant/Server/Internal/RoutingApplication.hs#L140-L202">Helper functions</a> can be used to add more effects. In practice, this means that if you are writing a combinator for authentication, for example, you can simply use <code>addAuthCheck</code> to schedule your action. It will only be run if the captures and methods match, but before the body is looked at.</p>
 <p>These five slots do not exhaust the steps of handling an HTTP request. But rather than straight away implement a very large datatype for the entire <a href="https://camo.githubusercontent.com/4e15cccf2a9277dcca2c8824092547dee7058744/68747470733a2f2f7261776769746875622e636f6d2f666f722d4745542f687474702d6465636973696f6e2d6469616772616d2f6d61737465722f6874747064642e706e67">HTTP decision diagram</a>, we decided to implement what was needed for the official <code>servant</code> combinators. We now want to gather some experience to see, if something’s missing. So if you feel like another slot is needed, open an issue!</p>
 </section>
@@ -136,46 +136,46 @@
 <section id="http-api-data" class="level2">
 <h2><code>http-api-data</code></h2>
 <p>The type classes <code>FromText</code> and <code>ToText</code> have been renamed, revamped, and relocated. They are now called <code>FromHttpApiData</code> and <code>ToHttpApiData</code> respectively, and exist in the new package <code>http-api-data</code>. This was work by Nickolay Kudasov, and includes a variety of other improvements. Most noticeably, rather than having a single [de/]serialization method, there are now ones for each of the cases for which we need the [de/]serialization. (This was based on an idea from Greg Weber.):</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">FromHttpApiData</span> a <span class="kw">where</span>
-    <span class="ot">{-# MINIMAL parseUrlPiece | parseQueryParam #-}</span>
-<span class="ot">    parseUrlPiece ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a
-    parseUrlPiece <span class="fu">=</span> parseQueryParam
-
-<span class="ot">    parseHeader ::</span> <span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a
-    parseHeader <span class="fu">=</span> parseUrlPiece <span class="fu">.</span> decodeUtf8
-
-<span class="ot">    parseQueryParam ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a
-    parseQueryParam <span class="fu">=</span> parseUrlPiece</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">class</span> <span class="dt">FromHttpApiData</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    <span class="ot">{-# MINIMAL parseUrlPiece | parseQueryParam #-}</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="ot">    parseUrlPiece ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    parseUrlPiece <span class="fu">=</span> parseQueryParam</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="ot">    parseHeader ::</span> <span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    parseHeader <span class="fu">=</span> parseUrlPiece <span class="fu">.</span> decodeUtf8</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="ot">    parseQueryParam ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">Text</span> a</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">    parseQueryParam <span class="fu">=</span> parseUrlPiece</a></code></pre></div>
 <p>As an added bonus, the Template Haskell for <code>persistent</code> generates these automatically, making using <code>persistent</code> with <code>servant</code> a lot easier.</p>
 <p>The <a href="http://hackage.haskell.org/package/http-api-data-0.2.2/docs/Web-HttpApiData.html">haddocks</a> for the package have more information.</p>
 </section>
 <section id="simplify-tosample" class="level2">
 <h2>Simplify <code>ToSample</code></h2>
 <p><code>ToSample</code> now takes only one parameter. It was an annoying mistake that it ever took two, which Nickolay Kudasov fixed. Additionally, instead of having two methods (<code>toSample</code> and <code>toSamples</code>) defined in terms of one another, we now have a single one (<code>toSamples</code>).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span>
-
-<span class="co">-- Old code</span>
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="dt">MyData</span> <span class="kw">where</span>
-    toSample _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)
-
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="kw">where</span>
-    toSamples _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co">-- Old code</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="dt">MyData</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    toSample _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">    toSamples _ <span class="fu">=</span> singleSample (<span class="dt">MyData</span> <span class="dv">42</span>)</a></code></pre></div>
 <p>Nickolay also made a <code>Generic</code> default method for this class, so that now you could simply have:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">data</span> <span class="dt">MyData</span> <span class="fu">=</span> <span class="dt">MyData</span> <span class="dt">Int</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">instance</span> <span class="dt">ToSample</span> <span class="dt">MyData</span></a></code></pre></div>
 </section>
 <section id="unifying-method-combinators" class="level2">
 <h2>Unifying method combinators</h2>
 <p>Previously each of ‘Get’, ‘Put’, ‘Post’, etc. were entirely separate datatypes. This also meant each interpretation needed to included instances for all of them. The 0.5 release makes them instead type-synonyms, e.g.:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Get</span> contentTypes a <span class="fu">=</span> <span class="dt">Verb</span> <span class="ch">'GET 200 contentTypes a</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Get</span> contentTypes a <span class="fu">=</span> <span class="dt">Verb</span> '<span class="dt">GET</span> <span class="dv">200</span> contentTypes a</a></code></pre></div>
 <p>This makes it easy to change the status code of a success response. To further facilitate that, we now provide a variety of other type synonyms for responses other than 200, for example <code>PostCreated</code> for 201.</p>
 </section>
 <section id="non-memoized-request-body" class="level2">
 <h2>Non-memoized request body</h2>
 <p>Prior to Andres Löh’s trie-based routing improvements, we had to keep the request body in memory for more-or-less the duration of the request-response cycle. This was of course far from ideal, but necessary given that we could not tell whether the request might be re-routed to a different endpoint. After the changes, we can now remove it. Note however that certain idioms, such as</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] Int :&gt; Get '</span>[<span class="dt">JSON</span>] <span class="dt">Int</span>
-      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> <span class="ch">'[JSON] String :&gt; Get '</span>[<span class="dt">JSON</span>] <span class="dt">String</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">ReqBody</span> '[<span class="dt">JSON</span>] <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">      <span class="fu">:&lt;|&gt;</span> <span class="dt">ReqBody</span> '[<span class="dt">JSON</span>] <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">String</span></a></code></pre></div>
 <p>no longer make sense – a request body that cannot be decoded as an <code>Int</code> will be rejected with a 400, and the second endpoint will not be tried. This accords with the behaviour of more traditional frameworks and, as Edsko de Vries showed in a <a href="http://www.edsko.net/temp/dependently-typed-servers/">blog post</a>, no loss of expressivity is entailed by the change.</p>
 <p>We expect this to enable streaming combinators.</p>
 </section>
@@ -190,12 +190,12 @@
 <section id="manager-and-baseurl-as-an-argument" class="level2">
 <h2><code>Manager</code> and <code>BaseUrl</code> as an argument</h2>
 <p>Previously the <em>http-client</em> <code>Manager</code> – which is used to issue http requests – was created (with <code>unsafePerformIO</code>) by the <em>servant-client</em> library itself. This meant that it was impossible to configure the <code>Manager</code>. Now the <code>Manager</code> is passed in as an argument to client:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Old code</span>
-endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api
-<span class="co">-- endpoint1 :: BaseUrl -&gt; X</span>
-<span class="co">-- New code</span>
-endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api baseUrl manager
-<span class="co">-- endpoint1 :: X</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- Old code</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="co">-- endpoint1 :: BaseUrl -&gt; X</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="co">-- New code</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span> client api baseUrl manager</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"><span class="co">-- endpoint1 :: X</span></a></code></pre></div>
 <p>We’re not entirely happy with this solution, since sometimes you want the <code>endpoint1</code> functions to take these two arguments instead (for example, if you would like to distribute client functions as a library). But it is certainly an improvement.</p>
 </section>
 <section id="nocontent-and-status-codes" class="level2">
@@ -219,20 +219,20 @@ endpoint1 <span class="fu">:&lt;|&gt;</span> endpoint2 <span class="fu">=</span>
 <h3>Basic Auth</h3>
 <p>(<em>NOTE</em>: Basic Auth sends text in the clear, so only use this over HTTPS!)</p>
 <p>An API protected by Basic Auth in <code>servant</code> looks like this:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">User</span> <span class="fu">=</span> <span class="fu">...</span>
-<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">BasicAuth</span> <span class="st">&quot;my-realm&quot;</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">PrivateAPI</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">data</span> <span class="dt">User</span> <span class="fu">=</span> <span class="fu">...</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">BasicAuth</span> <span class="st">&quot;my-realm&quot;</span> <span class="dt">User</span> <span class="fu">:&gt;</span> <span class="dt">PrivateAPI</span></a></code></pre></div>
 <p>Where <code>User</code> is an application-specific datatype that your handlers will receive as an argument in case authentication succeeds.</p>
 <p><code>servant</code> needs to know how to generate a <code>User</code> from a username and password string. For that, we use the new <code>Context</code> mechanism.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">serverContext ::</span> <span class="dt">Context</span> (<span class="dt">BasicAuthCheck</span> <span class="dt">User</span> <span class="ch">': '</span>[])
-serverContext <span class="fu">=</span> authCheck <span class="fu">:.</span> <span class="dt">EmptyContext</span>
-
-<span class="ot">authCheck ::</span> <span class="dt">BasicAuthCheck</span> <span class="dt">User</span>
-authCheck <span class="fu">=</span>
-  <span class="kw">let</span> check (<span class="dt">BasicAuthData</span> username password) <span class="fu">=</span>
-        <span class="kw">if</span> username <span class="fu">==</span> <span class="st">&quot;servant&quot;</span> <span class="fu">&amp;&amp;</span> password <span class="fu">==</span> <span class="st">&quot;server&quot;</span>
-        <span class="kw">then</span> return (<span class="dt">Authorized</span> (<span class="dt">User</span> <span class="st">&quot;servant&quot;</span>))
-        <span class="kw">else</span> return <span class="dt">Unauthorized</span>
-  <span class="kw">in</span> <span class="dt">BasicAuthCheck</span> check</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">serverContext ::</span> <span class="dt">Context</span> (<span class="dt">BasicAuthCheck</span> <span class="dt">User</span> '<span class="fu">:</span> '[])</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">serverContext <span class="fu">=</span> authCheck <span class="fu">:.</span> <span class="dt">EmptyContext</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="ot">authCheck ::</span> <span class="dt">BasicAuthCheck</span> <span class="dt">User</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">authCheck <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">  <span class="kw">let</span> check (<span class="dt">BasicAuthData</span> username password) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">        <span class="kw">if</span> username <span class="fu">==</span> <span class="st">&quot;servant&quot;</span> <span class="fu">&amp;&amp;</span> password <span class="fu">==</span> <span class="st">&quot;server&quot;</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">        <span class="kw">then</span> return (<span class="dt">Authorized</span> (<span class="dt">User</span> <span class="st">&quot;servant&quot;</span>))</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">        <span class="kw">else</span> return <span class="dt">Unauthorized</span></a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">  <span class="kw">in</span> <span class="dt">BasicAuthCheck</span> check</a></code></pre></div>
 </section>
 </section>
 <section id="documentation" class="level2">

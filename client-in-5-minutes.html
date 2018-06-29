@@ -45,104 +45,104 @@ GET: json -- user id info
 /packages/
 GET: json -- List of all packages</code></pre>
 <p>Let’s see what the output looks like by using <em>curl</em>:</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/users/
-[<span class="dt">{&quot;username&quot;:&quot;admin&quot;,&quot;userid&quot;:0}</span>, <span class="kw">...</span>]
-$ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/user/AlpMestanogullari
-<span class="dt">{&quot;groups&quot;:[&quot;/package/gloss-juicy/maintainers&quot;,&quot;/package/hnn/maintainers&quot;,&quot;/package/hspec-attoparsec/maintainers&quot;,&quot;/package/kmeans-vector/maintainers&quot;,&quot;/package/pastis/maintainers&quot;,&quot;/package/probable/maintainers&quot;,&quot;/package/servant-client/maintainers&quot;,&quot;/package/servant-docs/maintainers&quot;,&quot;/package/servant-jquery/maintainers&quot;,&quot;/package/servant-pool/maintainers&quot;,&quot;/package/servant-postgresql/maintainers&quot;,&quot;/package/servant-response/maintainers&quot;,&quot;/package/servant-scotty/maintainers&quot;,&quot;/package/servant-server/maintainers&quot;,&quot;/package/servant/maintainers&quot;,&quot;/package/sitemap/maintainers&quot;,&quot;/package/statistics-linreg/maintainers&quot;,&quot;/package/taggy-lens/maintainers&quot;,&quot;/package/taggy/maintainers&quot;,&quot;/packages/uploaders&quot;],&quot;username&quot;:&quot;AlpMestanogullari&quot;,&quot;userid&quot;:75}</span>
-$ <span class="kw">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/packages/
-[<span class="dt">{&quot;packageName&quot;:&quot;3d-graphics-examples&quot;},{&quot;packageName&quot;:&quot;3dmodels&quot;}</span>, <span class="kw">...</span>]</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1">$ <span class="ex">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/users/</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">[<span class="dt">{&quot;username&quot;:&quot;admin&quot;,&quot;userid&quot;:0}</span>, <span class="ex">...</span>]</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">$ <span class="ex">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/user/AlpMestanogullari</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="dt">{&quot;groups&quot;:[&quot;/package/gloss-juicy/maintainers&quot;,&quot;/package/hnn/maintainers&quot;,&quot;/package/hspec-attoparsec/maintainers&quot;,&quot;/package/kmeans-vector/maintainers&quot;,&quot;/package/pastis/maintainers&quot;,&quot;/package/probable/maintainers&quot;,&quot;/package/servant-client/maintainers&quot;,&quot;/package/servant-docs/maintainers&quot;,&quot;/package/servant-jquery/maintainers&quot;,&quot;/package/servant-pool/maintainers&quot;,&quot;/package/servant-postgresql/maintainers&quot;,&quot;/package/servant-response/maintainers&quot;,&quot;/package/servant-scotty/maintainers&quot;,&quot;/package/servant-server/maintainers&quot;,&quot;/package/servant/maintainers&quot;,&quot;/package/sitemap/maintainers&quot;,&quot;/package/statistics-linreg/maintainers&quot;,&quot;/package/taggy-lens/maintainers&quot;,&quot;/package/taggy/maintainers&quot;,&quot;/packages/uploaders&quot;],&quot;username&quot;:&quot;AlpMestanogullari&quot;,&quot;userid&quot;:75}</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">$ <span class="ex">curl</span> -H <span class="st">&quot;Accept: application/json&quot;</span> http://hackage.haskell.org/packages/</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">[<span class="dt">{&quot;packageName&quot;:&quot;3d-graphics-examples&quot;},{&quot;packageName&quot;:&quot;3dmodels&quot;}</span>, <span class="ex">...</span>]</a></code></pre></div>
 <p>This is enough to get us started.</p>
 </section>
 <section id="describing-hackages-api-as-a-type" class="level1">
 <h1>Describing Hackage’s API as a type</h1>
 <p>First, some pragmas and imports:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
-<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
-<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
-<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
-<span class="kw">import </span><span class="dt">Control.Applicative</span>
-<span class="kw">import </span><span class="dt">Control.Monad</span>
-<span class="kw">import </span><span class="dt">Control.Monad.IO.Class</span>
-<span class="kw">import </span><span class="dt">Control.Monad.Trans.Either</span>
-<span class="kw">import </span><span class="dt">Data.Aeson</span>
-<span class="kw">import </span><span class="dt">Data.Monoid</span>
-<span class="kw">import </span><span class="dt">Data.Proxy</span>
-<span class="kw">import </span><span class="dt">Data.Text</span> (<span class="dt">Text</span>)
-<span class="kw">import </span><span class="dt">GHC.Generics</span>
-<span class="kw">import </span><span class="dt">Servant.API</span>
-<span class="kw">import </span><span class="dt">Servant.Client</span>
-
-<span class="kw">import qualified</span> <span class="dt">Data.Text</span>    <span class="kw">as</span> <span class="dt">T</span>
-<span class="kw">import qualified</span> <span class="dt">Data.Text.IO</span> <span class="kw">as</span> <span class="dt">T</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">{-# LANGUAGE DataKinds #-}</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ot">{-# LANGUAGE DeriveGeneric #-}</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ot">{-# LANGUAGE TypeOperators #-}</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Control.Applicative</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Control.Monad</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Control.Monad.IO.Class</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Control.Monad.Trans.Either</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Data.Aeson</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Data.Monoid</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Data.Proxy</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="kw">import</span> <span class="dt">GHC.Generics</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Servant.API</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Servant.Client</span></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Text</span>    <span class="kw">as</span> <span class="dt">T</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Text.IO</span> <span class="kw">as</span> <span class="dt">T</span></a></code></pre></div>
 <p>Now, let’s write the API type that corresponds to those 3 endpoints we’re interested in.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">HackageAPI</span> <span class="fu">=</span>
-       <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [UserSummary]</span>
-  <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] UserDetailed</span>
-  <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;packages&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Package]</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">type</span> <span class="dt">HackageAPI</span> <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">       <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] [<span class="dt">UserSummary</span>]</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">UserDetailed</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;packages&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] [<span class="dt">Package</span>]</a></code></pre></div>
 <p>Nothing fancy here, except that we clearly specify we are expecting the output to be in JSON (this will insert the appropriate <code>Accept</code> header).</p>
 </section>
 <section id="data-types-and-json-serialization" class="level1">
 <h1>Data types and JSON serialization</h1>
 <p>We also need some types to go with that: <code>UserSummary</code>, <code>Username</code>, <code>UserDetailed</code>, <code>Package</code>. Here they are, along with JSON deserialization instances.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Text</span>
-
-<span class="kw">data</span> <span class="dt">UserSummary</span> <span class="fu">=</span> <span class="dt">UserSummary</span>
-  {<span class="ot"> summaryUsername ::</span> <span class="dt">Username</span>
-  ,<span class="ot"> summaryUserid   ::</span> <span class="dt">Int</span>
-  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">UserSummary</span> <span class="kw">where</span>
-  parseJSON (<span class="dt">Object</span> o) <span class="fu">=</span>
-    <span class="dt">UserSummary</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;username&quot;</span>
-                <span class="fu">&lt;*&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;userid&quot;</span>
-
-  parseJSON _ <span class="fu">=</span> mzero
-
-<span class="kw">type</span> <span class="dt">Group</span> <span class="fu">=</span> <span class="dt">Text</span>
-
-<span class="kw">data</span> <span class="dt">UserDetailed</span> <span class="fu">=</span> <span class="dt">UserDetailed</span>
-  {<span class="ot"> username ::</span> <span class="dt">Username</span>
-  ,<span class="ot"> userid   ::</span> <span class="dt">Int</span>
-  ,<span class="ot"> groups   ::</span> [<span class="dt">Group</span>]
-  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Generic</span>)
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">UserDetailed</span>
-
-<span class="kw">newtype</span> <span class="dt">Package</span> <span class="fu">=</span> <span class="dt">Package</span> {<span class="ot"> packageName ::</span> <span class="dt">Text</span> }
-  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Generic</span>)
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Package</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">data</span> <span class="dt">UserSummary</span> <span class="fu">=</span> <span class="dt">UserSummary</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  {<span class="ot"> summaryUsername ::</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  ,<span class="ot"> summaryUserid   ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">UserSummary</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">  parseJSON (<span class="dt">Object</span> o) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">    <span class="dt">UserSummary</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;username&quot;</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">                <span class="fu">&lt;*&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;userid&quot;</span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">  parseJSON _ <span class="fu">=</span> mzero</a>
+<a class="sourceLine" id="cb5-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb5-15" data-line-number="15"><span class="kw">type</span> <span class="dt">Group</span> <span class="fu">=</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"><span class="kw">data</span> <span class="dt">UserDetailed</span> <span class="fu">=</span> <span class="dt">UserDetailed</span></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18">  {<span class="ot"> username ::</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19">  ,<span class="ot"> userid   ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">  ,<span class="ot"> groups   ::</span> [<span class="dt">Group</span>]</a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb5-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">UserDetailed</span></a>
+<a class="sourceLine" id="cb5-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb5-25" data-line-number="25"><span class="kw">newtype</span> <span class="dt">Package</span> <span class="fu">=</span> <span class="dt">Package</span> {<span class="ot"> packageName ::</span> <span class="dt">Text</span> }</a>
+<a class="sourceLine" id="cb5-26" data-line-number="26">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb5-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb5-28" data-line-number="28"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Package</span></a></code></pre></div>
 </section>
 <section id="deriving-functions-to-query-hackage" class="level1">
 <h1>Deriving functions to query hackage</h1>
 <p>Finally, we can automatically derive our client functions:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hackageAPI ::</span> <span class="dt">Proxy</span> <span class="dt">HackageAPI</span>
-hackageAPI <span class="fu">=</span> <span class="dt">Proxy</span>
-
-<span class="ot">getUsers ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">UserSummary</span>]
-<span class="ot">getUser ::</span> <span class="dt">Username</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">UserDetailed</span>
-<span class="ot">getPackages ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">Package</span>]
-getUsers <span class="fu">:&lt;|&gt;</span> getUser <span class="fu">:&lt;|&gt;</span> getPackages <span class="fu">=</span> client hackageAPI (<span class="dt">BaseUrl</span> <span class="dt">Http</span> <span class="st">&quot;hackage.haskell.org&quot;</span> <span class="dv">80</span>)</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">hackageAPI ::</span> <span class="dt">Proxy</span> <span class="dt">HackageAPI</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">hackageAPI <span class="fu">=</span> <span class="dt">Proxy</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="ot">getUsers ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">UserSummary</span>]</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="ot">getUser ::</span> <span class="dt">Username</span> <span class="ot">-&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> <span class="dt">UserDetailed</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="ot">getPackages ::</span> <span class="dt">EitherT</span> <span class="dt">ServantError</span> <span class="dt">IO</span> [<span class="dt">Package</span>]</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">getUsers <span class="fu">:&lt;|&gt;</span> getUser <span class="fu">:&lt;|&gt;</span> getPackages <span class="fu">=</span> client hackageAPI (<span class="dt">BaseUrl</span> <span class="dt">Http</span> <span class="st">&quot;hackage.haskell.org&quot;</span> <span class="dv">80</span>)</a></code></pre></div>
 <p>And here’s some runnable code to actually check that everything works as expected:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> print <span class="fu">=&lt;&lt;</span> uselessNumbers
-
-<span class="ot">uselessNumbers ::</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">ServantError</span> ())
-uselessNumbers <span class="fu">=</span> runEitherT <span class="fu">$</span> <span class="kw">do</span>
-  users <span class="ot">&lt;-</span> getUsers
-  liftIO <span class="fu">.</span> putStrLn <span class="fu">$</span> show (length users) <span class="fu">++</span> <span class="st">&quot; users&quot;</span>
-
-  user <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span>
-    putStrLn <span class="st">&quot;Enter a valid hackage username&quot;</span>
-    T.getLine
-  userDetailed <span class="ot">&lt;-</span> run (getUser user)
-  liftIO <span class="fu">.</span> T.putStrLn <span class="fu">$</span> user <span class="fu">&lt;&gt;</span> <span class="st">&quot; maintains &quot;</span> <span class="fu">&lt;&gt;</span> T.pack (show (length <span class="fu">$</span> groups userDetailed)) <span class="fu">&lt;&gt;</span> <span class="st">&quot; packages&quot;</span>
-
-  packages <span class="ot">&lt;-</span> run getPackages
-  <span class="kw">let</span> monadPackages <span class="fu">=</span> filter (isMonadPackage <span class="fu">.</span> packageName) packages
-  liftIO <span class="fu">.</span> putStrLn <span class="fu">$</span> show (length monadPackages) <span class="fu">++</span> <span class="st">&quot; monad packages&quot;</span>
-
-  <span class="kw">where</span> isMonadPackage <span class="fu">=</span> T.isInfixOf <span class="st">&quot;monad&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">main <span class="fu">=</span> print <span class="fu">=&lt;&lt;</span> uselessNumbers</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="ot">uselessNumbers ::</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">ServantError</span> ())</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">uselessNumbers <span class="fu">=</span> runEitherT <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  users <span class="ot">&lt;-</span> getUsers</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">  liftIO <span class="fu">.</span> putStrLn <span class="fu">$</span> show (length users) <span class="fu">++</span> <span class="st">&quot; users&quot;</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">  user <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">    putStrLn <span class="st">&quot;Enter a valid hackage username&quot;</span></a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">    T.getLine</a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">  userDetailed <span class="ot">&lt;-</span> run (getUser user)</a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">  liftIO <span class="fu">.</span> T.putStrLn <span class="fu">$</span> user <span class="fu">&lt;&gt;</span> <span class="st">&quot; maintains &quot;</span> <span class="fu">&lt;&gt;</span> T.pack (show (length <span class="fu">$</span> groups userDetailed)) <span class="fu">&lt;&gt;</span> <span class="st">&quot; packages&quot;</span></a>
+<a class="sourceLine" id="cb7-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">  packages <span class="ot">&lt;-</span> run getPackages</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">  <span class="kw">let</span> monadPackages <span class="fu">=</span> filter (isMonadPackage <span class="fu">.</span> packageName) packages</a>
+<a class="sourceLine" id="cb7-17" data-line-number="17">  liftIO <span class="fu">.</span> putStrLn <span class="fu">$</span> show (length monadPackages) <span class="fu">++</span> <span class="st">&quot; monad packages&quot;</span></a>
+<a class="sourceLine" id="cb7-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb7-19" data-line-number="19">  <span class="kw">where</span> isMonadPackage <span class="fu">=</span> T.isInfixOf <span class="st">&quot;monad&quot;</span></a></code></pre></div>
 <p>Here’s a sample run:</p>
 <pre><code>$ cabal run hackage
 Preprocessing executable hackage for servant-examples-0.3...

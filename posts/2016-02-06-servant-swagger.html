@@ -37,117 +37,117 @@
 <p>Thankfully David Johnson and Nickolay Kudasov have written two Haskell libraries, <a href="https://hackage.haskell.org/package/swagger2">swagger2</a> and <a href="https://hackage.haskell.org/package/servant-swagger">servant-swagger</a>, that automate nearly all of that process for <code>servant</code> APIs. They use the mechanism that guides most of the <code>servant</code> ecosystem — interpreters for the type-level DSL for APIs that is <code>servant</code> — to generate a swagger spec for that API.</p>
 <p>Let’s see how it is used; as an example, we’re going to take the Gists part of the <a href="https://developer.github.com/v3/gists/">GitHub API v3</a>. For the purpose of this post we will ignore authentication and consider only <code>GET</code> requests which do not require one. Furthermore, we’ll use simplified representation for the responses (i.e. we are also ignoring some fields of the response objects).</p>
 <p>First the imports and pragmas (this is a <a href="https://github.com/haskell-servant/haskell-servant.github.io/blob/hakyll/posts/2016-02-06-servant-swagger.lhs">literate haskell file</a>):</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE DataKinds #-}</span>
-<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
-<span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span>
-<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
-<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
-<span class="kw">module</span> <span class="dt">Gists</span> <span class="kw">where</span>
-
-<span class="kw">import </span><span class="dt">Control.Lens</span>
-<span class="kw">import </span><span class="dt">Data.Aeson</span>
-<span class="kw">import </span><span class="dt">Data.Aeson.Types</span> (camelTo2)
-<span class="kw">import qualified</span> <span class="dt">Data.Aeson.Types</span> <span class="kw">as</span> <span class="dt">JSON</span>
-<span class="kw">import qualified</span> <span class="dt">Data.ByteString.Lazy.Char8</span> <span class="kw">as</span> <span class="dt">BL8</span>
-<span class="kw">import </span><span class="dt">Data.HashMap.Strict</span> (<span class="dt">HashMap</span>)
-<span class="kw">import </span><span class="dt">Data.Proxy</span>
-<span class="kw">import </span><span class="dt">Data.Swagger</span>
-<span class="kw">import </span><span class="dt">Data.Text</span> (<span class="dt">Text</span>)
-<span class="kw">import </span><span class="dt">Data.Time</span> (<span class="dt">UTCTime</span>)
-<span class="kw">import </span><span class="dt">GHC.Generics</span> (<span class="dt">Generic</span>)
-<span class="kw">import </span><span class="dt">Servant</span>
-<span class="kw">import </span><span class="dt">Servant.Swagger</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE DataKinds #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE DeriveGeneric #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">{-# LANGUAGE TypeOperators #-}</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">module</span> <span class="dt">Gists</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Control.Lens</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Data.Aeson</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Data.Aeson.Types</span> (camelTo2)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Aeson.Types</span> <span class="kw">as</span> <span class="dt">JSON</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString.Lazy.Char8</span> <span class="kw">as</span> <span class="dt">BL8</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Data.HashMap.Strict</span> (<span class="dt">HashMap</span>)</a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Data.Proxy</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Data.Swagger</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Data.Time</span> (<span class="dt">UTCTime</span>)</a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">GHC.Generics</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Servant</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Servant.Swagger</span></a></code></pre></div>
 <p>The API:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">GitHubGistAPI</span>
-    <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Gist]</span>
- <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">GistsAPI</span>
-
-<span class="kw">type</span> <span class="dt">GistsAPI</span>
-    <span class="fu">=</span> <span class="st">&quot;public&quot;</span>  <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Gist]</span>
- <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;starred&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] [Gist]</span>
- <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> <span class="dt">GistId</span> <span class="fu">:&gt;</span> <span class="dt">GistAPI</span>
-
-<span class="kw">type</span> <span class="dt">GistAPI</span>
-    <span class="fu">=</span> <span class="dt">Get</span> <span class="ch">'[JSON] Gist</span>
- <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;sha&quot;</span> <span class="dt">Revision</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] Gist</span>
-
-<span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">GitHubGistAPI</span>
-api <span class="fu">=</span> <span class="dt">Proxy</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">type</span> <span class="dt">GitHubGistAPI</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    <span class="fu">=</span> <span class="st">&quot;users&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;username&quot;</span> <span class="dt">Username</span> <span class="fu">:&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] [<span class="dt">Gist</span>]</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"> <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;gists&quot;</span> <span class="fu">:&gt;</span> <span class="dt">GistsAPI</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">type</span> <span class="dt">GistsAPI</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    <span class="fu">=</span> <span class="st">&quot;public&quot;</span>  <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] [<span class="dt">Gist</span>]</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"> <span class="fu">:&lt;|&gt;</span> <span class="st">&quot;starred&quot;</span> <span class="fu">:&gt;</span> <span class="dt">QueryParam</span> <span class="st">&quot;since&quot;</span> <span class="dt">UTCTime</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] [<span class="dt">Gist</span>]</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"> <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> <span class="dt">GistId</span> <span class="fu">:&gt;</span> <span class="dt">GistAPI</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">type</span> <span class="dt">GistAPI</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="fu">=</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">Gist</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"> <span class="fu">:&lt;|&gt;</span> <span class="dt">Capture</span> <span class="st">&quot;sha&quot;</span> <span class="dt">Revision</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">Gist</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">GitHubGistAPI</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">api <span class="fu">=</span> <span class="dt">Proxy</span></a></code></pre></div>
 <p>Data types:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Username</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)
-
-<span class="kw">newtype</span> <span class="dt">GistId</span> <span class="fu">=</span> <span class="dt">GistId</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)
-
-<span class="kw">newtype</span> <span class="dt">SHA</span> <span class="fu">=</span> <span class="dt">SHA</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>)
-
-<span class="kw">type</span> <span class="dt">Revision</span> <span class="fu">=</span> <span class="dt">SHA</span>
-
-<span class="kw">data</span> <span class="dt">Gist</span> <span class="fu">=</span> <span class="dt">Gist</span>
-  {<span class="ot"> gistId          ::</span> <span class="dt">GistId</span>
-  ,<span class="ot"> gistDescription ::</span> <span class="dt">Text</span>
-  ,<span class="ot"> gistOwner       ::</span> <span class="dt">Owner</span>
-  ,<span class="ot"> gistFiles       ::</span> <span class="dt">HashMap</span> FilePath <span class="dt">GistFile</span>
-  ,<span class="ot"> gistTruncated   ::</span> <span class="dt">Bool</span>
-  ,<span class="ot"> gistComments    ::</span> <span class="dt">Integer</span>
-  ,<span class="ot"> gistCreatedAt   ::</span> <span class="dt">UTCTime</span>
-  ,<span class="ot"> gistUpdatedAt   ::</span> <span class="dt">UTCTime</span>
-  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">data</span> <span class="dt">OwnerType</span> <span class="fu">=</span> <span class="dt">User</span> <span class="fu">|</span> <span class="dt">Organization</span>
-  <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">data</span> <span class="dt">Owner</span> <span class="fu">=</span> <span class="dt">Owner</span>
-  {<span class="ot"> ownerLogin      ::</span> <span class="dt">Username</span>
-  ,<span class="ot"> ownerType       ::</span> <span class="dt">OwnerType</span>
-  ,<span class="ot"> ownerSiteAdmin  ::</span> <span class="dt">Bool</span>
-  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)
-
-<span class="kw">data</span> <span class="dt">GistFile</span> <span class="fu">=</span> <span class="dt">GistFile</span>
-  {<span class="ot"> gistfileSize      ::</span> <span class="dt">Integer</span>
-  ,<span class="ot"> gistfileLanguage  ::</span> <span class="dt">Text</span>
-  ,<span class="ot"> gistfileRawUrl    ::</span> <span class="dt">Text</span>
-  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Username</span> <span class="fu">=</span> <span class="dt">Username</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">GistId</span> <span class="fu">=</span> <span class="dt">GistId</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>, <span class="dt">FromJSON</span>)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="kw">newtype</span> <span class="dt">SHA</span> <span class="fu">=</span> <span class="dt">SHA</span> <span class="dt">Text</span> <span class="kw">deriving</span> (<span class="dt">Generic</span>, <span class="dt">ToText</span>)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw">type</span> <span class="dt">Revision</span> <span class="fu">=</span> <span class="dt">SHA</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="kw">data</span> <span class="dt">Gist</span> <span class="fu">=</span> <span class="dt">Gist</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">  {<span class="ot"> gistId          ::</span> <span class="dt">GistId</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">  ,<span class="ot"> gistDescription ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">  ,<span class="ot"> gistOwner       ::</span> <span class="dt">Owner</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">  ,<span class="ot"> gistFiles       ::</span> <span class="dt">HashMap</span> FilePath <span class="dt">GistFile</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">  ,<span class="ot"> gistTruncated   ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">  ,<span class="ot"> gistComments    ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">  ,<span class="ot"> gistCreatedAt   ::</span> <span class="dt">UTCTime</span></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">  ,<span class="ot"> gistUpdatedAt   ::</span> <span class="dt">UTCTime</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb3-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="kw">data</span> <span class="dt">OwnerType</span> <span class="fu">=</span> <span class="dt">User</span> <span class="fu">|</span> <span class="dt">Organization</span></a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">  <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb3-23" data-line-number="23"><span class="kw">data</span> <span class="dt">Owner</span> <span class="fu">=</span> <span class="dt">Owner</span></a>
+<a class="sourceLine" id="cb3-24" data-line-number="24">  {<span class="ot"> ownerLogin      ::</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb3-25" data-line-number="25">  ,<span class="ot"> ownerType       ::</span> <span class="dt">OwnerType</span></a>
+<a class="sourceLine" id="cb3-26" data-line-number="26">  ,<span class="ot"> ownerSiteAdmin  ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-27" data-line-number="27">  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb3-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb3-29" data-line-number="29"><span class="kw">data</span> <span class="dt">GistFile</span> <span class="fu">=</span> <span class="dt">GistFile</span></a>
+<a class="sourceLine" id="cb3-30" data-line-number="30">  {<span class="ot"> gistfileSize      ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb3-31" data-line-number="31">  ,<span class="ot"> gistfileLanguage  ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb3-32" data-line-number="32">  ,<span class="ot"> gistfileRawUrl    ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb3-33" data-line-number="33">  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a></code></pre></div>
 <p><code>FromJSON</code> instances:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">modifier ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-modifier <span class="fu">=</span> drop <span class="dv">1</span> <span class="fu">.</span> dropWhile (<span class="fu">/=</span> <span class="ch">'_'</span>) <span class="fu">.</span> camelTo2 <span class="ch">'_'</span>
-
-<span class="ot">prefixOptions ::</span> <span class="dt">JSON.Options</span>
-prefixOptions <span class="fu">=</span> JSON.defaultOptions { JSON.fieldLabelModifier <span class="fu">=</span> modifier }
-
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">OwnerType</span>
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Owner</span>    <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">GistFile</span> <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions
-<span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Gist</span>     <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">modifier ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">modifier <span class="fu">=</span> drop <span class="dv">1</span> <span class="fu">.</span> dropWhile (<span class="fu">/=</span> <span class="ch">'_'</span>) <span class="fu">.</span> camelTo2 <span class="ch">'_'</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">prefixOptions ::</span> <span class="dt">JSON.Options</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">prefixOptions <span class="fu">=</span> JSON.defaultOptions { JSON.fieldLabelModifier <span class="fu">=</span> modifier }</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">OwnerType</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Owner</span>    <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">GistFile</span> <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">Gist</span>     <span class="kw">where</span> parseJSON <span class="fu">=</span> genericParseJSON prefixOptions</a></code></pre></div>
 <p>So far this is what you would usually have when working with <code>servant</code>. Now to generate Swagger specification we need to define schemas for our types. This is done with <code>ToParamSchema</code> and <code>ToSchema</code> instances:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">prefixSchemaOptions ::</span> <span class="dt">SchemaOptions</span>
-prefixSchemaOptions <span class="fu">=</span> defaultSchemaOptions { fieldLabelModifier <span class="fu">=</span> modifier }
-
-<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">SHA</span>
-<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">Username</span>
-<span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">GistId</span>
-
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Username</span>
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistId</span>
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">OwnerType</span>
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Owner</span>    <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistFile</span> <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions
-<span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Gist</span>     <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">prefixSchemaOptions ::</span> <span class="dt">SchemaOptions</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">prefixSchemaOptions <span class="fu">=</span> defaultSchemaOptions { fieldLabelModifier <span class="fu">=</span> modifier }</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">SHA</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">ToParamSchema</span> <span class="dt">GistId</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Username</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistId</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">OwnerType</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Owner</span>    <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">GistFile</span> <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"><span class="kw">instance</span> <span class="dt">ToSchema</span> <span class="dt">Gist</span>     <span class="kw">where</span> declareNamedSchema <span class="fu">=</span> genericDeclareNamedSchema prefixSchemaOptions</a></code></pre></div>
 <p>These will give us a generically-derived Swagger schema (which is sort of a deterministic version of JSON Schema).</p>
 <p>Part of the <code>swagger2</code> package, <code>Schema</code> and <code>ParamSchema</code> can be quite useful in their own right if you want to e.g. respond with a schema in case of bad request bodies, or <code>OPTIONS</code> requests.</p>
 <p>The next step will traverse the <code>GitHubGistAPI</code>, gathering information about it and <code>swagger2</code> schemas to generate a <code>Swagger</code> value:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">swaggerDoc1 ::</span> <span class="dt">Swagger</span>
-swaggerDoc1 <span class="fu">=</span> toSwagger api</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">swaggerDoc1 ::</span> <span class="dt">Swagger</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">swaggerDoc1 <span class="fu">=</span> toSwagger api</a></code></pre></div>
 <p>Now we can generate the swagger documentation:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">genSwaggerDoc1 ::</span> <span class="dt">IO</span> ()
-genSwaggerDoc1 <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc1</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">genSwaggerDoc1 ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">genSwaggerDoc1 <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc1</a></code></pre></div>
 <p>You can attach more information to your <code>Swagger</code> doc quite easily, using the lenses provided by <code>swagger2</code>:</p>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">swaggerDoc2 ::</span> <span class="dt">Swagger</span>
-swaggerDoc2 <span class="fu">=</span> swaggerDoc1
-  <span class="fu">&amp;</span> host <span class="fu">?~</span> <span class="st">&quot;api.github.com&quot;</span>
-  <span class="fu">&amp;</span> info<span class="fu">.</span>title <span class="fu">.~</span> <span class="st">&quot;GitHub Gists API&quot;</span>
-  <span class="fu">&amp;</span> info<span class="fu">.</span>version <span class="fu">.~</span> <span class="st">&quot;v3&quot;</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc2</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">swaggerDoc2 ::</span> <span class="dt">Swagger</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">swaggerDoc2 <span class="fu">=</span> swaggerDoc1</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="fu">&amp;</span> host <span class="fu">?~</span> <span class="st">&quot;api.github.com&quot;</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  <span class="fu">&amp;</span> info<span class="fu">.</span>title <span class="fu">.~</span> <span class="st">&quot;GitHub Gists API&quot;</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="fu">&amp;</span> info<span class="fu">.</span>version <span class="fu">.~</span> <span class="st">&quot;v3&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">main <span class="fu">=</span> BL8.putStr <span class="fu">$</span> encode swaggerDoc2</a></code></pre></div>
 <p>Which results in <a href="https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json">this</a>.</p>
 <p>There’s a lot more you can do with both <code>servant-swagger</code> and <code>swagger2</code> — write manual <code>ToSchema</code> instances for more detailed information, conveniently add tags or change responses of parts of your API, use convenient lenses to modify any part of your schema, generate automatic tests, etc.</p>
 <p>Check out the <a href="https://hackage.haskell.org/package/servant-swagger"><code>servant-swagger</code></a> and <a href="https://hackage.haskell.org/package/swagger2"><code>swagger2</code></a> docs for more.</p>

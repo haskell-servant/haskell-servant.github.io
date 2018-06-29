@@ -36,117 +36,117 @@
 <section id="summary" class="level1">
 <h1>Summary</h1>
 <p>A couple of days ago, <em>marcushg</em> mentioned on the <strong>#servant</strong> IRC channel that one could probably easily use the information available from API types to “derive” a mock implementation of your request handlers that just generates random values of whatever the return type of the handlers are. Julian and I discussed this a bit today and I just went ahead and wrote down our thoughts in a new branch. The result will be explained in this post, but in short, it lets us take a type describing a web API, such as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">User</span></a></code></pre></div>
 <p>and generate request handlers that just respond with random values of the appropriate type, <code>User</code> in our case. In <em>servant</em>/<em>wai</em> terms, this means we get a <code>mock</code> function with the type:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mock ::</span> <span class="dt">HasMock</span> api <span class="ot">=&gt;</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">mock ::</span> <span class="dt">HasMock</span> api <span class="ot">=&gt;</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</a></code></pre></div>
 <p>i.e., “given an API type, please generate a mock server for such an API”. This effectively means “please pull a mock server out of thin air for me”.</p>
 <p>Out of thin air, really? Not exactly. But let’s start by clearly stating the problem.</p>
 </section>
 <section id="the-problem" class="level1">
 <h1>The Problem</h1>
 <p><em>servant</em> lets you describe web applications with a Haskell type using the combinators from servant’s type-level EDSL. Such a type would be:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- In English:</span>
-<span class="co">-- the API has one endpoint, under /user, which returns</span>
-<span class="co">-- response bodies in JSON that describe values of type User</span>
-<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- In English:</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co">-- the API has one endpoint, under /user, which returns</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">-- response bodies in JSON that describe values of type User</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">User</span></a></code></pre></div>
 <p>where <code>User</code> could be defined as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }</a></code></pre></div>
 <p>The goal would be to “automagically” derive a request handler of the right type that we could use as a placeholder until we properly implement a handler that talks to the database and responds with “the real data”.</p>
 <p>For anyone not familiar with <em>servant</em> already, you just need to know that it means we need to somehow automatically implement a computation with the type:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">getUser ::</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></a></code></pre></div>
 <p>possibly by constraining the user to provide an instance for some random generation class.</p>
 </section>
 <section id="the-plan" class="level1">
 <h1>The Plan</h1>
 <p>Just like <em>servant-server</em>, <em>servant-client</em> and others, we need a class whose instances will define the way we interpret each combinator, in a way very specific to this task: we will produce what <em>servant-server</em> takes as input, i.e., request handlers! This all means we are basically looking at a class like:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">HasServer</span> api <span class="ot">=&gt;</span> <span class="dt">HasMock</span> api <span class="kw">where</span>
-<span class="ot">  mock ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">class</span> <span class="dt">HasServer</span> api <span class="ot">=&gt;</span> <span class="dt">HasMock</span> api <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">  mock ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">Server</span> api</a></code></pre></div>
 <p>where <code>Server api</code> just computes the types of the all the request handlers of an <em>API type</em>. In our case, <code>Server api</code> is computed as follows:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- api = the API type from above in our case</span>
-<span class="dt">Server</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">Server</span> (<span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User)</span>
-           <span class="co">-- static strings in the path do not influence</span>
-           <span class="co">-- the type of a handler</span>
-           <span class="fu">=</span> <span class="dt">Server</span> (<span class="dt">Get</span> <span class="ch">'[JSON] User)</span>
-           <span class="co">-- EitherT ServantErr IO is the default monad</span>
-           <span class="co">-- in which handlers run</span>
-           <span class="fu">=</span> <span class="dt">Either</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">-- api = the API type from above in our case</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="dt">Server</span> <span class="dt">API</span> <span class="fu">=</span> <span class="dt">Server</span> (<span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">User</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">           <span class="co">-- static strings in the path do not influence</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">           <span class="co">-- the type of a handler</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">           <span class="fu">=</span> <span class="dt">Server</span> (<span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">User</span>)</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">           <span class="co">-- EitherT ServantErr IO is the default monad</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">           <span class="co">-- in which handlers run</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">           <span class="fu">=</span> <span class="dt">Either</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> <span class="dt">User</span></a></code></pre></div>
 <p>So we have to implement at least support for static string fragments in the path and the <code>Get</code> combinator (i.e handlers for HTTP GET requests).</p>
 </section>
 <section id="hasmock-instances" class="level1">
 <h1><code>HasMock</code> instances</h1>
 <p>Let’s start with the one for static path fragments, it’s the simplest one: we ignore the string bit and move on to what comes after.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">KnownSymbol</span> path, <span class="dt">HasMock</span> rest) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (path <span class="fu">:&gt;</span> rest) <span class="kw">where</span>
-  mock _ <span class="fu">=</span> mock (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> rest)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">KnownSymbol</span> path, <span class="dt">HasMock</span> rest) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (path <span class="fu">:&gt;</span> rest) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  mock _ <span class="fu">=</span> mock (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> rest)</a></code></pre></div>
 <p>Don’t be scared by <code>KnownSymbol</code>, it basically just means “<code>path</code> is a type-level string”, that is, a string that appears in a type.</p>
 <p>Next comes the one for <code>Get</code>. This one is trickier: this is the combinator that says what type the handler returns. The returned value then gets encoded into JSON, HTML, CSV or any format of your choice. In our case, the handler returns a <code>User</code> and can only encode it in the JSON format.</p>
 <p>Now the heart of the matter really is: we know we need to return an <code>User</code> and our <code>EitherT ServantErr IO</code> monad mentions <code>IO</code>, couldn’t we randomly generate an <code>User</code>? Yes, we can! For the purpose of a mock server, we will simply use <a href="http://hackage.haskell.org/package/QuickCheck">QuickCheck</a>’s <code>Arbitrary</code> class, which represents types for which we can generate random values, given a random number generator.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Arbitrary</span> a <span class="kw">where</span>
-<span class="ot">  arbitrary ::</span> <span class="dt">Gen</span> a
-  <span class="co">-- and another method, but optional</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Arbitrary</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="ot">  arbitrary ::</span> <span class="dt">Gen</span> a</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="co">-- and another method, but optional</span></a></code></pre></div>
 <p>The <code>Gen</code> type provides instances for the <code>Functor</code>, <code>Applicative</code> and <code>Monad</code> classes and <code>Arbitrary</code> comes with instances for many of the types in <em>base</em>.</p>
 <p>This essentially means writing an <code>Arbitrary</code> instance for <code>User</code> is as simple as:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">User</span> <span class="kw">where</span>
-  <span class="co">-- we just rely on the arbitrary instance for lists of</span>
-  <span class="co">-- chars, i.e., Strings, and use the Functor instance for Gen</span>
-  arbitrary <span class="fu">=</span> fmap <span class="dt">User</span> arbitrary</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">User</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="co">-- we just rely on the arbitrary instance for lists of</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  <span class="co">-- chars, i.e., Strings, and use the Functor instance for Gen</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  arbitrary <span class="fu">=</span> fmap <span class="dt">User</span> arbitrary</a></code></pre></div>
 <p>If you have multiple fields, you can use the usual combo of <code>&lt;$&gt;</code> (i.e., <code>fmap</code>) and <code>&lt;*&gt;</code> (comes with <code>Applicative</code>).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- a point: x, y coordinates</span>
-<span class="kw">data</span> <span class="dt">Point</span> <span class="fu">=</span> <span class="dt">Point</span> <span class="dt">Double</span> <span class="dt">Double</span>
-
-<span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Point</span> <span class="kw">where</span>
-  arbitrary <span class="fu">=</span> <span class="dt">Point</span> <span class="fu">&lt;$&gt;</span> arbitrary <span class="fu">&lt;*&gt;</span> arbitrary</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- a point: x, y coordinates</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Point</span> <span class="fu">=</span> <span class="dt">Point</span> <span class="dt">Double</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Point</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  arbitrary <span class="fu">=</span> <span class="dt">Point</span> <span class="fu">&lt;$&gt;</span> arbitrary <span class="fu">&lt;*&gt;</span> arbitrary</a></code></pre></div>
 <p>Once you have an <code>Arbitrary</code> instance, in order to generate a random value using your instance, you have to call a function called… <code>generate</code>!</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generate ::</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">generate ::</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a></code></pre></div>
 <p>Putting the two together, we get:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">generate<span class="ot"> arbitrary ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">IO</span> a</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">generate<span class="ot"> arbitrary ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">IO</span> a</a></code></pre></div>
 <p>All we need to do is just “lift” that up into our <code>EitherT ServantErr IO</code> monad, which is exactly what <code>Control.Monad.IO.Class.liftIO</code> is about in the <a href="http://hackage.haskell.org/package/transformers">transformers</a> package.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">liftIO (generate arbitrary)<span class="ot"> ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> a</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">liftIO (generate arbitrary)<span class="ot"> ::</span> <span class="dt">Arbitrary</span> a <span class="ot">=&gt;</span> <span class="dt">EitherT</span> <span class="dt">ServantErr</span> <span class="dt">IO</span> a</a></code></pre></div>
 <p>In order to automatically “fill” request handlers with this expression we just need to write the <code>HasMock</code> instance for <code>Get</code>, shown below.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Arbitrary</span> a, <span class="dt">AllCTRender</span> ctypes a) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (<span class="dt">Get</span> ctypes a) <span class="kw">where</span>
-  mock _ <span class="fu">=</span> liftIO (generate arbitrary)</code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">Arbitrary</span> a, <span class="dt">AllCTRender</span> ctypes a) <span class="ot">=&gt;</span> <span class="dt">HasMock</span> (<span class="dt">Get</span> ctypes a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  mock _ <span class="fu">=</span> liftIO (generate arbitrary)</a></code></pre></div>
 <p>The <code>AllCTRender</code> constraint just says “we know how to encode values of type <code>a</code> in the formats listed in the <code>Get</code> combinator”.</p>
 <p>And that’s it! You can now actually use all of this to put together a mock server for our little API.</p>
 </section>
 <section id="using-mock" class="level1">
 <h1>Using <code>mock</code></h1>
 <p>All we need to do to run the mock server is call <em>servant-server</em>’s <code>serve</code> function. It is illustrated below, along with <strong>all</strong> of the code you’d have to write if you were to use this mock-generation feature (aside from language pragmas and imports).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- 1/ define our user type, deriving the Arbitrary instance</span>
-<span class="co">--    since it's just a newtype and we can use the</span>
-<span class="co">--    GeneralizedNewtypeDeriving extension. We also</span>
-<span class="co">--    derive the Generic class to get our JSON encoding</span>
-<span class="co">--    functions for free.</span>
-<span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }
-  <span class="kw">deriving</span> (<span class="dt">Arbitrary</span>, <span class="dt">Generic</span>)
-
-<span class="co">-- 2/ we get the JSON encoding for free</span>
-<span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">Generic</span>
-
-<span class="co">-- 3/ recall our API type</span>
-<span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> <span class="ch">'[JSON] User</span>
-
-<span class="co">-- 4/ define this simple Proxy.</span>
-<span class="co">-- for any given type 'a', there's only one value of type 'Proxy a'</span>
-<span class="co">-- that is not equivalent to error &quot;foo&quot; and the likes, a real honest value.</span>
-<span class="co">-- The way to build this value is to use the Proxy constructor.</span>
-<span class="co">-- In other words, this value lets us target one precise type. Servant</span>
-<span class="co">-- uses this to tie the type-level information with value-level data.</span>
-<span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span>
-api <span class="fu">=</span> <span class="dt">Proxy</span>
-
-<span class="co">-- 5/ we magically derive the mock server.</span>
-<span class="co">-- the run function comes from the warp webserver,</span>
-<span class="co">-- http://hackage.haskell.org/package/warp</span>
-<span class="co">-- 'mock' is the method of the `HasMock` class we've</span>
-<span class="co">-- developed in this post.</span>
-<span class="co">-- This will run a mock web server with an endpoint at</span>
-<span class="co">-- http://localhost:8080/user that generates random values</span>
-<span class="co">-- of type User</span>
-<span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span class="fu">$</span> mock api)</code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="co">-- 1/ define our user type, deriving the Arbitrary instance</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="co">--    since it's just a newtype and we can use the</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="co">--    GeneralizedNewtypeDeriving extension. We also</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="co">--    derive the Generic class to get our JSON encoding</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5"><span class="co">--    functions for free.</span></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="kw">newtype</span> <span class="dt">User</span> <span class="fu">=</span> <span class="dt">User</span> {<span class="ot"> username ::</span> <span class="dt">String</span> }</a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">  <span class="kw">deriving</span> (<span class="dt">Arbitrary</span>, <span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb16-9" data-line-number="9"><span class="co">-- 2/ we get the JSON encoding for free</span></a>
+<a class="sourceLine" id="cb16-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">ToJSON</span> <span class="dt">Generic</span></a>
+<a class="sourceLine" id="cb16-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb16-12" data-line-number="12"><span class="co">-- 3/ recall our API type</span></a>
+<a class="sourceLine" id="cb16-13" data-line-number="13"><span class="kw">type</span> <span class="dt">API</span> <span class="fu">=</span> <span class="st">&quot;user&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> '[<span class="dt">JSON</span>] <span class="dt">User</span></a>
+<a class="sourceLine" id="cb16-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb16-15" data-line-number="15"><span class="co">-- 4/ define this simple Proxy.</span></a>
+<a class="sourceLine" id="cb16-16" data-line-number="16"><span class="co">-- for any given type 'a', there's only one value of type 'Proxy a'</span></a>
+<a class="sourceLine" id="cb16-17" data-line-number="17"><span class="co">-- that is not equivalent to error &quot;foo&quot; and the likes, a real honest value.</span></a>
+<a class="sourceLine" id="cb16-18" data-line-number="18"><span class="co">-- The way to build this value is to use the Proxy constructor.</span></a>
+<a class="sourceLine" id="cb16-19" data-line-number="19"><span class="co">-- In other words, this value lets us target one precise type. Servant</span></a>
+<a class="sourceLine" id="cb16-20" data-line-number="20"><span class="co">-- uses this to tie the type-level information with value-level data.</span></a>
+<a class="sourceLine" id="cb16-21" data-line-number="21"><span class="ot">api ::</span> <span class="dt">Proxy</span> <span class="dt">API</span></a>
+<a class="sourceLine" id="cb16-22" data-line-number="22">api <span class="fu">=</span> <span class="dt">Proxy</span></a>
+<a class="sourceLine" id="cb16-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb16-24" data-line-number="24"><span class="co">-- 5/ we magically derive the mock server.</span></a>
+<a class="sourceLine" id="cb16-25" data-line-number="25"><span class="co">-- the run function comes from the warp webserver,</span></a>
+<a class="sourceLine" id="cb16-26" data-line-number="26"><span class="co">-- http://hackage.haskell.org/package/warp</span></a>
+<a class="sourceLine" id="cb16-27" data-line-number="27"><span class="co">-- 'mock' is the method of the `HasMock` class we've</span></a>
+<a class="sourceLine" id="cb16-28" data-line-number="28"><span class="co">-- developed in this post.</span></a>
+<a class="sourceLine" id="cb16-29" data-line-number="29"><span class="co">-- This will run a mock web server with an endpoint at</span></a>
+<a class="sourceLine" id="cb16-30" data-line-number="30"><span class="co">-- http://localhost:8080/user that generates random values</span></a>
+<a class="sourceLine" id="cb16-31" data-line-number="31"><span class="co">-- of type User</span></a>
+<a class="sourceLine" id="cb16-32" data-line-number="32"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-33" data-line-number="33">main <span class="fu">=</span> run <span class="dv">8080</span> (serve api <span class="fu">$</span> mock api)</a></code></pre></div>
 <p>Our little program in action:</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">curl</span> localhost:8080/user
-<span class="dt">{&quot;username&quot;:&quot;Yv\rG\u0014±Ssv\u001e&gt;\u001aVF\u001e\u000fM5ø\u000ctefÚJ\u0001K4&quot;}</span>
-<span class="co"># yes, a truly original username.</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb17-1" data-line-number="1">$ <span class="ex">curl</span> localhost:8080/user</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="dt">{&quot;username&quot;:&quot;Yv\rG\u0014±Ssv\u001e&gt;\u001aVF\u001e\u000fM5ø\u000ctefÚJ\u0001K4&quot;}</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="co"># yes, a truly original username.</span></a></code></pre></div>
 <p>This is really all you have to do to put together a mock server for an API type. You can find the complete code for this in the work-in-progress <a href="https://github.com/haskell-servant/servant/tree/master/servant-mock">servant-mock</a> package on github. The example can be found under <code>example/main.hs</code> there.</p>
 <p>There are many more <code>HasMock</code> instances than the ones I have shown here of course – there’s one for all the combinators provided by the <em>servant</em> package! So you can take any API type out there and just create a mock server for it, as long as you provide <code>Arbitrary</code> instances for your data types. Nothing too interesting though, but feel free to take a look at <code>src/Servant/Mock.hs</code> in the repository if you want to read the other instances.</p>
 <p>I hope this makes clear how simple writing your own servant interpretation can be, and encourages you to try your hand at it!</p>

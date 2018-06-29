@@ -36,18 +36,18 @@
                       --data-binary &quot;@haskell-logo.png&quot; \
                       &gt; haskell-logo.jpeg</code></pre>
 <p>To get there, we need to do a couple of things. We need to of course run the application:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> run <span class="dv">8001</span> conversion</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">main <span class="fu">=</span> run <span class="dv">8001</span> conversion</a></code></pre></div>
 <p>And describe the API:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ConversionApi</span>
-     <span class="fu">=</span> <span class="dt">ReqBody</span> <span class="ch">'[BMP, GIF, JPEG 50, PNG, TIFF, RADIANCE] DynamicImage</span>
-    <span class="fu">:&gt;</span> <span class="dt">Post</span> <span class="ch">'[BMP, GIF, JPEG 50, PNG, TIFF, RADIANCE] DynamicImage</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">ConversionApi</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">     <span class="fu">=</span> <span class="dt">ReqBody</span> '[<span class="dt">BMP</span>, <span class="dt">GIF</span>, <span class="dt">JPEG</span> <span class="dv">50</span>, <span class="dt">PNG</span>, <span class="dt">TIFF</span>, <span class="dt">RADIANCE</span>] <span class="dt">DynamicImage</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="fu">:&gt;</span> <span class="dt">Post</span> '[<span class="dt">BMP</span>, <span class="dt">GIF</span>, <span class="dt">JPEG</span> <span class="dv">50</span>, <span class="dt">PNG</span>, <span class="dt">TIFF</span>, <span class="dt">RADIANCE</span>] <span class="dt">DynamicImage</span></a></code></pre></div>
 <p>As you can see, we state that we accept and can return a variety of image formats.</p>
 <p>The application is then:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">conversion ::</span> <span class="dt">Application</span>
-conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> <span class="dt">ConversionApi</span>) handler</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">conversion ::</span> <span class="dt">Application</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">conversion <span class="fu">=</span> serve (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> <span class="dt">ConversionApi</span>) handler</a></code></pre></div>
 <p>And for the clincher, the handler:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    <span class="kw">where</span> handler <span class="fu">=</span> return</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">    <span class="kw">where</span> handler <span class="fu">=</span> return</a></code></pre></div>
 <p>And that’s it!</p>
 </section>
 <section id="conclusion" class="level1">
