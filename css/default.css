@@ -10,20 +10,26 @@ body, html {
 	max-width: 900px;
 }
 
+.top-bar-container {
+	background: #009d8d;
+	border-bottom: 2px solid #604aff;
+}
+
 .top-bar, .top-bar ul {
 	background: #009d8d;
 }
 
-.top-bar {
-	border-bottom: 2px solid #604aff;
-}
-
 .top-bar a, .top-bar a:visited {
 	color: white;
+	font-weight: bold;
 }
 
 .top-bar a:hover {
 	color: #7ec2b9;
+}
+
+.dropdown.menu a {
+	padding: 0.7rem 1.2rem;
 }
 
 body {
