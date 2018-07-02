@@ -36,7 +36,7 @@
 <li><p>Added <code>NoFraming</code> streaming strategy (<a href="https://github.com/haskell-servant/servant/pull/959">#959</a>)</p></li>
 <li><p><em>servant-client-core</em> Free <code>Client</code> implementation. Useful for testing <code>HasClient</code> instances. (<a href="https://github.com/haskell-servant/servant/pull/920">#920</a>)</p></li>
 <li><p><em>servant-client-core</em> Add <code>hoistClient</code> to <code>HasClient</code>. Just like <code>hoistServer</code> allows us to change the monad in which request handlers of a web application live in, we also have <code>hoistClient</code> for changing the monad in which <em>client functions</em> live. Read <a href="https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in">tutorial section for more information</a>. (<a href="https://github.com/haskell-servant/servant/pull/936">#936</a>)</p>
-<p>iF you have own combinators, you’ll need to define a new method of <code>HasClient</code> class, for example:</p>
+<p>If you have own combinators, you’ll need to define a new method of <code>HasClient</code> class, for example:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Client</span> m (<span class="dt">MyCombinator</span> <span class="fu">:&gt;</span> api) <span class="fu">=</span> <span class="dt">MyValue</span> <span class="fu">:&gt;</span> <span class="dt">Client</span> m api</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">hoistClientMonad pm _ nt cl <span class="fu">=</span> hoistClientMonad pm (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> api) nt <span class="fu">.</span> cl</a></code></pre></div></li>
 <li><p><em>servant</em> Add <code>safeLink' :: (Link -&gt; a) -&gt; ... -&gt; MkLink endpoint a</code>, which allows to create helpers returning something else than <code>Link</code>. (<a href="https://github.com/haskell-servant/servant/pull/968">#968</a>)</p></li>
@@ -62,7 +62,7 @@
 </section>
 </section>
 
-<div class="info">
+<div class="post-info">
     Posted on June 19, 2018
     
         by The servant team
@@ -174,7 +174,7 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 <p><a href="https://github.com/haskell-servant/servant/issues/704#issuecomment-283396827">Alp Mestanogullari summarised it well</a>: <em>gradually reach for fancier things as your needs grow, never when it’s not required</em>.</p>
 </section>
 
-<div class="info">
+<div class="post-info">
     Posted on March  3, 2017
     
         by Oleg Grenrus
@@ -412,7 +412,7 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 <p>We hope you enjoy the new release. It was certainly lots of fun to work on <code>servant-0.5</code>. We’d like to say thanks to all the people that helped, big or small. Happy hacking.</p>
 </section>
 
-<div class="info">
+<div class="post-info">
     Posted on March 19, 2016
     
         by The servant team
@@ -426,13 +426,10 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 <item>
     <title>Announcing servant-swagger and swagger2</title>
     <link>http://haskell-servant.github.io/posts/2016-02-06-servant-swagger.html</link>
-    <description><![CDATA[<section id="swagger" class="level2">
-<h2>Swagger</h2>
-<p><code>Servant</code> is not the first project to provide a unified way of documenting APIs. There is <code>API Blueprint</code>, <code>RAML</code>, <code>Apiary</code>, and finally <code>swagger</code>. While these Web API description languages are not also web frameworks , they are generally very mature, and have some amazing tooling. For example, take a look at what <code>swagger-ui</code>, a client-side HTML, CSS, and JS bundle, does with your <code>swagger</code> API description <a href="http://petstore.swagger.io/?url=https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json#/default">here</a>.</p>
+    <description><![CDATA[<p><code>Servant</code> is not the first project to provide a unified way of documenting APIs. There is <code>API Blueprint</code>, <code>RAML</code>, <code>Apiary</code>, and finally <code>swagger</code>. While these Web API description languages are not also web frameworks , they are generally very mature, and have some amazing tooling. For example, take a look at what <code>swagger-ui</code>, a client-side HTML, CSS, and JS bundle, does with your <code>swagger</code> API description <a href="http://petstore.swagger.io/?url=https://gist.githubusercontent.com/fizruk/1037ddb2c81c017f4de6/raw/c4061c9655d7f0a6a51b0eebf1e16f64cc969a07/gist.swagger.json#/default">here</a>.</p>
 <p>As you can see, it’s a very convenient and approachable way of exploring your API. In addition to an easily-navigable structure, you can build up requests and send them to your server, and see its responses.</p>
 <p>But it doesn’t end there. If you have a <code>swagger</code> specification of your API, you can also take advantage of the large variety of <a href="https://github.com/swagger-api/swagger-codegen/blob/master/README.md#customizing-the-generator">languages</a> for which you can generate a client library automatically. You don’t even need to build the Java code - you can just use the “Generate Client” button in the beautiful <a href="http://editor.swagger.io/#/">swagger editor</a>.</p>
 <p>There are a wide array of other <a href="http://swagger.io/open-source-integrations/">tools</a> that support <code>swagger</code>. Obviously, having access to them would be a great boon. The problem so far has been that writing and maintaining a <code>swagger</code> specification, that you can be sure matches your service, is hard work.</p>
-</section>
 <section id="swagger2-and-servant-swagger" class="level2">
 <h2>swagger2 and servant-swagger</h2>
 <p>Thankfully David Johnson and Nickolay Kudasov have written two Haskell libraries, <a href="https://hackage.haskell.org/package/swagger2">swagger2</a> and <a href="https://hackage.haskell.org/package/servant-swagger">servant-swagger</a>, that automate nearly all of that process for <code>servant</code> APIs. They use the mechanism that guides most of the <code>servant</code> ecosystem — interpreters for the type-level DSL for APIs that is <code>servant</code> — to generate a swagger spec for that API.</p>
@@ -556,7 +553,7 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 <p>On a related note, Masahiro Yamauchi has recently <a href="https://github.com/swagger-api/swagger-codegen/pull/2009">added Servant codegen for Swagger</a>. So not only can you generate a swagger description for your servant server, but you can also generate the servant description from a swagger one too!</p>
 </section>
 
-<div class="info">
+<div class="post-info">
     Posted on February  6, 2016
     
         by David Johnson, Nickolay Kudasov, Julian Arni
@@ -601,7 +598,7 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 <p>Essentially the same idea could of course be applied to other areas. Document conversion with Pandoc, video and audio formats, etc.</p>
 </section>
 
-<div class="info">
+<div class="post-info">
     Posted on August  5, 2015
     
         by Julian K. Arni
@@ -751,7 +748,7 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 </ul>
 </section>
 
-<div class="info">
+<div class="post-info">
     Posted on July 24, 2015
     
         by Alp Mestanogullari
@@ -771,7 +768,7 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 </blockquote>
 <p>The full draft is available <a href="http://alpmestan.com/servant/servant-wgp.pdf">here</a>.</p>
 
-<div class="info">
+<div class="post-info">
     Posted on May 25, 2015
     
         by Alp Mestanogullari
@@ -895,7 +892,7 @@ app = serve api $ createCat :&lt;|&gt; readCat</code></pre>
 <p>Special thanks to <a href="https://github.com/anchor">the Anchor team</a> from Australia, <a href="https://github.com/mpickering">Matthew Pickering</a>, <a href="https://github.com/dlarsson">Daniel Larsson</a>, <a href="https://github.com/paf31">Phil Freeman</a>, <a href="https://github.com/fisx">Matthias Fischmann</a>, <a href="https://github.com/rschatz">rschatz</a>, <a href="https://github.com/Fuuzetsu">Mateusz Kowalczyk</a>, <a href="https://github.com/codedmart">Brandon Martin</a> and <a href="https://github.com/spl">Sean Leather</a> who’ve contributed from little fixes to whole new features. Several companies are now running <em>servant</em>-powered web applications.</p>
 </section>
 
-<div class="info">
+<div class="post-info">
     Posted on May 10, 2015
     
         by The servant team

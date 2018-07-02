@@ -4,28 +4,33 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Home - haskell-servant</title>
+        <title>Servant - haskell-servant</title>
+        <link rel="stylesheet" type="text/css" href="./css/foundation.min.css" />
         <link rel="stylesheet" type="text/css" href="./css/default.css" />
     </head>
     <body>
-        <div id="header">
-            <div id="logo">
-                <a href="./">servant</a>
-            </div>
-            <div id="navigation">
-                <a href="./">Home</a>
-                <a href="./blog.html">Blog</a>
-                <a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Tutorial</a>
-                <a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook</a>
-                <a href="./talks.html">Talks</a>
-                <a href="https://github.com/haskell-servant/servant">GitHub</a>
+        <div class="top-bar-container">
+            <div class="grid-container">
+                <div class="grid-x">
+                    <div class="medium-2 text-center"><a href="./">Servant</a></div>
+                    <div class="medium-2 text-center"><a href="./blog.html">Blog</a></div>
+                    <div class="medium-2 text-center"><a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Tutorial↦</a></div>
+                    <div class="medium-2 text-center"><a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook↦</a></div>
+                    <div class="medium-2 text-center"><a href="./talks.html">Talks</a></div>
+                    <div class="medium-2 text-center"><a href="https://github.com/haskell-servant/servant">GitHub↦</a></div>
+                </div>
             </div>
         </div>
 
-        <div id="content">
-            <h1>Home</h1>
+        <div id="content" class="grid-container"><div class="grid-x">
+            <div class="cell"><h1>Servant</h1></div>
 
-            <p><emph>servant</emph> is a set of packages for declaring web APIs at the type-level and then using those API specifications to:</p>
+            <div class="cell"><div class="grid-x">
+<div class="cell medium-3 text-center">
+<p><img src="./images/servant.png" /></p>
+</div>
+<div class="cell medium-9">
+<p><em>servant</em> is a set of packages for declaring web APIs at the type-level and then using those API specifications to:</p>
 <ul>
 <li>write servers (this part of servant can be considered a web framework),</li>
 <li>obtain client functions (in haskell),</li>
@@ -34,28 +39,16 @@
 <li>and more…</li>
 </ul>
 <p>All in a type-safe manner.</p>
-<h1 id="tutorials-and-blog-posts">Tutorials and Blog Posts</h1>
-<ul>
-<li><a href="http://www.andres-loeh.de/Servant/servant-wgp.pdf">Paper</a> for a more technical introduction</li>
-<li><a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Official tutorial</a></li>
-<li><a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook</a></li>
-<li><a href="./extending.html">Extending servant</a></li>
-<li><a href="./client-in-5-minutes.html">Hackage API client in 5 minutes</a></li>
-<li><a href="https://halcyon.sh/tutorial/">Developing a servant application with Halcyon</a></li>
-<li><a href="https://github.com/k-bx/owlcloud">Type-Safe Microservices in Haskell with Servant</a></li>
-<li><a href="http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/">Type-safe web services in Haskell with servant</a></li>
-<li><a href="http://www.arow.info/blog/posts/2015-07-10-servant-intro.html">Servant, Type Families, and Type-level Everything</a></li>
-<li><a href="http://www.parsonsmatt.org/2015/06/07/servant-persistent.html">Combining Servant With Persistent</a></li>
-<li><a href="https://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">Implementing a minimal version of haskell-servant</a></li>
-<li>See <a href="./talks.html">the talks</a></li>
-</ul>
+<p><a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Documentation</a> – <a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook</a> – <a href="http://www.andres-loeh.de/Servant/servant-wgp.pdf">WGP2015 Paper</a></p>
+</div>
+</div>
 
 <h2>Blog</h2>
-<p>Latest blog posts (<a href="./blog.html">all</a>)</p>
+<!-- <p>Latest blog posts (<a href="/blog.html">all</a>)</p> -->
 <ul>
     
         <li>
-            <a href="./posts/2018-06-19-servant-0.14-released.html">servant 0.14 released</a>,
+            <a href="./posts/2018-06-19-servant-0.14-released.html">servant 0.14 released</a>
             
             	by <i>The servant team</i>
             
@@ -63,7 +56,7 @@
         </li>
     
         <li>
-            <a href="./posts/2017-03-03-servant-and-db.html">Passing a DB connection to handlers in Servant</a>,
+            <a href="./posts/2017-03-03-servant-and-db.html">Passing a DB connection to handlers in Servant</a>
             
             	by <i>Oleg Grenrus</i>
             
@@ -71,7 +64,7 @@
         </li>
     
         <li>
-            <a href="./posts/2016-03-19-servant-0.5-release.html">servant 0.5 released</a>,
+            <a href="./posts/2016-03-19-servant-0.5-release.html">servant 0.5 released</a>
             
             	by <i>The servant team</i>
             
@@ -79,7 +72,7 @@
         </li>
     
         <li>
-            <a href="./posts/2016-02-06-servant-swagger.html">Announcing servant-swagger and swagger2</a>,
+            <a href="./posts/2016-02-06-servant-swagger.html">Announcing servant-swagger and swagger2</a>
             
             	by <i>David Johnson, Nickolay Kudasov, Julian Arni</i>
             
@@ -87,7 +80,7 @@
         </li>
     
         <li>
-            <a href="./posts/2015-08-05-content-types.html">Content Type Bliss</a>,
+            <a href="./posts/2015-08-05-content-types.html">Content Type Bliss</a>
             
             	by <i>Julian K. Arni</i>
             
@@ -95,7 +88,7 @@
         </li>
     
         <li>
-            <a href="./posts/2015-07-24-pulling-mock-servers-out-of-thin-air.html">Pulling a mock server for your APIs out of thin air</a>,
+            <a href="./posts/2015-07-24-pulling-mock-servers-out-of-thin-air.html">Pulling a mock server for your APIs out of thin air</a>
             
             	by <i>Alp Mestanogullari</i>
             
@@ -103,7 +96,7 @@
         </li>
     
         <li>
-            <a href="./posts/2015-05-25-servant-paper-wgp-2015.html">servant paper submitted to WGP 2015</a>,
+            <a href="./posts/2015-05-25-servant-paper-wgp-2015.html">servant paper submitted to WGP 2015</a>
             
             	by <i>Alp Mestanogullari</i>
             
@@ -111,7 +104,7 @@
         </li>
     
         <li>
-            <a href="./posts/2015-05-10-servant-0.4-released.html">servant 0.4 released</a>,
+            <a href="./posts/2015-05-10-servant-0.4-released.html">servant 0.4 released</a>
             
             	by <i>The servant team</i>
             
@@ -121,26 +114,36 @@
 </ul>
 
 
-<h1 id="consultancies">Consultancies</h1>
+<h2 id="external-tutorials-and-blog-posts">External Tutorials and Blog Posts</h2>
+<ul>
+<li><a href="./client-in-5-minutes.html">Hackage API client in 5 minutes</a></li>
+<li><a href="https://halcyon.sh/tutorial/">Developing a servant application with Halcyon</a></li>
+<li><a href="https://github.com/k-bx/owlcloud">Type-Safe Microservices in Haskell with Servant</a></li>
+<li><a href="http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/">Type-safe web services in Haskell with servant</a></li>
+<li><a href="http://www.arow.info/blog/posts/2015-07-10-servant-intro.html">Servant, Type Families, and Type-level Everything</a></li>
+<li><a href="http://www.parsonsmatt.org/2015/06/07/servant-persistent.html">Combining Servant With Persistent</a></li>
+<li><a href="https://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">Implementing a minimal version of haskell-servant</a></li>
+</ul>
+
+<h2 id="consultancies">Consultancies</h2>
 <p>If you’d like to be added, please send a pull request changing the <a href="https://github.com/haskell-servant/haskell-servant.github.io/blob/hakyll/consultancies.md">consultancies.md</a> file, while maintaining alphabetical order. Being listed does not imply endorsement by the <em>servant</em> maintainers.</p>
 <ul>
-<li><a href="https://turingjump.com/">Turing Jump</a></li>
 <li><a href="https://www.well-typed.com/">Well-Typed</a></li>
 </ul>
 
-<p class="notice">
+<div class="callout secondary">
 This work is licensed under the Creative Commons Attribution 4.0 International
 License. To view a copy of this license, visit
 <a href="http://creativecommons.org/licenses/by/4.0/">
   creativecommons.org/licenses/by/4.0/</a>.
-</p>
-
-        </div>
-        <div id="footer">
+</div>
+</div>
+        </div></div>
+        <div id="footer" class="grid-container"><div class="grid-x"><div class="cell">
             Site proudly generated by
             <a href="http://jaspervdj.be/hakyll">Hakyll</a>
             -
             <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
-        </div>
+        </div></div<>
     </body>
 </html>
