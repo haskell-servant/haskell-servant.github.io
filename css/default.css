@@ -15,21 +15,15 @@ body, html {
 	border-bottom: 2px solid #604aff;
 }
 
-.top-bar, .top-bar ul {
-	background: #009d8d;
-}
-
-.top-bar a, .top-bar a:visited {
+.top-bar-container a, .top-bar-container a:visited {
 	color: white;
 	font-weight: bold;
+	padding: 0.7rem 1rem;
+	display: inline-block;
 }
 
-.top-bar a:hover {
+.top-bar-container a:hover {
 	color: #7ec2b9;
-}
-
-.dropdown.menu a {
-	padding: 0.7rem 1.2rem;
 }
 
 body {
