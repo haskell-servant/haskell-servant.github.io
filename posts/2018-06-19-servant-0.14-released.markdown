@@ -48,7 +48,7 @@ breaking changes.
   Read [tutorial section for more information](https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
   ([#936](https://github.com/haskell-servant/servant/pull/936))
 
-  iF you have own combinators, you'll need to define a new method of
+  If you have own combinators, you'll need to define a new method of
   `HasClient` class, for example:
 
   ```haskell

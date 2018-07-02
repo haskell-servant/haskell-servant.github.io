@@ -4,9 +4,6 @@ author: David Johnson, Nickolay Kudasov, Julian Arni
 date: 2016-02-06 03:00
 ---
 
-Swagger
---------
-
 `Servant` is not the first project to provide a unified way of documenting APIs.
 There is `API Blueprint`, `RAML`, `Apiary`, and finally `swagger`. While these
 Web API description languages are not also web frameworks , they are generally

@@ -60,6 +60,7 @@ main = hakyllWith config $ do
 
     match "home.md" $ compile pandocCompiler
 
+    match "externalposts.md" $ compile pandocCompiler
     match "consultancies.md" $ compile pandocCompiler
 
     match "index.html" $ do
@@ -68,10 +69,12 @@ main = hakyllWith config $ do
             posts <- recentFirst =<< loadAll "posts/*"
             homeContent <- loadBody "home.md"
             consultanciesContent <- loadBody "consultancies.md"
+            externalPostsContent <- loadBody "externalposts.md"
             let indexCtx =
                     listField "posts" postCtx (return posts) `mappend`
-                    constField "title" "Home"                `mappend`
+                    constField "title" "Servant"             `mappend`
                     field "home" (\_ -> return homeContent)  `mappend`
+                    field "externalposts" (\_ -> return externalPostsContent)  `mappend`
                     field "consultancies" (\_ -> return consultanciesContent)  `mappend`
                     defaultContext
 
