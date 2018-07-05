@@ -1,10 +1,7 @@
 ---
 title: servant 0.14.1 released
 author: The servant team
-toc: true
 ---
-
-# Introduction
 
 We're happy to announce the minor release of `servant-0.14.1`.
 
@@ -13,6 +10,23 @@ We're happy to announce the minor release of `servant-0.14.1`.
   into `servant` (`Servant.API.Generic`),
   `servant-client-code` (`Servant.Client.Generic`)
   and `servant-server` (`Servant.Server.Generic`).
+
+  ```haskell
+  data Routes route = Routes
+    { _get :: route :- Capture "id" Int :> Get '[JSON] String
+    , _put :: route :- ReqBody '[JSON] Int :> Put '[JSON] Bool
+    }
+  deriving (Generic)
+
+  record :: Routes AsServer
+  record = Routes
+      { _get = return . show
+      , _put = return . odd
+      }
+
+  app :: Application
+  app = genericServe record
+  ```
 
   See [the new cookbook recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/generic/Generic.html)
   for an example.
