@@ -28,8 +28,11 @@ We're happy to announce the minor release of `servant-0.14.1`.
   app = genericServe record
   ```
 
-  See [cookbook recipe for the complete usage example](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/generic/Generic.html)
+  See [the new cookbook recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/generic/Generic.html)
+  for an example.
 
-- Deprecate `Servant.Utils.Links`, use `Servant.Links`.
+- Deprecate `Servant.Utils.Links`, use `Servant.Links`. The `Servant.Utils.Links` module will be removed
+  in an upcoming major release.
 
-- *servant-server* Deprecate `Servant.Utils.StaticUtils`, use `Servant.Server.StaticUtils`.
+- *servant-server* Deprecate `Servant.Utils.StaticUtils`, use `Servant.Server.StaticUtils`. The `Servant.Utils.StaticUtils`
+   module will be removed in an upcoming major release.
