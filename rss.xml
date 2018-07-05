@@ -7,8 +7,44 @@
         <description><![CDATA[Posts from the haskell-servant blog]]></description>
         <atom:link href="http://haskell-servant.github.io/rss.xml" rel="self"
                    type="application/rss+xml" />
-        <lastBuildDate>Tue, 19 Jun 2018 00:00:00 UT</lastBuildDate>
+        <lastBuildDate>Thu, 05 Jul 2018 00:00:00 UT</lastBuildDate>
         <item>
+    <title>servant 0.14.1 released</title>
+    <link>http://haskell-servant.github.io/posts/2018-07-05-servant-0.14.1-released.html</link>
+    <description><![CDATA[<p>We’re happy to announce the minor release of <code>servant-0.14.1</code>.</p>
+<ul>
+<li><p>Merge in (and slightly refactor) <code>servant-generic</code> (by <a href="https://github.com/chpatrick">Patrick Chilton</a>) into <code>servant</code> (<code>Servant.API.Generic</code>), <code>servant-client-code</code> (<code>Servant.Client.Generic</code>) and <code>servant-server</code> (<code>Servant.Server.Generic</code>).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Routes</span> route <span class="fu">=</span> <span class="dt">Routes</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  {<span class="ot"> _get ::</span> route <span class="fu">:-</span> <span class="dt">Capture</span> <span class="st">&quot;id&quot;</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ,<span class="ot"> _put ::</span> route <span class="fu">:-</span> <span class="dt">ReqBody</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Put</span> &#39;[<span class="dt">JSON</span>] <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  }</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="ot">record ::</span> <span class="dt">Routes</span> <span class="dt">AsServer</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">record <span class="fu">=</span> <span class="dt">Routes</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    { _get <span class="fu">=</span> return <span class="fu">.</span> show</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    , _put <span class="fu">=</span> return <span class="fu">.</span> odd</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    }</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="ot">app ::</span> <span class="dt">Application</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">app <span class="fu">=</span> genericServe record</a></code></pre></div>
+<p>See <a href="https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/generic/Generic.html">cookbook recipe for the complete usage example</a></p></li>
+<li><p>Deprecate <code>Servant.Utils.Links</code>, use <code>Servant.Links</code>.</p></li>
+<li><p><em>servant-server</em> Deprecate <code>Servant.Utils.StaticUtils</code>, use <code>Servant.Server.StaticUtils</code>.</p></li>
+</ul>
+
+<div class="post-info">
+    Posted on July  5, 2018
+    
+        by The servant team
+    
+</div>
+]]></description>
+    <pubDate>Thu, 05 Jul 2018 00:00:00 UT</pubDate>
+    <guid>http://haskell-servant.github.io/posts/2018-07-05-servant-0.14.1-released.html</guid>
+    <dc:creator>servant developers</dc:creator>
+</item>
+<item>
     <title>servant 0.14 released</title>
     <link>http://haskell-servant.github.io/posts/2018-06-19-servant-0.14-released.html</link>
     <description><![CDATA[<div id="toc"><h3>Table of contents</h3><ul>
