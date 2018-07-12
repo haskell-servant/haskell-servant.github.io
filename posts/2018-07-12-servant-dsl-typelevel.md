@@ -448,11 +448,11 @@ instance HasLink api => HasLink (Capture :> api) where
 ```
 
 Looks good. Except that this does not typecheck. The problem is with
-the `Capture :> api` and `Static :> api` instances. While we know that the `link` will
-eventually return a `Link`, once given arguments for all the `Capture`s,
-we don't know whether there is another `Capture` later in `api`. If there is,
-then `link api` would have type e.g `String -> Link`, and we cannot cons
-a `String` to a function.
+the `Capture :> api` and `Static :> api` instances. While we know that the `link`
+function will eventually return a `Link`, once given arguments for all the
+`Capture`s, we don't know whether there is another `Capture` later in `api`. If
+there is, then `link api` would have type e.g `String -> Link`, and we cannot
+cons a `String` on top of... function.
 
 We have to be a little smarter and accumulate the path components as we go
 without building up the final list directly. We will be accumulating the path
