@@ -11,7 +11,7 @@ This post is an attempt at explaining servant's design as an embedded domain
 specific language, and particularly why it _had to_ be a _type-level_ domain
 specific language, given our requirements. Along the way, we will discuss
 approaches for designing extensible EDSLs in Haskell and see why other simpler
-approaches just don't cut it.
+approaches just can't meet the said requirements.
 
 # It all started with a problem
 
@@ -76,6 +76,13 @@ which would get us our client functions.
 
 We will now try implementating such a web application description DSL in the
 most straightforward way possible.
+
+_Note:_ We could define a DSL with an interpreter that spits out Haskell code
+for us (through Template Haskell or another mechanism). The result would be
+typed, but the _process_ would not be. The translation from the DSL to the
+result would be untyped code, therefore easy to get wrong. As Haskell
+programmers, we prefer static type checking where possible. This therefore
+excludes Template Haskell and other code generation mechanisms.
 
 # A first, non-modular attempt
 
@@ -150,20 +157,46 @@ one argument, which it is anyway) to depend on the value of type `Endpoint`
 it gets as input. That is, we want a type that depends on a value, i.e
 dependent types.
 
+The alternative would be:
+
+``` haskell
+-- linkTo assumes that the capture values are given in the same order as we want
+-- them to appear in the url.
+linkTo :: Endpoint -> [String] -> Link
+linkTo (Static str rest) captureValues  = str : linkTo rest captureValues
+-- when there is at least one value left in the list, we use it.
+-- when there isn't... we error out.
+linkTo (Capture rest)    (c : cs)       = c   : linkTo rest cs
+linkTo (Capture rest)    []             = error "linkTo: capture value needed but the list is empty" -- :-(
+linkTo (Verb method)     _              = []
+```
+
+This solution is very unsatisfactory, first and foremost because it is possible
+for it to error out if we don't supply the right number of captures. However,
+it will also silently let us pass too many capture values without telling us
+that some of them are not used. Such a function should be total, we really don't
+want an implementation that can let us down if we're not very careful.
+
 Fortunately, GADTs can help here. We could turn `Endpoint` into
-a GADT that tracks captures and use some type-level computations
+a GADT that tracks captures and then use some type-level computations
 to get the type of the link-making function from our list of captures, as well
 as define the link making function through typeclass instances that would
 go through the captures and add an argument for each of them. Request bodies,
 query parameters, headers? We could probably track them too, in a similar way.
-Or we could unify it all by basically building up and tracking API types
-through a `GADT` version of Endpoint's type argument, and do some of what
-servant does at the type-level, with everything else at the value-level.
+Or we could unify it all by basically building up and tracking actual servant
+API types through a `GADT` version of Endpoint's type argument, and do some of
+what servant does at the type-level, with everything else at the value-level.
 
 However, all those approaches have a big problem. Once you've made a decision,
-it is set in stone, in a way. You cannot explore two
-different directions simultaneously without breaking code, you cannot add new
-constructs you hadn't thought of before. Extensibility and modularity
+it is set in stone, in a way. To be more precise, with all these approaches,
+if you want to extend your web app description language you need to add a new
+constructor to your `Endpoint` type, and you then need to handle this new
+constructor in all you functions that pattern match on `Endpoint` constructors
+since they've instantly become partial. Not to mention that just the act of
+adding a constructor requires rebuilding the entire library. You cannot explore
+two different directions simultaneously without breaking code, you cannot add
+new constructs you hadn't thought of without touching the library, e.g just
+locally in a project of yours. Extensibility and modularity
 were central requirements as we had been bitten by the lack of them
 in libraries that we were using at the time.
 
@@ -619,11 +652,13 @@ arrived at in this post.
 
   by Ralf Lämmel and Klaus Ostermann talks in greater depth than the slides
   about the highly modular approach to embedded domain specific languages in
-  Haskell and uses it on several examples.
+  Haskell that we've seen above, and uses it on several examples.
 
 - [serv](https://github.com/tel/serv) and [solga](https://github.com/chpatrick/solga)
   are smaller, younger and (I think) humbler relatives of servant which make
   slightly different choices for the DSL.
 
   Somewhat relatedly, there is [servant-0.1](https://github.com/alpmestan/servant/tree/master#servant),
-  which wasn't anything like the servant most people know.
+  which wasn't anything like the current approach with its API types.
+  The link leads to its README, with an example and some explanations about the
+  approach, for the curious reader.
