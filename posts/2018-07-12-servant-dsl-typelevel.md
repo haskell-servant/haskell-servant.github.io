@@ -363,13 +363,21 @@ data Verb = Verb Method
 
 -- chain a few "endpoint components" with this operator,
 -- all chains must be terminated with a 'Verb' component.
-infixr :> 5
+infixr 5 :>
 data a :> b = a :> b
 
 -- a class to specify all the valid endpoint descriptions
 class Endpoint a
-instance Endpoint (Verb a)
+
+-- Verb alone is one.
+instance Endpoint Verb
+
+-- if we have a valid description, sticking 'Static :>' in front of it
+-- yields another valid description.
 instance Endpoint rest => Endpoint (Static :> rest)
+
+-- if we have a valid description, sticking 'Capture :>' in front of it
+-- yields another valid description.
 instance Endpoint rest => Endpoint (Capture :> rest)
 
 -- GET /hello
@@ -417,8 +425,8 @@ above. Let's introduce a slightly fancier `HasLink` class to make it seemingly
 
 ``` haskell
 class HasLink endpoint where
-  type LinkType endpoint :: *
-  link :: endpoint -> LinkType
+  type LinkType endpoint :: Type
+  link :: endpoint -> LinkType endpoint
 
 instance HasLink Verb where
   type LinkType Verb = Link
@@ -437,9 +445,48 @@ instance HasLink api => HasLink (Capture :> api) where
   -- we see that our little `LinkType` trick there allows
   -- link to receive arguments when appropriate
   link (Capture :> api) captureValue = captureValue : link api
+```
 
--- examples:
+Looks good. Except that this does not typecheck. The problem is with
+the `Capture :> api` and `Static :> api` instances. While we know that the `link` will
+eventually return a `Link`, once given arguments for all the `Capture`s,
+we don't know whether there is another `Capture` later in `api`. If there is,
+then `link api` would have type e.g `String -> Link`, and we cannot cons
+a `String` to a function.
 
+We have to be a little smarter and accumulate the path components as we go
+without building up the final list directly. We will be accumulating the path
+components in reverse order, to make the accumulation efficient, and reverse the
+whole list at the end to give the final `Link` (`= [String]`) value.
+
+``` haskell
+link :: HasLink endpoint => endpoint -> LinkType endpoint
+link e = link' e []
+
+class HasLink endpoint where
+  type LinkType endpoint :: Type
+  link' :: endpoint -> [String] -> LinkType endpoint
+
+instance HasLink Verb where
+  type LinkType Verb = Link
+  link' _ acc = reverse acc
+
+instance HasLink api => HasLink (Static :> api) where
+  type LinkType (Static :> api) = LinkType api
+  link' (Static s :> api) acc = link' api (s : acc)
+  -- we stick the static path fragment at the top of the list,
+  -- so that it appears after the rest when we reverse the list,
+  -- in the Verb instance.
+
+instance HasLink api => HasLink (Capture :> api) where
+  type LinkType (Capture :> api) = String -> LinkType api
+  link' (Capture :> api) acc captureValue =
+    link' api (captureValue : acc)
+```
+
+We can finally generate links with the new approach:
+
+``` haskell
 -- "/hello"
 simpleEndpointLink = renderLink (link endpoint1)
 
@@ -467,12 +514,8 @@ instance (Show a, HasLink api) => HasLink (Capture a :> api) where
   -- HERE! we introduce an argument of type 'a'
   type LinkType (Capture :> api) = a -> LinkType api
 
-  -- we expand the type of link:
-  -- link :: (Capture a :> api) -> a -> LinkType api
-  -- we see that our little `LinkType` trick there allows
-  -- link to receive the argument of type 'a' at the right time, just
-  -- when we need to stick it at the top of the list
-  link (Capture :> api) captureValue = show captureValue : link api
+  link' (Capture :> api) acc captureValue =
+	link' api (show captureValue : acc)
 ```
 
 We unfortunately cannot just "track" some type by storing it in a field
@@ -582,27 +625,29 @@ where the calls to `link` will happen, and the type level, where the description
 live and drive the link interpretation through our typeclass instances.
 
 ``` haskell
+link :: Proxy api -> LinkType api
+link api = link' api []
+
 class HasLink api where
   type LinkType api :: Type
-
-  link :: Proxy api -> LinkType api
+  link' :: Proxy api -> [String] -> LinkType api
 
 instance HasLink (Verb method) where
   type LinkType (Verb method) = Link
-
-  link _ = []
+  link' _ acc = reverse acc
 
 instance (KnownSymbol str, HasLink api) => HasLink (Static str :> api) where
   type LinkType (Static str :> api) = LinkType api
 
   -- we call some "magic" GHC function, symbolVal, to turn type-level
-  -- strings to good old value level strings.
-  link api = symbolVal (Proxy :: Proxy str) : link (apiTail api)
+  -- strings to good old value level strings, through a Proxy to
+  -- the type-level string.
+  link' api acc = link' (apiTail api) (str : acc)
+    where str = symbolVal (Proxy :: Proxy str)
 
 instance (Show a, HasLink api) => HasLink (Capture a :> api) where
   type LinkType (Capture a :> api) = a -> LinkType api
-
-  link api a = show a : link (apiTail api)
+  link' api acc a = link' (apiTail api) (show a : acc)
 
 -- we're just specifying a very handy type for a function
 -- that's in fact much more general (forall a b. Proxy a -> Proxy b).
@@ -613,17 +658,17 @@ apiTail Proxy = Proxy
 ```
 
 It is not all that different from the code in the previous section.
-We can use this as follows:
+We can use it all as follows:
 
 ``` haskell
-type Foo = Static "hello" :> Capture Int :> Capture Text :> Verb 'Get
+type Foo = Static "hello" :> Capture Int :> Capture Double :> Verb 'Get
 
-linkFoo :: Int -> Text -> Link
+linkFoo :: Int -> Double -> Link
 linkFoo = link (Proxy :: Proxy Foo)
 
 link1, link2 :: Link
-link1 = linkFoo 40 "abc"
-link2 = linkFoo 2987 "cba"
+link1 = linkFoo 40 0.1
+link2 = linkFoo 2987 980.5
 ```
 
 And that's it! The key ingredients to servant's design are all here. If you want
