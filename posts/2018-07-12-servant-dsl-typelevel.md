@@ -177,7 +177,8 @@ it will also silently let us pass too many capture values without telling us
 that some of them are not used. Such a function should be total, we really don't
 want an implementation that can let us down if we're not very careful.
 
-Fortunately, GADTs can help here. We could turn `Endpoint` into
+Fortunately, [GADTs](https://en.wikibooks.org/wiki/Haskell/GADT)
+can help here. We could turn `Endpoint` into
 a GADT that tracks captures and then use some type-level computations
 to get the type of the link-making function from our list of captures, as well
 as define the link making function through typeclass instances that would
@@ -188,10 +189,10 @@ API types through a `GADT` version of Endpoint's type argument, and do some of
 what servant does at the type-level, with everything else at the value-level.
 
 However, all those approaches have a big problem. Once you've made a decision,
-it is set in stone, in a way. To be more precise, with all these approaches,
-if you want to extend your web app description language you need to add a new
-constructor to your `Endpoint` type, and you then need to handle this new
-constructor in all you functions that pattern match on `Endpoint` constructors
+it is set in stone, in a way. Indeed, in all these approaches,
+if you want to extend your web app description language, you need to add a new
+constructor to your `Endpoint` type. You then need to handle this new
+constructor in all the functions that pattern match on `Endpoint` constructors
 since they've instantly become partial. Not to mention that just the act of
 adding a constructor requires rebuilding the entire library. You cannot explore
 two different directions simultaneously without breaking code, you cannot add
@@ -199,6 +200,10 @@ new constructs you hadn't thought of without touching the library, e.g just
 locally in a project of yours. Extensibility and modularity
 were central requirements as we had been bitten by the lack of them
 in libraries that we were using at the time.
+
+Note that a GADT-based approach would work well (in addition to being more
+approachable) for very stable domains, and is not considered here because
+of the kind of flexibility we are asking for.
 
 So... how do people build extensible/modular DSLs in Haskell? The next section
 talks about the general problem behind this and a solution that I read about
@@ -319,7 +324,7 @@ construct not supported by this interpretation, we get a type error! This is
 much better than calling `error` in some corner cases that should in theory
 not be reached... In theory. Right.
 
-Anyway, if we now want to add support for multiplications, we can simply do:
+Anyway, if we now want to add support for multiplications, we can do:
 
 ``` haskell
 data Mul l r = Mul l r
@@ -482,7 +487,7 @@ Let's now see an endpoint description using this variant of `Capture`.
 ``` haskell
 endpoint4  = Static "hello" :> (Capture :: Capture Int) :> Verb Post
 -- or, with TypeApplications:
-endpoint4' = Static "hello" :> (Capture @ Int) :> Verb Post
+endpoint4' = Static "hello" :> (Capture @Int) :> Verb Post
 ```
 
 OK, interesting, why not. It does look a little bit ugly. It would look
@@ -538,7 +543,7 @@ approach looks like.
 # Servant's approach (simplified)
 
 First, let me emphasize that any of the designs we have considered so far
-are interesting on their own and are fruitful in different ways. They simply
+are interesting on their own and are fruitful in different ways. They
 were not quite good enough to meet our requirements which were, again, dictated
 by the projects and needs we had at work. This whole project started because
 we were sick of getting things wrong when manually constructing (client) or
@@ -554,7 +559,7 @@ section, with more explanations, you may want to read
 -- wrapped with 'Static'. See the first link in the "Going further"
 -- section if you're not familiar with type-level strings, kinds, etc.
 data Static (str :: Symbol)
-data Capture a
+data Capture (a :: Type)
 
 -- GHC-flavoured Haskell (with the DataKinds extension) supports promoting ordinary data types
 -- to kinds and their constructors to types of those kinds. See again the
@@ -566,7 +571,7 @@ data Method = Get | Post
 data Verb (method :: Method)
 
 infixr 5 :>
-data a :> b
+data (a :: Type) :> (b :: Type)
 ```
 
 As you can see, there isn't a single constructor in sight, all the types (but Method)
@@ -578,7 +583,7 @@ live and drive the link interpretation through our typeclass instances.
 
 ``` haskell
 class HasLink api where
-  type LinkType api :: *
+  type LinkType api :: Type
 
   link :: Proxy api -> LinkType api
 
@@ -620,6 +625,10 @@ link1, link2 :: Link
 link1 = linkFoo 40 "abc"
 link2 = linkFoo 2987 "cba"
 ```
+
+And that's it! The key ingredients to servant's design are all here. If you want
+to read more about actually implementing server/client interpretations for the
+DSL, the _Going further_ section has got you covered with a few relevant links.
 
 # Conclusion
 
