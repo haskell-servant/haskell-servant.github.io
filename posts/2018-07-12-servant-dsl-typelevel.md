@@ -261,7 +261,7 @@ directions (constructors and interpretations) in Haskell. It boils down to:
   constructs.
 
 This effectively means that we won't have a single type to represent all the
-vald "endpoint descriptions". Instead, with this approach, we will be able to
+valid "endpoint descriptions". Instead, with this approach, we will be able to
 process any "reasonable" combination of "endpoint components". The `Expr` typeclass
 below is exactly what lets us say what is a valid endpoint description and what
 isn't. Using their approach for our expressions would look like this:
