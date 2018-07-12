@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Why is servant a type-level DSL? - haskell-servant</title>
+        <link rel="stylesheet" type="text/css" href="../css/foundation.min.css" />
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+    </head>
+    <body>
+        <div class="top-bar-container">
+            <div class="grid-container">
+                <div class="grid-x">
+                    <div class="medium-2 text-center"><a href="../">Servant</a></div>
+                    <div class="medium-2 text-center"><a href="../blog.html">Blog</a></div>
+                    <div class="medium-2 text-center"><a href="https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html">Tutorial↦</a></div>
+                    <div class="medium-2 text-center"><a href="https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html">Cookbook↦</a></div>
+                    <div class="medium-2 text-center"><a href="../talks.html">Talks</a></div>
+                    <div class="medium-2 text-center"><a href="https://github.com/haskell-servant/servant">GitHub↦</a></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="content" class="grid-container"><div class="grid-x">
+            <div class="cell"><h1>Why is servant a type-level DSL?</h1></div>
+
+            <div class="cell"><div id="toc"><h3>Table of contents</h3><ul>
+<li><a href="#it-all-started-with-a-problem">It all started with a problem</a></li>
+<li><a href="#a-first-non-modular-attempt">A first, non-modular attempt</a></li>
+<li><a href="#the-expression-problem">The Expression Problem</a></li>
+<li><a href="#a-first-modular-attempt">A first modular attempt</a></li>
+<li><a href="#servants-approach-simplified">Servant’s approach (simplified)</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+<li><a href="#going-further">Going further</a></li>
+</ul></div>
+<hr />
+<p>This post is an attempt at explaining servant’s design as an embedded domain specific language, and particularly why it <em>had to</em> be a <em>type-level</em> domain specific language, given our requirements. Along the way, we will discuss approaches for designing extensible EDSLs in Haskell and see why other simpler approaches just don’t cut it.</p>
+<section id="it-all-started-with-a-problem" class="level1">
+<h1>It all started with a problem</h1>
+<p>Back in 2014, Sönke Hahn, Julian Arni and myself were working together in “the Haskell team” at Zalora on all sorts of projects. Many of them involved serving web applications, querying external APIs or our own services from Haskell, PHP, JS and probably a few other languages. At the time, we were using a few of the well established “web frameworks”, among which <code>scotty</code>, whenever we had to offer some service over HTTP.</p>
+<p>However, writing all those functions for hitting our own webservices was a lot of manual, error-prone, tedious work. The bigger web applications got, the more tedious it became. And it had to be done once per language in which we wanted to hit the application. This could not continue.</p>
+<p>For reference, this is what a simple scotty application looks like:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Data.Text</span> (split)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Web.Scotty</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">main <span class="fu">=</span> scotty <span class="dv">8000</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">  get <span class="st">&quot;/repeat/:n&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">    n <span class="ot">&lt;-</span> param <span class="st">&quot;n&quot;</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    json (replicate n n)</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">  post <span class="st">&quot;/message&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">    msg <span class="ot">&lt;-</span> jsonData</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    json (split <span class="st">&quot;\n&quot;</span> msg)</a></code></pre></div>
+<p>How could we somewhat automate the creation of one client function per endpoint of the web application? In an ideal world, we would just show this application to some program or library and it would collect all the data it needs about the overall structure of the application from the code itself, in order to produce 2 client functions:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">-- Client for the first endpoint.</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="co">--</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="co">-- The Int is the value you want to set &quot;:n&quot; to (/repeat/23, /repeat/10, ...).</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">getRepeat ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">ClientMonad</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="co">-- Client for the second endpoint.</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="co">--</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="co">-- The JSON body (just a naked string) to send is the Text argument.</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="ot">postMessage ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">ClientMonad</span> [<span class="dt">Text</span>]</a></code></pre></div>
+<p>which would do all the hard work of preparing an HTTP request for us, even taking care of JSON encoding and decoding for us. But… the entire structure of the application is just hidden in the <code>do</code> block and we just cannot programmatically access it.</p>
+<p>So… this is not realistically doable. We clearly <em>need</em> to change (a little bit? a lot?) the way we write our applications, making sure we get a description of the web’s application structure (the endpoints, the part of the request they use or depend on, what they return) that we could then hand over to <em>something</em>, which would get us our client functions.</p>
+<p>We will now try implementating such a web application description DSL in the most straightforward way possible.</p>
+</section>
+<section id="a-first-non-modular-attempt" class="level1">
+<h1>A first, non-modular attempt</h1>
+<p>We want to produce client functions that look like the ones above, that prepare and send HTTP requests for us by taking some pieces of data given as arguments to those functions and encoding then storing them in the right places of the request (request path for URL captures, request body, headers, etc). Let’s perhaps start simple with a data type for describing an endpoint that can be served under some path (which can contain static string fragments and captures), for a given http method, ignoring everything else for now.</p>
+<p>It could look like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Method</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="fu">|</span> <span class="dt">Post</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Endpoint</span> <span class="fu">=</span> <span class="dt">Static</span> <span class="dt">String</span> <span class="dt">Endpoint</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">              <span class="fu">|</span> <span class="dt">Capture</span> <span class="dt">Endpoint</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">              <span class="fu">|</span> <span class="dt">Verb</span> <span class="dt">Method</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co">-- GET /hello/:name</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="ot">getHello ::</span> <span class="dt">Endpoint</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">getHello <span class="fu">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> (<span class="dt">Capture</span> (<span class="dt">Verb</span> <span class="dt">Get</span>))</a></code></pre></div>
+<p>and, if we want it to look a little more “servant-y”, we can define:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:&gt;</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="ot">(:&gt;) ::</span> (<span class="dt">Endpoint</span> <span class="ot">-&gt;</span> <span class="dt">Endpoint</span>) <span class="ot">-&gt;</span> <span class="dt">Endpoint</span> <span class="ot">-&gt;</span> <span class="dt">Endpoint</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">f <span class="fu">:&gt;</span> x <span class="fu">=</span> f x</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="ot">getHelloNew ::</span> <span class="dt">Endpoint</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">getHelloNew <span class="fu">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Get</span></a></code></pre></div>
+<p>Unlike servant though, as you can see with the type of <code>getHello</code> and <code>getHelloNew</code>, our descriptions are good old Haskell values, both of the <code>Endpoint</code> type.</p>
+<p>Given those few definitions, how could we go about, say, generating links to endpoints? Well, here is a straightforward attempt.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">-- a link here is just a list of path components</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co">-- (we ignore query parameters in this post)</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">type</span> <span class="dt">Link</span> <span class="fu">=</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="ot">linkTo ::</span> <span class="dt">Endpoint</span> <span class="ot">-&gt;</span> <span class="dt">Link</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">linkTo (<span class="dt">Static</span> str rest) <span class="fu">=</span> str <span class="fu">:</span> linkTo rest</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">linkTo (<span class="dt">Verb</span> _method)    <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">linkTo (<span class="dt">Capture</span> rest)    <span class="fu">=</span> <span class="fu">???</span> <span class="fu">:</span> linkTo rest</a></code></pre></div>
+<p>But… what should we put in place of those <code>???</code>, if anything?</p>
+<p>Well, we definitely want to add <em>some</em> path component, to fill the <code>Capture</code> slot. However, by definition, a captured path fragment is not fixed, it is allowed to vary. In other words, <code>Capture :&gt; Verb Post</code> matches both <code>POST /x</code> and <code>POST /y</code>. We cannot just pick one value and hope that it is the one the user wanted. We need to take it as an argument. But what about <code>Capture :&gt; Capture :&gt; Verb Post</code>? We would need our <code>linkTo</code> function to take 2 arguments for that case. And zero additional argument for <code>Static &quot;hello&quot; :&gt; Verb Post</code>. This is quite problematic.</p>
+<p>Indeed, we would like the type of <code>linkTo</code> to be <code>Endpoint -&gt; Link</code>, <code>Endpoint -&gt; String -&gt; Link</code>, <code>Endpoint -&gt; String -&gt; String -&gt; Link</code> and so on depending on what the <code>Endpoint</code> argument is. In other words, we want the return type of <code>linkTo</code> (when really seen as a function of one argument, which it is anyway) to depend on the value of type <code>Endpoint</code> it gets as input. That is, we want a type that depends on a value, i.e dependent types.</p>
+<p>Fortunately, GADTs can help here. We could turn <code>Endpoint</code> into a GADT that tracks captures and use some type-level computations to get the type of the link-making function from our list of captures, as well as define the link making function through typeclass instances that would go through the captures and add an argument for each of them. Request bodies, query parameters, headers? We could probably track them too, in a similar way. Or we could unify it all by basically building up and tracking API types through a <code>GADT</code> version of Endpoint’s type argument, and do some of what servant does at the type-level, with everything else at the value-level.</p>
+<p>However, all those approaches have a big problem. Once you’ve made a decision, it is set in stone, in a way. You cannot explore two different directions simultaneously without breaking code, you cannot add new constructs you hadn’t thought of before. Extensibility and modularity were central requirements as we had been bitten by the lack of them in libraries that we were using at the time.</p>
+<p>So… how do people build extensible/modular DSLs in Haskell? The next section talks about the general problem behind this and a solution that I read about that gets us halfway to servant.</p>
+</section>
+<section id="the-expression-problem" class="level1">
+<h1>The Expression Problem</h1>
+<p>To quote <a href="http://homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt">Phil Wadler</a>: “<em>the expression problem is a new name for an old problem. The goal is to define a datatype by cases, where one can add new cases to the datatype and new functions over the datatype, without recompiling existing code, and while retaining static type safety (e.g., no casts)</em>”.</p>
+<p>In Haskell, the standard approach to representing some domain is to define an algebraic data type for it. For a simple type of expressions with additions and integers, we usually do:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Expr</span> <span class="fu">=</span> <span class="dt">I</span> <span class="dt">Integer</span> <span class="fu">|</span> <span class="dt">Add</span> <span class="dt">Expr</span> <span class="dt">Expr</span></a></code></pre></div>
+<p>and proceed to write what we call “interpreters”, which in this case are just functions that take expressions as input and do something interesting with them.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">eval ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">eval (<span class="dt">I</span> n)     <span class="fu">=</span> n</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">eval (<span class="dt">Add</span> a b) <span class="fu">=</span> eval a <span class="fu">+</span> eval b</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"><span class="ot">prettyPrint ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">prettyPrint (<span class="dt">I</span> n) <span class="fu">=</span> show n</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">prettyPrint (<span class="dt">Add</span> a b) <span class="fu">=</span> unwords [prettyPrint a, <span class="st">&quot;+&quot;</span>, prettyPrint b]</a></code></pre></div>
+<p>So, given an expression type, we can easily “add new functions over the data type”, to reuse Phil’s wording. We just write a new function. However, when the time comes to “add new cases to the data type”, this approach becomes painful. A “new case” here means a new constructor for our <code>Expr</code> data type. Let’s say we want to support multiplications too:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Expr</span> <span class="fu">=</span> <span class="dt">I</span> <span class="dt">Integer</span> <span class="fu">|</span> <span class="dt">Add</span> <span class="dt">Expr</span> <span class="dt">Expr</span> <span class="fu">|</span> <span class="dt">Mul</span> <span class="dt">Expr</span> <span class="dt">Expr</span></a></code></pre></div>
+<p>Now, we have to modify <em>every single function that patterns matches on an <code>Expr</code></em> to handle the <code>Mul</code> constructor, including our <code>eval</code> and <code>prettyPrint</code> “interpreters”. For any non-trivial domain, this becomes <em>very</em> painful, <em>very</em> quickly. Fine, so what other options are there?</p>
+<p><a href="https://userpages.uni-koblenz.de/~laemmel/TheEagle/resources/pdf/xproblem1.pdf">Ralf Lämmel’s slides</a> on the topic have been of a great help for me, back when we were looking for a solution suitable to our needs. With Oleg Kiselyov, they show how we can reasonably easily (that is, in Haskell 98) achieve full extensibility in both directions (constructors and interpretations) in Haskell. It boils down to:</p>
+<ul>
+<li>Turn what would be a constructor into its own little data type.</li>
+<li>Turn what would be a simple function that operates on the data type into a typeclass with a method.</li>
+<li>Write instances of those typeclasses for the data types representing the DSL’s constructs.</li>
+</ul>
+<p>This effectively means that we won’t have a single type to represent all the vald “endpoint descriptions”. Instead, with this approach, we will be able to process any “reasonable” combination of “endpoint components”. The <code>Expr</code> typeclass below is exactly what lets us say what is a valid endpoint description and what isn’t. Using their approach for our expressions would look like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- our expression constructs, one data type per</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co">-- constructor we had previously.</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">	<span class="co">-- integer constants</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="kw">data</span> <span class="dt">I</span> <span class="fu">=</span> <span class="dt">I</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"><span class="co">-- Since we don't have an 'Expr' type anymore, to use as a type for</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="co">-- the fields of Add, we just make them type parameters. Sometimes</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9"><span class="co">-- 'l' and 'r' might be I, some other times they might be 'Add I I',</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"><span class="co">-- or 'Add (Add I I) I', and so on. The type reflects the recursive</span></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="co">-- structure.</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"><span class="kw">data</span> <span class="dt">Add</span> l r <span class="fu">=</span> <span class="dt">Add</span> l r</a>
+<a class="sourceLine" id="cb9-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb9-14" data-line-number="14"><span class="co">-- an &quot;open union&quot; to be able to describe all the</span></a>
+<a class="sourceLine" id="cb9-15" data-line-number="15"><span class="co">-- valid expression types.</span></a>
+<a class="sourceLine" id="cb9-16" data-line-number="16"><span class="kw">class</span> <span class="dt">Expr</span> a</a>
+<a class="sourceLine" id="cb9-17" data-line-number="17"><span class="kw">instance</span> <span class="dt">Expr</span> <span class="dt">I</span></a>
+<a class="sourceLine" id="cb9-18" data-line-number="18"><span class="kw">instance</span> (<span class="dt">Expr</span> l, <span class="dt">Expr</span> r) <span class="ot">=&gt;</span> <span class="dt">Expr</span> (<span class="dt">Add</span> l r)</a>
+<a class="sourceLine" id="cb9-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb9-20" data-line-number="20"><span class="co">-- our first interpretation, evaluation</span></a>
+<a class="sourceLine" id="cb9-21" data-line-number="21"><span class="kw">class</span> <span class="dt">Expr</span> a <span class="ot">=&gt;</span> <span class="dt">Eval</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-22" data-line-number="22"><span class="ot">  eval ::</span> a <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb9-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb9-24" data-line-number="24"><span class="co">-- evaluating a constant amounts to returning it</span></a>
+<a class="sourceLine" id="cb9-25" data-line-number="25"><span class="kw">instance</span> <span class="dt">Eval</span> <span class="dt">I</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-26" data-line-number="26">  eval (<span class="dt">I</span> n) <span class="fu">=</span> n</a>
+<a class="sourceLine" id="cb9-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb9-28" data-line-number="28"><span class="co">-- if we know how to evaluate two things, we know how to evaluate</span></a>
+<a class="sourceLine" id="cb9-29" data-line-number="29"><span class="co">-- their addition</span></a>
+<a class="sourceLine" id="cb9-30" data-line-number="30"><span class="kw">instance</span> (<span class="dt">Eval</span> l, <span class="dt">Eval</span> r) <span class="ot">=&gt;</span> <span class="dt">Eval</span> (<span class="dt">Add</span> l r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-31" data-line-number="31">  eval (<span class="dt">Add</span> a b) <span class="fu">=</span> eval a <span class="fu">+</span> eval b</a>
+<a class="sourceLine" id="cb9-32" data-line-number="32"></a>
+<a class="sourceLine" id="cb9-33" data-line-number="33"><span class="co">-- our second interpretation, pretty printing</span></a>
+<a class="sourceLine" id="cb9-34" data-line-number="34"><span class="kw">class</span> <span class="dt">Expr</span> a <span class="ot">=&gt;</span> <span class="dt">Pretty</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-35" data-line-number="35"><span class="ot">  pretty ::</span> a <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb9-36" data-line-number="36"></a>
+<a class="sourceLine" id="cb9-37" data-line-number="37"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">I</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-38" data-line-number="38">  pretty (<span class="dt">I</span> n) <span class="fu">=</span> show n</a>
+<a class="sourceLine" id="cb9-39" data-line-number="39"></a>
+<a class="sourceLine" id="cb9-40" data-line-number="40"><span class="kw">instance</span> (<span class="dt">Pretty</span> l, <span class="dt">Pretty</span> r) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> (<span class="dt">Add</span> l r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-41" data-line-number="41">  pretty (<span class="dt">Add</span> a b) <span class="fu">=</span> unwords [pretty a, <span class="st">&quot;+&quot;</span>, pretty b]</a></code></pre></div>
+<p>Every constructor that we had in our previous <code>Expr</code> data type is now turned into its own little type, and every interpretation becomes a type class that all those little types are then free to provide an instance for. In fact, we do not necessarily have to supply an instance of each interpretation for all of our constructs. If we try to interpret an expression that uses a construct not supported by this interpretation, we get a type error! This is much better than calling <code>error</code> in some corner cases that should in theory not be reached… In theory. Right.</p>
+<p>Anyway, if we now want to add support for multiplications, we can simply do:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Mul</span> l r <span class="fu">=</span> <span class="dt">Mul</span> l r</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw">instance</span> (<span class="dt">Expr</span> l, <span class="dt">Expr</span> r) <span class="ot">=&gt;</span> <span class="dt">Expr</span> (<span class="dt">Mul</span> l r)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="kw">instance</span> (<span class="dt">Eval</span> l, <span class="dt">Eval</span> r) <span class="ot">=&gt;</span> <span class="dt">Eval</span> (<span class="dt">Mul</span> l r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  eval (<span class="dt">Mul</span> a b) <span class="fu">=</span> eval a <span class="fu">*</span> eval b</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7"><span class="kw">instance</span> (<span class="dt">Pretty</span> l, <span class="dt">Pretty</span> r) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> (<span class="dt">Mul</span> l r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8">  pretty (<span class="dt">Mul</span> a b) <span class="fu">=</span> unwords [autoParens a, <span class="st">&quot;*&quot;</span>, autoParens b]</a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">    <span class="kw">where</span> autoParens a<span class="fu">@</span>(<span class="dt">Add</span> _ _) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> pretty a <span class="fu">++</span> <span class="st">&quot;)&quot;</span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">          autoParens           a <span class="fu">=</span> pretty a</a></code></pre></div>
+<p>We didn’t have to change any existing function, that’s great! Let’s apply this approach to a very simplified web application description “language” that we could make out of tiny building blocks (static path fragments, captures, etc).</p>
+</section>
+<section id="a-first-modular-attempt" class="level1">
+<h1>A first modular attempt</h1>
+<p>Adapting the approach from the previous section to our domain, we can give a shot at decomposing the kind of information we want to represent into a few different “constructs” (i.e data types).</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- static path fragments</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Static</span> <span class="fu">=</span> <span class="dt">Static</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="co">-- variable path fragments (&quot;captures&quot;)</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5"><span class="kw">data</span> <span class="dt">Capture</span> <span class="fu">=</span> <span class="dt">Capture</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7"><span class="co">-- HTTP method</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8"><span class="kw">data</span> <span class="dt">Method</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="fu">|</span> <span class="dt">Post</span></a>
+<a class="sourceLine" id="cb11-9" data-line-number="9"><span class="co">-- Leaf of a chain of :&gt;'s, specifies the HTTP method</span></a>
+<a class="sourceLine" id="cb11-10" data-line-number="10"><span class="kw">data</span> <span class="dt">Verb</span> <span class="fu">=</span> <span class="dt">Verb</span> <span class="dt">Method</span></a>
+<a class="sourceLine" id="cb11-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb11-12" data-line-number="12"><span class="co">-- chain a few &quot;endpoint components&quot; with this operator,</span></a>
+<a class="sourceLine" id="cb11-13" data-line-number="13"><span class="co">-- all chains must be terminated with a 'Verb' component.</span></a>
+<a class="sourceLine" id="cb11-14" data-line-number="14"><span class="kw">infixr</span> <span class="fu">:&gt;</span> <span class="dv">5</span></a>
+<a class="sourceLine" id="cb11-15" data-line-number="15"><span class="kw">data</span> a <span class="fu">:&gt;</span> b <span class="fu">=</span> a <span class="fu">:&gt;</span> b</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb11-17" data-line-number="17"><span class="co">-- a class to specify all the valid endpoint descriptions</span></a>
+<a class="sourceLine" id="cb11-18" data-line-number="18"><span class="kw">class</span> <span class="dt">Endpoint</span> a</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19"><span class="kw">instance</span> <span class="dt">Endpoint</span> (<span class="dt">Verb</span> a)</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20"><span class="kw">instance</span> <span class="dt">Endpoint</span> rest <span class="ot">=&gt;</span> <span class="dt">Endpoint</span> (<span class="dt">Static</span> <span class="fu">:&gt;</span> rest)</a>
+<a class="sourceLine" id="cb11-21" data-line-number="21"><span class="kw">instance</span> <span class="dt">Endpoint</span> rest <span class="ot">=&gt;</span> <span class="dt">Endpoint</span> (<span class="dt">Capture</span> <span class="fu">:&gt;</span> rest)</a>
+<a class="sourceLine" id="cb11-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb11-23" data-line-number="23"><span class="co">-- GET /hello</span></a>
+<a class="sourceLine" id="cb11-24" data-line-number="24">endpoint1 <span class="fu">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Get</span></a></code></pre></div>
+<p>OK, why not. Let’s now try to write an interpretation for generating links to endpoints like the one above. This is a lot simpler and self-contained than investigating client generation or server-side routing, while retaining many of the difficulties. The main one is that depending on what we find in the description of the endpoint, we need the type of the link-generating function to change: indeed, if we encounter <code>Capture</code>s, then the user has to supply values for them. We will let the user do that through one additional argument per Capture we encounter.</p>
+<p>Let’s start with something really simple.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Link</span> <span class="fu">=</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="co">-- @renderLink [&quot;hello&quot;, &quot;world&quot;] == &quot;/hello/world&quot;@</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="ot">renderLink ::</span> <span class="dt">Link</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">renderLink xs <span class="fu">=</span> <span class="ch">'/'</span> <span class="fu">:</span> intercalate <span class="ch">'/'</span> xs</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"><span class="kw">class</span> <span class="dt">HasLink</span> endpoint <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">  <span class="co">-- return the path components</span></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"><span class="ot">  link ::</span> endpoint <span class="ot">-&gt;</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb12-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11"><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Static</span> <span class="fu">:&gt;</span> api) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-12" data-line-number="12">  link (<span class="dt">Static</span> s <span class="fu">:&gt;</span> api) <span class="fu">=</span> s <span class="fu">:</span> link api</a>
+<a class="sourceLine" id="cb12-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb12-14" data-line-number="14"><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> <span class="fu">:&gt;</span> api) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-15" data-line-number="15">  link (<span class="dt">Capture</span> <span class="fu">:&gt;</span> api) <span class="fu">=</span> <span class="fu">???</span> <span class="fu">:</span> link api</a>
+<a class="sourceLine" id="cb12-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb12-17" data-line-number="17"><span class="kw">instance</span> <span class="dt">HasLink</span> <span class="dt">Verb</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-18" data-line-number="18">  link _ <span class="fu">=</span> []</a></code></pre></div>
+<p>We should be appending something in place of those <code>???</code> there. But since <code>Capture</code> represents variable path fragments (like <code>:userid</code> in <code>/user/:userid</code>, in many web frameworks), we do not want to pick a fixed string, we would like for this string to be supplied by the caller of <code>link</code>, as stated above. Let’s introduce a slightly fancier <code>HasLink</code> class to make it seemingly “variadic”.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">class</span> <span class="dt">HasLink</span> endpoint <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="kw">type</span> <span class="dt">LinkType</span><span class="ot"> endpoint ::</span> <span class="fu">*</span></a>
+<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="ot">  link ::</span> endpoint <span class="ot">-&gt;</span> <span class="dt">LinkType</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="kw">instance</span> <span class="dt">HasLink</span> <span class="dt">Verb</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">  <span class="kw">type</span> <span class="dt">LinkType</span> <span class="dt">Verb</span> <span class="fu">=</span> <span class="dt">Link</span></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7">  link _ <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb13-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb13-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Static</span> <span class="fu">:&gt;</span> api) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-10" data-line-number="10">  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Static</span> <span class="fu">:&gt;</span> api) <span class="fu">=</span> <span class="dt">LinkType</span> api</a>
+<a class="sourceLine" id="cb13-11" data-line-number="11">  link (<span class="dt">Static</span> s <span class="fu">:&gt;</span> api) <span class="fu">=</span> s <span class="fu">:</span> link api</a>
+<a class="sourceLine" id="cb13-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb13-13" data-line-number="13"><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> <span class="fu">:&gt;</span> api) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-14" data-line-number="14">  <span class="co">-- HERE! we introduce a String argument</span></a>
+<a class="sourceLine" id="cb13-15" data-line-number="15">  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Capture</span> <span class="fu">:&gt;</span> api) <span class="fu">=</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</a>
+<a class="sourceLine" id="cb13-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb13-17" data-line-number="17">  <span class="co">-- we expand the type of link:</span></a>
+<a class="sourceLine" id="cb13-18" data-line-number="18">  <span class="co">-- link :: (Capture :&gt; api) -&gt; String -&gt; LinkType api</span></a>
+<a class="sourceLine" id="cb13-19" data-line-number="19">  <span class="co">-- we see that our little `LinkType` trick there allows</span></a>
+<a class="sourceLine" id="cb13-20" data-line-number="20">  <span class="co">-- link to receive arguments when appropriate</span></a>
+<a class="sourceLine" id="cb13-21" data-line-number="21">  link (<span class="dt">Capture</span> <span class="fu">:&gt;</span> api) captureValue <span class="fu">=</span> captureValue <span class="fu">:</span> link api</a>
+<a class="sourceLine" id="cb13-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb13-23" data-line-number="23"><span class="co">-- examples:</span></a>
+<a class="sourceLine" id="cb13-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb13-25" data-line-number="25"><span class="co">-- &quot;/hello&quot;</span></a>
+<a class="sourceLine" id="cb13-26" data-line-number="26">simpleEndpointLink <span class="fu">=</span> renderLink (link endpoint1)</a>
+<a class="sourceLine" id="cb13-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb13-28" data-line-number="28">endpoint2 <span class="fu">=</span> <span class="dt">Capture</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Post</span></a>
+<a class="sourceLine" id="cb13-29" data-line-number="29"><span class="ot">linkFun2 ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Link</span></a>
+<a class="sourceLine" id="cb13-30" data-line-number="30">linkFun2 <span class="fu">=</span> link endpoint2</a>
+<a class="sourceLine" id="cb13-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb13-32" data-line-number="32">link2a <span class="fu">=</span> renderLink (linkFun2 <span class="st">&quot;foo&quot;</span>) <span class="co">-- &quot;/foo&quot;</span></a>
+<a class="sourceLine" id="cb13-33" data-line-number="33">link2b <span class="fu">=</span> renderLink (linkFun2 <span class="st">&quot;bar&quot;</span>) <span class="co">-- &quot;/bar&quot;</span></a>
+<a class="sourceLine" id="cb13-34" data-line-number="34"></a>
+<a class="sourceLine" id="cb13-35" data-line-number="35">endpoint3 <span class="fu">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Get</span></a>
+<a class="sourceLine" id="cb13-36" data-line-number="36">link3 <span class="fu">=</span> renderLink (link endpoint3 <span class="st">&quot;x&quot;</span> <span class="st">&quot;y&quot;</span>) <span class="co">-- &quot;/hello/x/y&quot;</span></a></code></pre></div>
+<p>This looks promising. Let’s now try to introduce some more types here, by allowing captures to not be specified just as simple strings, but any <code>Show</code>able type (this is terrible, but simple enough for this post). We need to modify <code>Capture</code> to track that <code>Show</code>able type we will use to specify the value of that path fragment.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Capture</span> a <span class="fu">=</span> <span class="dt">Capture</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="kw">instance</span> (<span class="dt">Show</span> a, <span class="dt">HasLink</span> api) <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> a <span class="fu">:&gt;</span> api) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  <span class="co">-- HERE! we introduce an argument of type 'a'</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Capture</span> <span class="fu">:&gt;</span> api) <span class="fu">=</span> a <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">  <span class="co">-- we expand the type of link:</span></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">  <span class="co">-- link :: (Capture a :&gt; api) -&gt; a -&gt; LinkType api</span></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">  <span class="co">-- we see that our little `LinkType` trick there allows</span></a>
+<a class="sourceLine" id="cb14-10" data-line-number="10">  <span class="co">-- link to receive the argument of type 'a' at the right time, just</span></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11">  <span class="co">-- when we need to stick it at the top of the list</span></a>
+<a class="sourceLine" id="cb14-12" data-line-number="12">  link (<span class="dt">Capture</span> <span class="fu">:&gt;</span> api) captureValue <span class="fu">=</span> show captureValue <span class="fu">:</span> link api</a></code></pre></div>
+<p>We unfortunately cannot just “track” some type by storing it in a field (which is different from storing <em>a value of that type</em>). Instead we make <code>Capture</code> a clone of <code>Proxy</code> (from <code>Data.Proxy</code>) and just carry around a phantom type parameter. This is a little inconvenient as we will <em>have to</em> type annotate <em>all</em> <code>Capture</code>s (or use the <code>TypeApplications</code> language extension), but let’s roll with this approach for now.</p>
+<p>Let’s now see an endpoint description using this variant of <code>Capture</code>.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1">endpoint4  <span class="fu">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> (<span class="dt">Capture</span><span class="ot"> ::</span> <span class="dt">Capture</span> <span class="dt">Int</span>) <span class="fu">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Post</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co">-- or, with TypeApplications:</span></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">endpoint4' <span class="fu">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> (<span class="dt">Capture</span> <span class="fu">@</span> <span class="dt">Int</span>) <span class="fu">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Post</span></a></code></pre></div>
+<p>OK, interesting, why not. It does look a little bit ugly. It would look even uglier if we included the response type in <code>Verb</code>, turning it into <code>data Verb a = Verb Method</code> which would require the same kind of type annotations. And the same problem would manifest itself if we were to add all the similar types from servant (<code>ReqBody</code>, <code>QueryParam</code>, <code>Header</code>, etc). This is quite disappointing.</p>
+<p>Unrelatedly, have you noticed that I have not given the type of any of our endpoint descriptions so far? This is on purpose, because those types are a little bit fancy. Fortunately, they should look familiar:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">endpoint1 ::</span> <span class="dt">Static</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="ot">endpoint2 ::</span> <span class="dt">Capture</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="ot">endpoint3 ::</span> <span class="dt">Static</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="dt">String</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="ot">endpoint4 ::</span> <span class="dt">Static</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span></a></code></pre></div>
+<p>That’s right, not only do the descriptions (which are good old haskell values) look like servant’s API types, but their types too! We can see that we are only “hiding” the strings (in static path fragments) and the HTTP method (in verbs) from the type-level.</p>
+<p>Most of the other bits of information we would want to see in API descriptions will also have to be reflected at the type-level. When we consider content types for example, we have no choice but to keep track of them at the type level too, even with this design. Because we need to make sure suitable encoding/decoding instances are available for the types that will be represented with those MIME types, and this cannot be done when discovering <code>&quot;application/json&quot;</code> in a list somewhere, at runtime.</p>
+<p>All in all, there is no value in keeping anything at the value level at this point. And we are already traversing a bunch of types mixed together with funny symbols and computing the type of a link making function as we go, as evidenced by the <code>HasLink</code> instances from above, so we’ve already got one foot in type-level land.</p>
+<p>An important tradeoff that we are making here is that while putting more information at the type-level indeed makes things more complex, it does however give a chance to our descriptions to influence more things, including other types. This is noticeable in the last <code>HasLink</code> instance we wrote, where making <code>Capture</code> track the type the url fragment is going to be decoded to allowed us to directly make the link-making function take a value of that type, instead of a string. This is strictly more powerful and will allow us to work in a very strongly typed world and where the typechecker “writes” a whole lot of code for us.</p>
+<p>Let’s bite the bullet and finally take a quick look at what servant’s type-level approach looks like.</p>
+</section>
+<section id="servants-approach-simplified" class="level1">
+<h1>Servant’s approach (simplified)</h1>
+<p>First, let me emphasize that any of the designs we have considered so far are interesting on their own and are fruitful in different ways. They simply were not quite good enough to meet our requirements which were, again, dictated by the projects and needs we had at work. This whole project started because we were sick of getting things wrong when manually constructing (client) or deconstructing (server) HTTP requests and so on.</p>
+<p>Now, let’s write our type-level DSL. If you want a longer version of just this section, with more explanations, you may want to read <a href="https://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">Implementing a minimal version of servant</a>.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- GHC-flavoured Haskell supports type-level strings, they are the only type-level</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="co">-- entity to have kind Symbol. We will therefore just use those,</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="co">-- wrapped with 'Static'. See the first link in the &quot;Going further&quot;</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4"><span class="co">-- section if you're not familiar with type-level strings, kinds, etc.</span></a>
+<a class="sourceLine" id="cb17-5" data-line-number="5"><span class="kw">data</span> <span class="dt">Static</span> (<span class="ot">str ::</span> <span class="dt">Symbol</span>)</a>
+<a class="sourceLine" id="cb17-6" data-line-number="6"><span class="kw">data</span> <span class="dt">Capture</span> a</a>
+<a class="sourceLine" id="cb17-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb17-8" data-line-number="8"><span class="co">-- GHC-flavoured Haskell (with the DataKinds extension) supports promoting ordinary data types</span></a>
+<a class="sourceLine" id="cb17-9" data-line-number="9"><span class="co">-- to kinds and their constructors to types of those kinds. See again the</span></a>
+<a class="sourceLine" id="cb17-10" data-line-number="10"><span class="co">-- first link in the &quot;Going further&quot; section if this is new to you.</span></a>
+<a class="sourceLine" id="cb17-11" data-line-number="11"><span class="co">-- In our example, this lets us parametrize Verb not by an ordinary type but by</span></a>
+<a class="sourceLine" id="cb17-12" data-line-number="12"><span class="co">-- a constructor of 'Method'. Indeed, 'method' can only be instantiated to</span></a>
+<a class="sourceLine" id="cb17-13" data-line-number="13"><span class="co">-- Get and Post.</span></a>
+<a class="sourceLine" id="cb17-14" data-line-number="14"><span class="kw">data</span> <span class="dt">Method</span> <span class="fu">=</span> <span class="dt">Get</span> <span class="fu">|</span> <span class="dt">Post</span></a>
+<a class="sourceLine" id="cb17-15" data-line-number="15"><span class="kw">data</span> <span class="dt">Verb</span> (<span class="ot">method ::</span> <span class="dt">Method</span>)</a>
+<a class="sourceLine" id="cb17-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb17-17" data-line-number="17"><span class="kw">infixr</span> <span class="dv">5</span> <span class="fu">:&gt;</span></a>
+<a class="sourceLine" id="cb17-18" data-line-number="18"><span class="kw">data</span> a <span class="fu">:&gt;</span> b</a></code></pre></div>
+<p>As you can see, there isn’t a single constructor in sight, all the types (but Method) are empty. And now, we proceed with the <code>HasLink</code> class. Since we don’t have any value to give to the <code>link</code> method, given that the description is now a type, we will use <code>data Proxy a = Proxy</code> to act as an intermediate between the value level, where the calls to <code>link</code> will happen, and the type level, where the descriptions live and drive the link interpretation through our typeclass instances.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="kw">class</span> <span class="dt">HasLink</span> api <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">  <span class="kw">type</span> <span class="dt">LinkType</span><span class="ot"> api ::</span> <span class="fu">*</span></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="ot">  link ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb18-6" data-line-number="6"><span class="kw">instance</span> <span class="dt">HasLink</span> (<span class="dt">Verb</span> method) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Verb</span> method) <span class="fu">=</span> <span class="dt">Link</span></a>
+<a class="sourceLine" id="cb18-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb18-9" data-line-number="9">  link _ <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb18-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb18-11" data-line-number="11"><span class="kw">instance</span> (<span class="dt">KnownSymbol</span> str, <span class="dt">HasLink</span> api) <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Static</span> str <span class="fu">:&gt;</span> api) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-12" data-line-number="12">  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Static</span> str <span class="fu">:&gt;</span> api) <span class="fu">=</span> <span class="dt">LinkType</span> api</a>
+<a class="sourceLine" id="cb18-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb18-14" data-line-number="14">  <span class="co">-- we call some &quot;magic&quot; GHC function, symbolVal, to turn type-level</span></a>
+<a class="sourceLine" id="cb18-15" data-line-number="15">  <span class="co">-- strings to good old value level strings.</span></a>
+<a class="sourceLine" id="cb18-16" data-line-number="16">  link api <span class="fu">=</span> symbolVal (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> str) <span class="fu">:</span> link (apiTail api)</a>
+<a class="sourceLine" id="cb18-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb18-18" data-line-number="18"><span class="kw">instance</span> (<span class="dt">Show</span> a, <span class="dt">HasLink</span> api) <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> a <span class="fu">:&gt;</span> api) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb18-19" data-line-number="19">  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Capture</span> a <span class="fu">:&gt;</span> api) <span class="fu">=</span> a <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</a>
+<a class="sourceLine" id="cb18-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb18-21" data-line-number="21">  link api a <span class="fu">=</span> show a <span class="fu">:</span> link (apiTail api)</a>
+<a class="sourceLine" id="cb18-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb18-23" data-line-number="23"><span class="co">-- we're just specifying a very handy type for a function</span></a>
+<a class="sourceLine" id="cb18-24" data-line-number="24"><span class="co">-- that's in fact much more general (forall a b. Proxy a -&gt; Proxy b).</span></a>
+<a class="sourceLine" id="cb18-25" data-line-number="25"><span class="co">-- no magic going on, we just decide that this function takes endpoint description</span></a>
+<a class="sourceLine" id="cb18-26" data-line-number="26"><span class="co">-- shaped types and drops the first component.</span></a>
+<a class="sourceLine" id="cb18-27" data-line-number="27"><span class="ot">apiTail ::</span> <span class="dt">Proxy</span> (a <span class="fu">:&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Proxy</span> b</a>
+<a class="sourceLine" id="cb18-28" data-line-number="28">apiTail <span class="dt">Proxy</span> <span class="fu">=</span> <span class="dt">Proxy</span></a></code></pre></div>
+<p>It is not all that different from the code in the previous section. We can use this as follows:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Foo</span> <span class="fu">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="dt">Int</span> <span class="fu">:&gt;</span> <span class="dt">Capture</span> <span class="dt">Text</span> <span class="fu">:&gt;</span> <span class="dt">Verb</span> '<span class="dt">Get</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="ot">linkFoo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Link</span></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">linkFoo <span class="fu">=</span> link (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> <span class="dt">Foo</span>)</a>
+<a class="sourceLine" id="cb19-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">link1,<span class="ot"> link2 ::</span> <span class="dt">Link</span></a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">link1 <span class="fu">=</span> linkFoo <span class="dv">40</span> <span class="st">&quot;abc&quot;</span></a>
+<a class="sourceLine" id="cb19-8" data-line-number="8">link2 <span class="fu">=</span> linkFoo <span class="dv">2987</span> <span class="st">&quot;cba&quot;</span></a></code></pre></div>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>I hope this little tour of some of the designs we explored on our way to writing servant was useful and informative, whether from a Haskell EDSL writer perspective or for any Haskeller who has ever wondered about why the descriptions live at the type-level. The real servant libraries of course have a much richer vocabulary for describing endpoints and entire APIs, and offer many interpretations in addition to the type-safe links. But the core ideas behind the design and implementation are the same ones we progressively arrived at in this post.</p>
+</section>
+<section id="going-further" class="level1">
+<h1>Going further</h1>
+<ul>
+<li><p><a href="https://arow.info/blog/posts/2015-07-10-servant-intro.html">Servant, Type Families, and Type-level Everything - A look at advanced GHC features used in Servant</a></p>
+<p>I suspect this is a rather useful resource for Haskellers who haven’t yet encountered type-level programming in (GHC) Haskell.</p></li>
+<li><p><a href="https://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">Implementing a minimal version of servant</a></p>
+<p>A more approchable and more narrowly focused alternative to the servant paper, which consists in implementing a very simplified version of servant, using however the same “API type” based approach for the EDSL as the real servant.</p></li>
+<li><p><a href="https://alpmestan.com/servant/servant-wgp.pdf">the servant paper</a>, published at the Workshop on Generic Programming, 2015.</p></li>
+<li><p><a href="https://www.informatik.uni-marburg.de/~kos/papers/gpce06.pdf">Software extensions and Integration with Type Classes</a></p>
+<p>by Ralf Lämmel and Klaus Ostermann talks in greater depth than the slides about the highly modular approach to embedded domain specific languages in Haskell and uses it on several examples.</p></li>
+<li><p><a href="https://github.com/tel/serv">serv</a> and <a href="https://github.com/chpatrick/solga">solga</a> are smaller, younger and (I think) humbler relatives of servant which make slightly different choices for the DSL.</p>
+<p>Somewhat relatedly, there is <a href="https://github.com/alpmestan/servant/tree/master#servant">servant-0.1</a>, which wasn’t anything like the servant most people know.</p></li>
+</ul>
+</section>
+
+<div class="post-info">
+    Posted on June 20, 2018
+    
+        by Alp Mestanogullari
+    
+</div>
+</div>
+        </div></div>
+        <div id="footer" class="grid-container"><div class="grid-x"><div class="cell">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+            -
+            <a href="https://github.com/haskell-servant/haskell-servant.github.io">Source</a>
+        </div></div<>
+    </body>
+</html>
