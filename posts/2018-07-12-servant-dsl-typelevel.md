@@ -95,7 +95,7 @@ data Method = Get | Post
 
 data Endpoint = Static String Endpoint
               | Capture Endpoint
-			  | Verb Method
+              | Verb Method
 
 -- GET /hello/:name
 getHello :: Endpoint
