@@ -400,7 +400,7 @@ type Link = [String]
 
 -- @renderLink ["hello", "world"] == "/hello/world"@
 renderLink :: Link -> String
-renderLink xs = '/' : intercalate '/' xs
+renderLink xs = '/' : intercalate "/" xs
 
 class HasLink endpoint where
   -- return the path components
