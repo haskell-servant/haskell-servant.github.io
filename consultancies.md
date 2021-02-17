@@ -7,3 +7,4 @@ file, while maintaining alphabetical order.  Being listed does not imply
 endorsement by the *servant* maintainers.
 
 - [Well-Typed](https://www.well-typed.com/)
+- [Tweag](https://www.tweag.io/)
