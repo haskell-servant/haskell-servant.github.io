@@ -6,5 +6,6 @@ If you'd like to be added, please send a pull request changing the
 file, while maintaining alphabetical order.  Being listed does not imply
 endorsement by the *servant* maintainers.
 
-- [Well-Typed](https://www.well-typed.com/)
+- [Platonic.Systems](https://platonic.systems/)
 - [Tweag](https://www.tweag.io/)
+- [Well-Typed](https://www.well-typed.com/)
