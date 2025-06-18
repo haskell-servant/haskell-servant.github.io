@@ -18,9 +18,9 @@ type-level and then using those API specifications to:
 
 All in a type-safe manner.
 
-[Documentation](https://haskell-servant.readthedocs.io/en/stable/tutorial/index.html)
+[Documentation](https://docs.servant.dev/en/latest/tutorial/index.html)
 &ndash;
-[Cookbook](https://haskell-servant.readthedocs.io/en/stable/cookbook/index.html)
+[Cookbook](https://haskell-servant.readthedocs.io/en/latest/cookbook/index.html)
 &ndash;
 [WGP2015 Paper](http://www.andres-loeh.de/Servant/servant-wgp.pdf)
 </div>
